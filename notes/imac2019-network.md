@@ -266,7 +266,9 @@ illumos-gate submission needs ("tested on iMac19,1, BCM57766 A1").
     `pkg://oi-gnome/driver/audio/audiohd@<new>.1`.
   - installed on the iMac 2026-11-09: BE **gnome45-audiohd** (clone of
     gnome45, active on reboot), pkg verify clean, module sha256 9831202b…
-    (= the tested v2).
+    (= the tested v2). Booted into it at 14:07; the packaged module is
+    loaded and reads SSID 0x106b5c00, and the user confirmed that sound
+    from the GNOME session comes from the speakers.
 
 ## 7. iMac13,2 setup (2026-11-09)
 
