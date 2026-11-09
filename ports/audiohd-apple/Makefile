@@ -90,7 +90,8 @@ $(BUILD_DIR)/.unpacked: $(ARCHIVE_DIR)/$(COMPONENT_ARCHIVE)
 	mkdir -p $(BUILD_DIR)
 	$(GTAR) -xzf $< -C $(BUILD_DIR) \
 	    $(COMPONENT_SRC)/usr/src/uts/common/io/audio/drv/audiohd \
-	    $(COMPONENT_SRC)/usr/src/uts/common/sys/beep.h
+	    $(COMPONENT_SRC)/usr/src/uts/common/sys/beep.h \
+	    $(COMPONENT_SRC)/usr/src/man/man4d/audiohd.4d
 	touch $@
 
 $(BUILD_DIR)/.patched: $(BUILD_DIR)/.unpacked $(wildcard patches/*.patch)
@@ -125,7 +126,34 @@ check: $(BUILD_DIR)/$(MODULE)
 	    of $(MODULE) are in unix, genunix or drv/audio"
 	/usr/bin/elfdump -d $(BUILD_DIR)/$(MODULE) | grep NEEDED
 
+# The IPS package: our driver/audio/audiohd, same name and contents as
+# OpenIndiana's, at $(OSNET_VERSION).1 in our publisher (audiohd-apple.p5m).
+# OSNET_VERSION is the installed OS build, whose illumos-gate commit
+# (pkg contents -m driver/audio/audiohd: illumos-gate.info.git-rev) must be
+# GATE_COMMIT.  For a new OS build: set both, the archive hash, gmake
+# clean publish, then pkg install the new version (notes, section 6).
+OSNET_VERSION=	0.5.11-2026.0.0.23381
+PKG_VERSION=	$(OSNET_VERSION).1
+GATE_SHORT=	$(shell echo $(GATE_COMMIT) | cut -c1-10)
+REPO?=		$(HOME)/oi-repo
+PUBLISHER?=	oi-gnome
+PROTO=		$(BUILD_DIR)/proto
+
+publish: check
+	rm -rf $(PROTO)
+	mkdir -p $(PROTO)
+	cp $(BUILD_DIR)/$(MODULE) $(PROTO)/audiohd
+	cp $(DRV_DIR)/audiohd.conf $(PROTO)/audiohd.conf
+	cp $(SRC_DIR)/usr/src/man/man4d/audiohd.4d $(PROTO)/audiohd.4d
+	cp $(COMPONENT_LICENSE_FILE) $(PROTO)/
+	/usr/bin/pkgmogrify -D PKG_VERSION=$(PKG_VERSION) \
+	    -D OSNET_VERSION=$(OSNET_VERSION) -D GATE_COMMIT=$(GATE_COMMIT) \
+	    -D GATE_SHORT=$(GATE_SHORT) $(COMPONENT_NAME).p5m > $(BUILD_DIR)/manifest
+	/usr/bin/pkglint $(BUILD_DIR)/manifest
+	/usr/bin/pkgsend -s $(REPO) publish -d $(PROTO) \
+	    --fmri-in-manifest $(BUILD_DIR)/manifest
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all check clean
+.PHONY: all check clean publish

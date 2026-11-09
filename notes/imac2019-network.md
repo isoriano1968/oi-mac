@@ -236,6 +236,37 @@ illumos-gate submission needs ("tested on iMac19,1, BCM57766 A1").
   until the patch is in illumos-gate. To upstream: illumos issue + this patch.
 - `modunload` of audiohd fails with "Device busy" even with no user, so a
   live test is not possible: use a one-boot BE (`beadm activate -t`).
+- No upstream submission for now (user, 2026-11-09): upstream/ stays as
+  prepared. Instead **a package of our own** (`gmake publish` in
+  ports/audiohd-apple, manifest audiohd-apple.p5m):
+  - same name as OI's, `driver/audio/audiohd`, same files (module,
+    audiohd.conf, man page audiohd.4d) and the same `driver` action and
+    aliases, at **0.5.11-2026.0.0.23381.1** (OI's build + .1) in our
+    publisher oi-gnome. pkg owns the file, `pkg verify` is clean. Chosen
+    over a renamed module, which would need OI's driver_aliases changed.
+  - installing needs `pkg change-facet
+    facet.version-lock.driver/audio/audiohd=false` (osnet-incorporation pins
+    it) and the publisher-qualified FMRI. pkg creates a new BE for it
+    (reboot-needed module).
+  - **update case**: `depend type=incorporate
+    fmri=consolidation/osnet/osnet-incorporation@<OS build>` ties the
+    package to the OS build it was built for, so a `pkg update` to a newer
+    osnet build cannot go ahead without a rebuilt audiohd (pkg reports the
+    conflict instead of quietly reinstalling the silent stock driver). Our
+    publisher is also sticky for the installed package. Not tested against a
+    real newer build yet: 23381 is the newest on openindiana.org
+    (2026-11-09).
+  - **rebuild for a new OS build**: read the new build's version and gate
+    commit (`pkg info -r osnet-incorporation`, `pkg contents -mr
+    driver/audio/audiohd | grep git-rev`); in ports/audiohd-apple/Makefile
+    set OSNET_VERSION and GATE_COMMIT, fetch the tarball and set
+    COMPONENT_ARCHIVE_HASH; check that patches/0001 still applies; `gmake
+    clean publish` on the VM (after the VM runs that build, or with its
+    headers); then on the iMac `pkg update` together with
+    `pkg://oi-gnome/driver/audio/audiohd@<new>.1`.
+  - installed on the iMac 2026-11-09: BE **gnome45-audiohd** (clone of
+    gnome45, active on reboot), pkg verify clean, module sha256 9831202b…
+    (= the tested v2).
 
 ## 7. iMac13,2 setup (2026-11-09)
 

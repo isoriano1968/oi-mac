@@ -1,0 +1,57 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+# Our driver/audio/audiohd: the same package name, files and driver action
+# as OpenIndiana's, at a higher version ($(OSNET_VERSION).1) in our
+# publisher, with the patched module (patches/0001: Apple CS4206/CS4207
+# amplifier GPIOs).  The incorporate dependency ties it to the OS build it
+# was built for: a pkg update to a newer osnet build stops until this
+# package is rebuilt for it, instead of silently going back to the stock
+# (silent) driver.  See the Makefile and notes/imac2019-network.md.
+
+set name=pkg.fmri value=pkg:/driver/audio/audiohd@$(PKG_VERSION)
+set name=pkg.summary value="SUNW High Definition Audio Drivers (Apple CS4206 GPIO fix)"
+set name=pkg.description \
+    value="illumos audiohd from illumos-gate $(GATE_SHORT) with the Apple CS4206/CS4207 speaker and headphone amplifier fix (OpenIndiana project)"
+set name=pkg.human-version value="$(GATE_SHORT)+apple-gpio"
+set name=info.classification value=org.opensolaris.category.2008:Drivers/Media
+set name=illumos-gate.info.git-remote value=https://github.com/illumos/illumos-gate.git
+set name=illumos-gate.info.git-rev value=$(GATE_COMMIT)
+set name=variant.arch value=i386
+set name=org.opensolaris.consolidation value=osnet
+set name=variant.opensolaris.zone value=global value=nonglobal
+
+dir path=kernel group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv/amd64 group=sys mode=0755 owner=root \
+    variant.opensolaris.zone=global
+file audiohd path=kernel/drv/amd64/audiohd group=sys mode=0755 owner=root \
+    reboot-needed=true variant.opensolaris.zone=global
+file audiohd.conf path=kernel/drv/audiohd.conf group=sys mode=0644 owner=root \
+    variant.opensolaris.zone=global
+dir path=usr/share/man group=bin mode=0755 owner=root
+dir path=usr/share/man/man4d group=bin mode=0755 owner=root facet.doc.man=true
+file audiohd.4d path=usr/share/man/man4d/audiohd.4d group=bin mode=0444 \
+    owner=root facet.doc.man=true
+
+driver name=audiohd alias=pci10de,371 alias=pci8086,2668 alias=pciclass,0403 \
+    alias=pciexclass,0403
+
+license audiohd-apple.license license=CDDL
+
+depend type=require fmri=pkg:/driver/audio@$(OSNET_VERSION) \
+    variant.opensolaris.zone=global
+depend type=incorporate \
+    fmri=pkg:/consolidation/osnet/osnet-incorporation@$(OSNET_VERSION)
