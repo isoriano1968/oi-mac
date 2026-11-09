@@ -284,6 +284,19 @@ gets the new modules after a new login. Not yet: jack state (port
 availability), which needs an audiohd control (stage 2), and a listening
 check.
 
+Hardware mute (user: "mute does not mute the audiotest"): PA's mute was
+software-only, so programs on /dev/dsp directly were not silenced; audiohd
+has no mute control. Patch 31 now mutes in the mixer: the sink's volume
+control to 0 at mute, PA's volume written back at unmute, volume changes
+while muted kept for later, an audioctl change while muted counts as
+unmute (polled), and PA leaves the hardware unmuted when it exits. Tested
+on the iMac with audiotest playing: 60 % -> 59, mute -> 0, 40 % while
+muted -> stays 0, unmute -> 39, `audioctl volume 55` while muted -> PA
+unmuted, PA exit while muted -> 54. Needs `pulseaudio -k` (or a new login)
+to load. Found on the way, not fixed: OI's OSSv4 code aborts PA when
+module-oss is loaded with record=0 (source callbacks set on a NULL source,
+source.c:479); module-detect loads with recording, so it does not show.
+
 Build deps added on the VM: library/libsndfile/32, library/python/sip-39,
 developer/check, developer/documentation-tool/doxygen.
 
