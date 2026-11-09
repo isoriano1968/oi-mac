@@ -33,11 +33,23 @@
 | HDMI codec (audiohd#1, NVIDIA 0x10de0040) | not tested by ear (no display with speakers). The codec is unchanged by the patch (no APPLE_AMP_GPIO flag); its subsystem ID was read as above |
 | a non-Apple machine (should behave exactly as before) | not available |
 
-Speakers staying on with headphones plugged in is today's audiohd
-behaviour, not a regression: audiohd mutes the speaker pin only when it sees
-a jack unsolicited response in its playback interrupt
-(audiohd_pin_sense()), so a jack plugged in before playback starts is not
-noticed. The patch only enables the amplifiers.
+**Known limitation: the speakers do not mute with headphones plugged in**
+(user: "they kept playing with the headphones plugged in"). Not tested
+separately: plugging the jack in *during* playback. Possible causes, to be
+looked at with the jack-detection work (separate change):
+
+- audiohd mutes the speaker pin only from audiohd_pin_sense(), which runs
+  from the playback interrupt on a jack unsolicited response. A jack
+  plugged in before playback starts is never noticed.
+- The CS4206 headphone pin may not report presence or send an unsolicited
+  response the way audiohd sets it up (Linux cs420x enables jack detection
+  per pin and does the automute by GPIO: speaker amplifier off when the
+  headphones are present, cs_automute()).
+- With this patch both amplifier GPIOs stay on, so muting only the speaker
+  *pin* may not silence the Apple speaker amplifier.
+
+Before the patch nothing was heard at all; this patch does not make the
+mute behaviour worse.
 
 ## What the user must test before submitting (exact steps)
 

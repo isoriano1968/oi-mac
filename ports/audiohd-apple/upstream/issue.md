@@ -74,9 +74,12 @@ patch, module built out of tree with the gate's flags):
 - not tested: HDMI audio by ear (no display with speakers), suspend/resume,
   other Apple models, a non-Apple CS4206 board, a full gate build
 
-The speakers keep playing with headphones plugged in before playback starts:
+Known limitation: the speakers keep playing with headphones plugged in.
 audiohd only reacts to jack events in its playback interrupt
-(audiohd_pin_sense()). That is unchanged by this fix.
+(audiohd_pin_sense()), and with both amplifier GPIOs on, muting the speaker
+pin may not be enough on these boards (Linux switches the speaker
+amplifier GPIO off instead). Automute for Apple CS420x boards is left for a
+follow-up issue.
 
 ### References
 
