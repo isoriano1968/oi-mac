@@ -26,10 +26,18 @@
 |---|---|
 | v1 (all CS4206, no subsystem check): `audiotest -2 /dev/sound/audiohd:0dsp`, internal speakers | **OK, heard** (user, 2026-11-09 08:55) |
 | v1: vlc playing a sound file to /dev/dsp from the MATE session | played, not yet confirmed by ear |
-| v2 (this patch, Apple subsystem check) | **not yet tested** |
-| headphones | **not yet tested** |
-| HDMI codec (audiohd#1, NVIDIA 0x10de0040) unaffected | **not yet tested** |
+| v2 (this patch) loaded: BE gnome45, one boot (`beadm activate -t`), 2026-11-09 09:34, sha256 9831202b…4847 | OK |
+| v2: codec subsystem IDs read with mdb | audiohd#0 CS4206 vid 0x10134206, **ssid 0x106b5c00** (Apple, so the Apple path is taken); audiohd#1 NVIDIA vid 0x10de0040, ssid 0x106b010c (no APPLE_AMP_GPIO flag, unchanged) |
+| v2: speakers, no headphones: `audiotest -2 /dev/sound/audiohd:0dsp` | **OK, heard**, left and right correct (user, 2026-11-09 ~10:20) |
+| v2: headphones plugged in, same audiotest | **OK, heard in the headphones**; the speakers kept playing too (user, same time). The jack was plugged in before playback started. |
+| HDMI codec (audiohd#1, NVIDIA 0x10de0040) | not tested by ear (no display with speakers). The codec is unchanged by the patch (no APPLE_AMP_GPIO flag); its subsystem ID was read as above |
 | a non-Apple machine (should behave exactly as before) | not available |
+
+Speakers staying on with headphones plugged in is today's audiohd
+behaviour, not a regression: audiohd mutes the speaker pin only when it sees
+a jack unsolicited response in its playback interrupt
+(audiohd_pin_sense()), so a jack plugged in before playback starts is not
+noticed. The patch only enables the amplifiers.
 
 ## What the user must test before submitting (exact steps)
 
@@ -51,7 +59,12 @@ To test it on its own instead: create a one-boot BE as below.
 2. Check the driver and the codec subsystem ID (must start with 106b):
 
        digest -a sha256 /kernel/drv/amd64/audiohd
-       echo '::devbindings -q audiohd | ::print struct dev_info devi_driver_data | ::print audiohd_state_t codec[0] | ::print hda_codec_t vid ssid' | sudo mdb -k
+       for a in $(echo '::devbindings -q audiohd' | sudo mdb -k | awk '{print $1}'); do
+           echo "$a::print struct dev_info devi_driver_data | ::print audiohd_state_t codec[0] | ::print hda_codec_t vid ssid" | sudo mdb -k
+       done
+
+   (`::devbindings -q` prints a name after each address, so the addresses
+   are taken one by one.)
 
    (audiohd keeps its state as the devinfo's driver data; the module has
    CTF, so mdb knows hda_codec_t.)

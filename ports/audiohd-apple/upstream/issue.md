@@ -18,9 +18,11 @@ Seen on an iMac13,2 (27-inch, Late 2012) running OpenIndiana 2026.10
 
 - HD Audio controller: Intel 8086:1e20 rev 04 (7 Series PCH), PCI subsystem
   8086:7270 (not Apple's ID), driver audiohd, instance 0
-- codec: Cirrus CS4206 (vendor/device 0x10134206), "HD codec: Cirrus CS4206"
+- codec: Cirrus CS4206 (vendor/device 0x10134206), subsystem 0x106b5c00,
+  "HD codec: Cirrus CS4206"
 - second instance: NVIDIA 10de:0e0a (GK104 HDMI audio), PCI subsystem
-  106b:010c, codec 0x10de0040 (not affected)
+  106b:010c, codec 0x10de0040, subsystem 0x106b010c (not affected: no
+  APPLE_AMP_GPIO flag)
 
 ### Cause
 
@@ -53,14 +55,28 @@ amplifiers on (cs_automute()).
 The controller's PCI subsystem cannot be used for this: on the iMac13,2 it
 is Intel's 8086:7270. The codec's own subsystem ID is Apple's on the Macs
 seen in public dumps, e.g. 0x106b5100 (iMac11,1) and 0x106b5500 (MacBook
-Air 5,1). <!-- TODO: iMac13,2 codec SSID from the test, see testing.md -->
+Air 5,1). On the tested iMac13,2 the CS4206 reports 0x106b5c00.
 
 Both amplifiers are always on (there is no jack-sense automute of the
 speakers yet, which audiohd does not do for the other codecs either).
 
 ### Testing
 
-See testing.md (to be pasted here as "Testing Done" once complete).
+Testing Done (iMac13,2, OpenIndiana 2026.10, illumos-08e59b676b + this
+patch, module built out of tree with the gate's flags):
+
+- codec subsystem IDs read with mdb: CS4206 0x106b5c00 (Apple path taken),
+  NVIDIA HDMI 0x106b010c (unchanged)
+- `audiotest -2` on the CS4206: tones heard from the internal speakers, left
+  and right correct; with headphones: heard in the headphones (the speakers
+  keep playing, see below)
+- before the patch: audiotest "OK", but nothing heard
+- not tested: HDMI audio by ear (no display with speakers), suspend/resume,
+  other Apple models, a non-Apple CS4206 board, a full gate build
+
+The speakers keep playing with headphones plugged in before playback starts:
+audiohd only reacts to jack events in its playback interrupt
+(audiohd_pin_sense()). That is unchanged by this fix.
 
 ### References
 
