@@ -1,0 +1,74 @@
+From d376e43c316f20b402a567cc6eafa448ed4ddccc Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Mon, 9 Nov 2026 00:10:20 +0100
+Subject: [PATCH 2/3] bge: BCM57765-family read DMA mode as tg3 sets it
+
+Leave the reserved read-DMA priority bits clear on the 57765 family (as
+already done for the 5717/5725 families), and set the 2K multiple memory
+read request mode on the BCM57766 at the standard MTU, as Linux tg3 does.
+---
+ usr/src/uts/common/io/bge/bge_chip2.c | 24 +++++++++++++++++++-----
+ usr/src/uts/common/io/bge/bge_hw.h    |  5 +++++
+ 2 files changed, 24 insertions(+), 5 deletions(-)
+
+diff --git a/usr/src/uts/common/io/bge/bge_chip2.c b/usr/src/uts/common/io/bge/bge_chip2.c
+index 7b0f525cc6..621850d7f5 100644
+--- a/usr/src/uts/common/io/bge/bge_chip2.c
++++ b/usr/src/uts/common/io/bge/bge_chip2.c
+@@ -4208,6 +4208,7 @@ bge_chip_start(bge_t *bgep, boolean_t reset_phys)
+ 	uint32_t maxring;
+ 	uint32_t stats_mask;
+ 	uint32_t dma_wrprio;
++	uint32_t dma_rdmode;
+ 	uint64_t ring;
+ 	uint32_t reg;
+ 	uint32_t regval;
+@@ -4685,14 +4686,27 @@ bge_chip_start(bge_t *bgep, boolean_t reset_phys)
+ 
+ 	/*
+ 	 * These chipsets no longer use the rdprio logic (bits 31:30 are
+-	 * reserved).
++	 * reserved).  The 57765 family is one of them, as in Linux tg3 and
++	 * the BSDs, which never set these bits.  (A local value: the
++	 * global tunable is shared by all bge instances.)
+ 	 */
++	dma_rdmode = (bge_dma_rdprio << DMA_PRIORITY_SHIFT) | ALL_DMA_ATTN_BITS;
+ 	if (DEVICE_5723_SERIES_CHIPSETS(bgep) ||
+ 	    DEVICE_5717_SERIES_CHIPSETS(bgep) ||
+-	    DEVICE_5725_SERIES_CHIPSETS(bgep))
+-		bge_dma_rdprio = 0;
+-	if (!bge_chip_enable_engine(bgep, READ_DMA_MODE_REG,
+-	    (bge_dma_rdprio << DMA_PRIORITY_SHIFT) | ALL_DMA_ATTN_BITS))
++	    DEVICE_5725_SERIES_CHIPSETS(bgep) ||
++	    DEVICE_57765_SERIES_CHIPSETS(bgep))
++		dma_rdmode &= ~DMA_PRIORITY_MASK;
++
++	/*
++	 * BCM57766 at the standard MTU: 2K multiple memory read requests,
++	 * as Linux tg3 sets (RDMAC_MODE_JMB_2K_MMRR, with its 2K TX BD
++	 * limit, which bge meets: no LSO, one BD per frame).
++	 */
++	if (bgep->chipid.device == DEVICE_ID_57766 &&
++	    bgep->chipid.default_mtu <= BGE_DEFAULT_MTU)
++		dma_rdmode |= RDMA_MODE_JMB_2K_MMRR;
++
++	if (!bge_chip_enable_engine(bgep, READ_DMA_MODE_REG, dma_rdmode))
+ 		retval = DDI_FAILURE;
+ 
+ 	drv_usecwait(40);
+diff --git a/usr/src/uts/common/io/bge/bge_hw.h b/usr/src/uts/common/io/bge/bge_hw.h
+index 7dfb86fb0d..92a40fd00b 100644
+--- a/usr/src/uts/common/io/bge/bge_hw.h
++++ b/usr/src/uts/common/io/bge/bge_hw.h
+@@ -738,6 +738,11 @@ extern "C" {
+ #define	DMA_PRIORITY_SHIFT		30
+ #define	ALL_DMA_ATTN_BITS		0x000003fc
+ 
++/*
++ * Read DMA Mode: 2K multiple memory read requests (BCM57766, standard MTU)
++ */
++#define	RDMA_MODE_JMB_2K_MMRR		0x00800000
++
+ /*
+  * BCM5755, 5755M, 5906, 5906M only
+  * 1 - Enable Fix. Device will send out the status block before

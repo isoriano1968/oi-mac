@@ -1,0 +1,153 @@
+From 6de610103d52ea376fce3cbbc9efb9aa9ddd807b Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Mon, 9 Nov 2026 09:28:36 +0100
+Subject: [PATCH] NNNNN audiohd: Apple iMac/MacBook CS4206 speakers silent
+ (GPIO amplifier enable)
+
+---
+ .../uts/common/io/audio/drv/audiohd/audiohd.c | 33 +++++++++++++++++--
+ .../uts/common/io/audio/drv/audiohd/audiohd.h | 10 ++++++
+ 2 files changed, 40 insertions(+), 3 deletions(-)
+
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+index b569adb446..84dff9bf60 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+@@ -20,6 +20,7 @@
+  */
+ /*
+  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
++ * Copyright 2026 isoriano1968
+  */
+ 
+ #include <sys/audio/audio_driver.h>
+@@ -64,6 +65,7 @@ static int audiohd_reinit_hda(audiohd_state_t *);
+ static int audiohd_response_from_codec(audiohd_state_t *,
+     uint32_t *, uint32_t *);
+ static void audiohd_restore_codec_gpio(audiohd_state_t *);
++static uint_t audiohd_gpio_direction(hda_codec_t *);
+ static void audiohd_change_speaker_state(audiohd_state_t *, int);
+ static int audiohd_allocate_port(audiohd_state_t *);
+ static void audiohd_free_port(audiohd_state_t *);
+@@ -124,7 +126,8 @@ static const char *audiohd_dtypes[] = {
+ 
+ static audiohd_codec_info_t audiohd_codecs[] = {
+ 	{0x1002aa01, "ATI R600 HDMI", 0x0},
+-	{0x10134206, "Cirrus CS4206", 0x0},
++	{0x10134206, "Cirrus CS4206", (APPLE_AMP_GPIO)},
++	{0x10134207, "Cirrus CS4207", (APPLE_AMP_GPIO)},
+ 	{0x10de0002, "nVidia MCP78 HDMI", 0x0},
+ 	{0x10de0003, "nVidia MCP78 HDMI", 0x0},
+ 	{0x10de0006, "nVidia MCP78 HDMI", 0x0},
+@@ -2991,6 +2994,9 @@ audiohd_create_codec(audiohd_state_t *statep)
+ 
+ 		ASSERT(codec->wid_afg == wid);
+ 
++		codec->ssid = audioha_codec_verb_get(statep, i, wid,
++		    AUDIOHDC_VERB_GET_SUBSYSTEM_ID, 0);
++
+ 		len = sizeof (audiohd_codecs) / sizeof (audiohd_codec_info_t);
+ 		for (j = 0; j < len-1; j++) {
+ 			if (audiohd_codecs[j].devid == codec->vid) {
+@@ -3022,7 +3028,8 @@ audiohd_create_codec(audiohd_state_t *statep)
+ 			    AUDIOHDC_VERB_SET_UNSOL_ENABLE_MASK,
+ 			    AUDIOHDC_GPIO_ENABLE);
+ 			(void) audioha_codec_verb_get(statep, i, wid,
+-			    AUDIOHDC_VERB_SET_GPIO_DIREC, AUDIOHDC_GPIO_DIRECT);
++			    AUDIOHDC_VERB_SET_GPIO_DIREC,
++			    audiohd_gpio_direction(codec));
+ 			(void) audioha_codec_verb_get(statep, i, wid,
+ 			    AUDIOHDC_VERB_SET_GPIO_STCK,
+ 			    AUDIOHDC_GPIO_DATA_CTRL);
+@@ -5301,6 +5308,25 @@ audiohd_reset_pins_ur_cap(audiohd_state_t *statep)
+ 		}
+ 	}
+ }
++/*
++ * GPIO direction for a codec.  GPIO1-3 are normally left as inputs.  On
++ * Apple's boards with a Cirrus CS4206/CS4207 (iMac, MacBook Pro, MacBook
++ * Air, Mac mini of 2010-2013) GPIO3 enables the speaker amplifier and GPIO1
++ * or GPIO2 the headphone amplifier, as in Linux's cs420x fixups (gpio_13,
++ * gpio_23); left as inputs, both stay off and nothing is heard.  There all
++ * GPIOs are outputs, and the GPIO data (all ones) turns the amplifiers on.
++ * These boards are recognized by the codec's subsystem vendor (Apple).
++ */
++static uint_t
++audiohd_gpio_direction(hda_codec_t *codec)
++{
++	if ((codec->codec_info->flags & APPLE_AMP_GPIO) != 0 &&
++	    (codec->ssid >> 16) == AUDIOHD_SSVID_APPLE)
++		return (AUDIOHDC_GPIO_DIRECT_ALL);
++
++	return (AUDIOHDC_GPIO_DIRECT);
++}
++
+ static void
+ audiohd_restore_codec_gpio(audiohd_state_t *statep)
+ {
+@@ -5328,7 +5354,8 @@ audiohd_restore_codec_gpio(audiohd_state_t *statep)
+ 			(void) audioha_codec_verb_get(statep, i, wid,
+ 			    AUDIOHDC_VERB_SET_GPIO_MASK, AUDIOHDC_GPIO_ENABLE);
+ 			(void) audioha_codec_verb_get(statep, i, wid,
+-			    AUDIOHDC_VERB_SET_GPIO_DIREC, AUDIOHDC_GPIO_DIRECT);
++			    AUDIOHDC_VERB_SET_GPIO_DIREC,
++			    audiohd_gpio_direction(codec));
+ 			(void) audioha_codec_verb_get(statep, i, wid,
+ 			    AUDIOHDC_VERB_SET_GPIO_STCK,
+ 			    AUDIOHDC_GPIO_DATA_CTRL);
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+index 8aac036386..1885126a3e 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+@@ -20,6 +20,7 @@
+  */
+ /*
+  * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
++ * Copyright 2026 isoriano1968
+  */
+ #ifndef _SYS_AUDIOHD_IMPL_H_
+ #define	_SYS_AUDIOHD_IMPL_H_
+@@ -42,6 +43,11 @@ extern "C" {
+ #define	AUDIOHD_VID_SIGMATEL	0x8384
+ #define	AUDIOHD_VID_INTEL	0x8086
+ 
++/*
++ * subsystem vendor IDs of codecs
++ */
++#define	AUDIOHD_SSVID_APPLE	0x106b
++
+ /*
+  * specific audiohd controller device id
+  */
+@@ -54,6 +60,7 @@ extern "C" {
+ #define	NO_MIXER	0x00000002
+ #define	NO_SPDIF	0x00000004
+ #define	EN_PIN_BEEP	0x00000008
++#define	APPLE_AMP_GPIO	0x00000010	/* Apple: GPIO1-3 switch amplifiers */
+ 
+ #define	AUDIOHD_DEV_CONFIG	"onboard1"
+ #define	AUDIOHD_DEV_VERSION	"a"
+@@ -352,6 +359,7 @@ extern "C" {
+ #define	AUDIOHDC_VERB_SET_EAPD			0x70c
+ 
+ #define	AUDIOHDC_VERB_GET_DEFAULT_CONF		0xf1c
++#define	AUDIOHDC_VERB_GET_SUBSYSTEM_ID		0xf20
+ #define	AUDIOHDC_VERB_GET_SPDIF_CTL		0xf0d
+ #define	AUDIOHDC_VERB_SET_SPDIF_LCL		0x70d
+ 
+@@ -372,6 +380,7 @@ extern "C" {
+ 
+ #define	AUDIOHDC_GPIO_ENABLE			0xff
+ #define	AUDIOHDC_GPIO_DIRECT			0xf1
++#define	AUDIOHDC_GPIO_DIRECT_ALL		0xff
+ 
+ #define	AUDIOHDC_GPIO_DATA_CTRL			0xff
+ #define	AUDIOHDC_GPIO_STCK_CTRL			0xff
+@@ -774,6 +783,7 @@ struct hda_codec {
+ 	uint8_t		index;		/* codec address */
+ 	uint32_t	vid;		/* vendor id and device id */
+ 	uint32_t	revid;		/* revision id */
++	uint32_t	ssid;		/* subsystem id of the AFG */
+ 	wid_t		wid_afg;	/* id of AFG */
+ 	wid_t		first_wid;	/* wid of 1st subnode of AFG */
+ 	wid_t		last_wid;	/* wid of the last subnode of AFG */

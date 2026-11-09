@@ -1,0 +1,46 @@
+From f6f5f8ba9dbbff83f07adebad32bfb3bc983e971 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Mon, 9 Nov 2026 00:10:51 +0100
+Subject: [PATCH 3/3] bge: warn about Broadcom's placeholder MAC address
+
+BCM57766 boards without NVRAM (Apple T2 Macs) report 00:10:18:00:00:00.
+Warn and point at local-mac-address in bge.conf, which bge already
+honours (Linux tg3: e4c00ba7274b).
+---
+ usr/src/uts/common/io/bge/bge_main2.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/usr/src/uts/common/io/bge/bge_main2.c b/usr/src/uts/common/io/bge/bge_main2.c
+index c50518768f..d682e0a745 100644
+--- a/usr/src/uts/common/io/bge/bge_main2.c
++++ b/usr/src/uts/common/io/bge/bge_main2.c
+@@ -56,6 +56,8 @@ static char latency_propname[] = "latency-timer";
+ static char localmac_boolname[] = "local-mac-address?";
+ static char localmac_propname[] = "local-mac-address";
+ static char macaddr_propname[] = "mac-address";
++static const uchar_t bge_placeholder_mac[ETHERADDRL] =
++	{ 0x00, 0x10, 0x18, 0x00, 0x00, 0x00 };
+ static char subdev_propname[] = "subsystem-id";
+ static char subven_propname[] = "subsystem-vendor-id";
+ static char rxrings_propname[] = "bge-rx-rings";
+@@ -3157,6 +3159,20 @@ bge_find_mac_address(bge_t *bgep, chip_id_t *cidp)
+ 	BGE_DEBUG(("bge_find_mac_address: =final %s (%sset)",
+ 	    ether_sprintf((void *)cidp->vendor_addr.addr),
+ 	    cidp->vendor_addr.set ? "" : "not "));
++
++	/*
++	 * Some Apple boards (BCM57766 in the iMac20,1 and other T2 Macs)
++	 * have no NVRAM of their own: the chip then reports Broadcom's
++	 * placeholder 00:10:18:00:00:00, which looks valid.  Linux tg3
++	 * takes the real address from the firmware's "local-mac-address"
++	 * device property (e4c00ba7274b); on illumos it can be given in
++	 * bge.conf.  Say so, as every such Mac would get the same address.
++	 */
++	if (cidp->vendor_addr.set &&
++	    bcmp(cidp->vendor_addr.addr, bge_placeholder_mac, ETHERADDRL) == 0)
++		bge_problem(bgep, "chip reports the placeholder MAC address "
++		    "%s: set local-mac-address in bge.conf",
++		    ether_sprintf((void *)cidp->vendor_addr.addr));
+ }
+ 
+ /*ARGSUSED*/
