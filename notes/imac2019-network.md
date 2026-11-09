@@ -254,6 +254,54 @@ illumos-gate submission needs ("tested on iMac19,1, BCM57766 A1").
 - Still broken, harmless: svc:/network/ipfilter (config error),
   input-method-cache (gtk2 immodules dir missing).
 
+## 8. PulseAudio: GNOME's sound settings and the real hardware (2026-11-09)
+
+Before: one output "0 - audiohd#0 onboard1, a", no ports, no HDMI, and
+**GNOME's volume slider moved the HDMI device's volume, not the speakers**
+(PA 60 % -> audiohd#1 volume 59, audiohd#0 stayed 100). Causes, in OI's
+pulseaudio 17.0 component:
+- 13-module-detect loads module-oss for one device only ($AUDIODEV or
+  /dev/audio);
+- module-oss (08-oss4) finds the mixer with SNDCTL_MIXERINFO mi.dev = N;
+  illumos counts those indexes differently (sndctl_mixerinfo() adds 1), and
+  on a two-device machine dsp0 got the second device's mixer;
+- no ports, no device names, no notification of mixer changes in OSS.
+
+`packages/desktop/pulseaudio` = oi-userland's component + patch 30 (module-oss
+for every /dev/dspN, default first) + patch 31 (mixer derived from the dsp
+link, /dev/dspN -> /dev/sound/X:Nmixer; "Built-in Audio (codec)" / "HDMI /
+DisplayPort Audio" from SNDCTL_CARDINFO, form factor, icon; Speakers and
+Headphones ports on audiohd's speaker/headphones controls; HDMI port; mixer
+polled every second). Revision 2026.0.0.4, published to oi-gnome.
+
+On the iMac (BE gnome45, `pkg change-facet
+facet.version-lock.library/audio/pulseaudio=false`, then the oi-gnome FMRI;
+pkg made a backup BE): tested with a private PA instance: both devices
+named, ports present, PA 50 %/80 % -> audiohd#0 volume 50/79 with HDMI
+untouched, the port switch sets speaker/headphones 0 and 75, and
+`audioctl volume 70` shows up as 70 % within 2 s. The user's own session
+gets the new modules after a new login. Not yet: jack state (port
+availability), which needs an audiohd control (stage 2), and a listening
+check.
+
+Build deps added on the VM: library/libsndfile/32, library/python/sip-39,
+developer/check, developer/documentation-tool/doxygen.
+
+## 9. Apple keyboard media keys (2026-11-09)
+
+Captured on the iMac (xinput test-xi2 + raw /dev/usb/hid4): the Magic
+Keyboard with Numeric Keypad (05ac:026c, boot protocol via usbkbm) sends
+F7-F12 as plain F-keys (X keycodes 73-75, 76, 95, 96), **the same with
+fn**; hid4 (input@0:hid_0_11) sends nothing. So no volume keysym ever
+reaches GNOME; macOS and Linux hid-apple translate F-keys themselves using
+the fn bit, which the boot protocol does not carry. FS-UAE uses F11/F12 as
+its own menu/combination keys (libfsemu input.c), so plain F11/F12 cannot be
+global volume keys. Options given to the user: Super+F-keys now (a gschema
+override package), or plain keys + test, later fn support in usbkbm/hid
+(as Linux hid-apple fnmode) for real Mac behaviour.
+Also seen: X uses layout "us" for the Magic Keyboard and "de" for the
+Bluetooth controller's emulated keyboard (05ac:820a).
+
 ## Sources
 
 - illumos-gate: `usr/src/uts/common/io/bge`, commit a2876d03ca (12450);
