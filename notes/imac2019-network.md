@@ -302,6 +302,26 @@ override package), or plain keys + test, later fn support in usbkbm/hid
 Also seen: X uses layout "us" for the Magic Keyboard and "de" for the
 Bluetooth controller's emulated keyboard (05ac:820a).
 
+User's choice: Super + F-keys. Done (2026-11-09):
+- `packages/desktop/apple-media-keys` (desktop/gnome/apple-media-keys 1.0,
+  local files only, like oi-userland's database/mysql-common): a
+  30_apple-media-keys.gschema.override for
+  org.gnome.settings-daemon.plugins.media-keys: previous/play/next =
+  <Super>F7/F8/F9, volume-mute/down/up = <Super>F10/F11/F12. Plain F-keys
+  stay free (FS-UAE's F11/F12).
+- OI bug found on the way: svc:/application/desktop-cache/gconf-cache
+  rebuilds gschemas.compiled only when a *.xml schema is newer, so a
+  package that ships only an override is never compiled in.
+  `packages/desktop/desktop-cache` = oi-userland's component + patch 11:
+  also *.override files, and the directory's mtime (added/removed files).
+  Revision 2026.0.0.23.
+- Installed on the iMac (gnome45; version-lock facet lifted for
+  service/gnome/desktop-cache), gconf-cache restarted once: "Doing rebuild",
+  gsettings shows the six bindings. Takes effect at the next login. Not yet
+  tried by hand.
+- Later, for real Mac behaviour: fn support in usbkbm/hid (Linux hid-apple
+  fnmode), then plain F7-F12 = media and fn+F-key = F-key.
+
 ## Sources
 
 - illumos-gate: `usr/src/uts/common/io/bge`, commit a2876d03ca (12450);
