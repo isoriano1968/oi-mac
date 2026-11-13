@@ -1,7 +1,7 @@
-From 8b1fe480358eae6a64794adbb853b0dabc7ec64a Mon Sep 17 00:00:00 2001
+From 62c95baad76a1e8d5adb704908807de7d0935e0e Mon Sep 17 00:00:00 2001
 From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
 Date: Fri, 13 Nov 2026 09:06:00 +0100
-Subject: [PATCH] NNNNN want a driver for the Apple SMC (temperatures, fans) on
+Subject: [PATCH] 18700 want a driver for the Apple SMC (temperatures, fans) on
  Intel Macs
 
 ---

@@ -1,0 +1,30 @@
+Subject: want a driver for the Apple SMC (temperatures, fans) on Intel Macs
+
+Intel Macs keep their temperatures, fan speeds, voltages and power values in the System Management Controller (SMC). illumos has no driver for it, so on a Mac Pro or iMac only the CPU and chipset sensors (coretemp, pchtemp) are visible; GPU, memory, display, power supply and fan values are not, and FMA sees none of them.
+
+h3. Proposal
+
+A small read-only driver, applesmc(4D), x86 only:
+
+* finds the SMC through the ACPI device APP0001 and its I/O port window (normally 0x300-0x31f), as Linux's drivers/hwmon/applesmc.c and FreeBSD's asmc(4) do; on machines without APP0001 it does not attach;
+* never writes keys: fan and thermal control stay with the SMC;
+* registers every temperature key of type sp78 or flt that reads a plausible value as a ksensor (@/dev/sensors/temperature/smc/<key>@), so the values are available to FMA and any ksensor consumer;
+* offers every key through @/dev/applesmc@ with four ioctls in @<sys/applesmc.h>@ (count, key by index, key info, read), raw as the SMC sends them;
+* plus smcstat(8): temperatures and fans; @-p@ parsable, @-a@ all keys, @-i@ interval, or the given keys.
+
+The devfsadm rule for @/dev/applesmc@ goes into misc_link_i386.c; the package is driver/sensor/applesmc (depends on system/ksensor); man pages applesmc.4d and smcstat.8.
+
+h3. Testing
+
+* Mac Pro (Late 2013, MacPro6,1), OpenIndiana 2026.10 (illumos 586678ac1b): 78 temperature ksensors; fan F0 "Main", 790-1900 rpm.
+* iMac (21.5-inch, Late 2013, iMac14,1), OpenIndiana 2026.10 (illumos 08e59b676b): 37 temperature ksensors; fan F0 "Main", 1400-2800 rpm.
+* On both: built out of tree as a package and installed with pkg; @/dev/applesmc@ and the ksensors appear at install, smcstat reads the temperatures and fans.
+* A GTK application that uses @smcstat -p@ and the ksensors: https://github.com/isoriano1968/mac-sensors
+
+h3. Open points for review
+
+* The @/dev/applesmc@ interface is private (Uncommitted in the man page); it exists for smcstat and similar tools.
+* On iMac14,1 TA0P reads exactly 20 °C below TA0p (raw vs. corrected ambient sensor); both are exported as they are.
+* Some private SMC keys refuse reads (EIO); @smcstat -a@ reports them.
+
+Filed 2026-11-13 on the user's yes: https://www.illumos.org/issues/18700 (Feature, driver, assigned to isoriano1968 Hernandez). Commit title on the VM branch applesmc is now "18700 want a driver for the Apple SMC (temperatures, fans) on Intel Macs" (62c95baa).
