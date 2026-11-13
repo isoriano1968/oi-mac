@@ -1,0 +1,60 @@
+From 215f249beed73f00fb8fe79b405232c3cc848985 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Fri, 13 Nov 2026 19:47:45 +0100
+Subject: [PATCH] NNNNN audiohd: no sound on HDMI and DisplayPort outputs
+
+HDMI and DisplayPort pins describe themselves as "Digital Other Out" in
+their pin default configuration (all six pins of the ATI/AMD GPU codec
+1002:aa01 on a Mac Pro (Late 2013): config 0x185600f0, pin capabilities
+0x94 = HDMI, output, presence detect). audiohd builds output paths only
+for line-out, speaker, headphone and S/PDIF-out pins, so no path is built
+on such a codec (pathnum 0): playback runs and audiotest reports OK, but
+no converter or pin is set up and the monitor stays silent.
+
+Drive a "Digital Other Out" pin with the HDMI or DP pin capability as an
+S/PDIF output: the existing digital path enables the converter (DigEn),
+sets its stream tag and format, and enables the pin output.
+---
+ usr/src/uts/common/io/audio/drv/audiohd/audiohd.c | 12 ++++++++++++
+ usr/src/uts/common/io/audio/drv/audiohd/audiohd.h |  2 ++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+index 9fb4987a..d9eaf76d 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+@@ -2723,6 +2723,18 @@ audiohd_get_pin_config(audiohd_widget_t *widget)
+ 	pin->assoc = (config & AUDIOHD_PIN_ASO_MASK) >> AUDIOHD_PIN_ASO_OFF;
+ 	pin->device = (config & AUDIOHD_PIN_DEV_MASK) >> AUDIOHD_PIN_DEV_OFF;
+ 
++	/*
++	 * HDMI and DisplayPort pins (pin capability HDMI or DP) describe
++	 * themselves as "Digital Other Out" in their default configuration
++	 * (e.g. every pin of the ATI/AMD GPU codecs). They are driven like an
++	 * S/PDIF output: a digital converter with DigEn set, the stream tag
++	 * and format on the converter, the pin's output enabled. Without this
++	 * no output path is built for them and nothing reaches the monitor.
++	 */
++	if (pin->device == DTYPE_DIGIT_OUT &&
++	    (cap & (AUDIOHD_PIN_HDMI_CAP | AUDIOHD_PIN_DP_CAP)) != 0)
++		pin->device = DTYPE_SPDIF_OUT;
++
+ 	/* enable the unsolicited response of the pin */
+ 	if ((widget->widget_cap & AUDIOHD_URCAP_MASK) &&
+ 	    (pin->cap & AUDIOHD_DTCCAP_MASK) &&
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+index 1885126a..3fe00688 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+@@ -111,6 +111,8 @@ extern "C" {
+ 
+ #define	AUDIOHD_URCAP_MASK	0x80
+ #define	AUDIOHD_DTCCAP_MASK	0x4
++#define	AUDIOHD_PIN_HDMI_CAP	0x00000080	/* pin capability: HDMI */
++#define	AUDIOHD_PIN_DP_CAP	0x01000000	/* pin capability: DisplayPort */
+ #define	AUDIOHD_UR_ENABLE_OFF	8
+ #define	AUDIOHD_UR_TAG_MASK	0x3f
+ 
+-- 
+2.56.0
+

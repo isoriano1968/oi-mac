@@ -1,0 +1,119 @@
+From 3c48b0bb18df9be760c89623e014c355fc4412b7 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Fri, 13 Nov 2026 21:13:06 +0100
+Subject: [PATCH] WIP audiohd: HDMI/DP converter channel count, ATI infoframe
+ defaults, pin state log
+
+Converter channel count (0x72d) for HDMI/DP paths; on ATI/AMD codecs the
+infoframe downmix info and channel allocation (stereo) and, on rev 3, the
+converter ramp rate, as Linux atihdmi_init()/atihdmi_setup_stream(). Logs
+each HDMI/DP pin and converter once after setup (pin sense, pin control,
+connection, DigEn, stream, channels). The log is for the bring-up and goes
+before upstream.
+---
+ .../uts/common/io/audio/drv/audiohd/audiohd.c | 63 +++++++++++++++++++
+ .../uts/common/io/audio/drv/audiohd/audiohd.h |  6 ++
+ 2 files changed, 69 insertions(+)
+
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+index d9eaf76d..e053ca81 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+@@ -566,6 +566,8 @@ audiohd_get_channels(audiohd_state_t *statep)
+ 	/* for record, support stereo so far */
+ 	statep->rchan = 2;
+ }
++static void audiohd_init_hdmi_path(audiohd_path_t *);
++
+ static void
+ audiohd_init_play_path(audiohd_path_t *path)
+ {
+@@ -670,7 +672,68 @@ audiohd_init_play_path(audiohd_path_t *path)
+ 		    statep->port[PORT_DAC]->format << 4 |
+ 		    statep->pchan - 1);
+ 	}
++	audiohd_init_hdmi_path(path);
+ }
++
++/*
++ * HDMI/DisplayPort output path: after the S/PDIF-type setup of
++ * audiohd_init_play_path() (DigEn, stream tag, format), set the converter's
++ * channel count, and on ATI/AMD codecs clear the infoframe's downmix
++ * information and set its channel allocation to stereo (FL/FR), and the
++ * converter ramp rate the AMD HDA verbs specification gives as default.
++ * Then log the pin and converter state once (to the system log only).
++ */
++static void
++audiohd_init_hdmi_path(audiohd_path_t *path)
++{
++	audiohd_state_t		*statep = path->statep;
++	hda_codec_t		*codec = path->codec;
++	audiohd_widget_t	*widget;
++	audiohd_pin_t		*pin;
++	wid_t			wid, cvt = path->adda_wid;
++	uint32_t		sense, pinctrl, conn, dig, stream, chcnt;
++	int			i;
++
++	for (i = 0; i < path->pin_nums; i++) {
++		wid = path->pin_wid[i];
++		widget = codec->widget[wid];
++		pin = (audiohd_pin_t *)widget->priv;
++		if ((pin->cap & (AUDIOHD_PIN_HDMI_CAP | AUDIOHD_PIN_DP_CAP)) == 0)
++			continue;
++
++		(void) audioha_codec_verb_get(statep, codec->index, cvt,
++		    AUDIOHDC_VERB_SET_CVT_CHAN_COUNT, statep->pchan - 1);
++		if ((codec->vid >> 16) == AUDIOHD_VID_ATI) {
++			(void) audioha_codec_verb_get(statep, codec->index,
++			    wid, AUDIOHDC_VERB_ATI_SET_DOWNMIX_INFO, 0);
++			(void) audioha_codec_verb_get(statep, codec->index,
++			    wid, AUDIOHDC_VERB_ATI_SET_CHANNEL_ALLOC, 0);
++			if ((codec->revid & 0xff00) >= 0x0300)
++				(void) audioha_codec_verb_get(statep,
++				    codec->index, cvt,
++				    AUDIOHDC_VERB_ATI_SET_RAMP_RATE, 180);
++		}
++
++		sense = audioha_codec_verb_get(statep, codec->index, wid,
++		    AUDIOHDC_VERB_GET_PIN_SENSE, 0);
++		pinctrl = audioha_codec_verb_get(statep, codec->index, wid,
++		    AUDIOHDC_VERB_GET_PIN_CTRL, 0);
++		conn = audioha_codec_verb_get(statep, codec->index, wid,
++		    AUDIOHDC_VERB_GET_CONN_SEL, 0);
++		dig = audioha_codec_verb_get(statep, codec->index, cvt,
++		    AUDIOHDC_VERB_GET_SPDIF_CTL, 0);
++		stream = audioha_codec_verb_get(statep, codec->index, cvt,
++		    AUDIOHDC_VERB_GET_STREAM_CHANN, 0);
++		chcnt = audioha_codec_verb_get(statep, codec->index, cvt,
++		    AUDIOHDC_VERB_GET_CVT_CHAN_COUNT, 0);
++		audio_dev_warn(statep->adev, "HDMI/DP pin %d: sense 0x%x "
++		    "(presence %d, ELD valid %d), pinctrl 0x%x, conn %d; "
++		    "converter %d: dig 0x%x, stream 0x%x, channels %d",
++		    wid, sense, (sense >> 31) & 1, (sense >> 30) & 1, pinctrl,
++		    conn, cvt, dig, stream, chcnt + 1);
++	}
++}
++
+ static void
+ audiohd_init_record_path(audiohd_path_t *path)
+ {
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+index 3fe00688..93d88987 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+@@ -364,6 +364,12 @@ extern "C" {
+ #define	AUDIOHDC_VERB_GET_SUBSYSTEM_ID		0xf20
+ #define	AUDIOHDC_VERB_GET_SPDIF_CTL		0xf0d
+ #define	AUDIOHDC_VERB_SET_SPDIF_LCL		0x70d
++#define	AUDIOHDC_VERB_GET_CVT_CHAN_COUNT	0xf2d
++#define	AUDIOHDC_VERB_SET_CVT_CHAN_COUNT	0x72d
++/* ATI/AMD HDMI codec verbs (AMD HDA verbs specification) */
++#define	AUDIOHDC_VERB_ATI_SET_RAMP_RATE		0x770
++#define	AUDIOHDC_VERB_ATI_SET_CHANNEL_ALLOC	0x771
++#define	AUDIOHDC_VERB_ATI_SET_DOWNMIX_INFO	0x772
+ 
+ #define	AUDIOHDC_VERB_GET_GPIO_MASK		0xf16
+ #define	AUDIOHDC_VERB_SET_GPIO_MASK		0x716
+-- 
+2.56.0
+

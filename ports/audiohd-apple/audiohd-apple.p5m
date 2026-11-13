@@ -22,10 +22,10 @@
 # (silent) driver.  See the Makefile and notes/imac2019-network.md.
 
 set name=pkg.fmri value=pkg:/driver/audio/audiohd@$(PKG_VERSION)
-set name=pkg.summary value="SUNW High Definition Audio Drivers (Apple CS4206 GPIO fix)"
+set name=pkg.summary value="SUNW High Definition Audio Drivers (Apple CS420x GPIO, HDMI/DP pins)"
 set name=pkg.description \
-    value="illumos audiohd from illumos-gate $(GATE_SHORT) with the Apple CS4206/CS4207 speaker and headphone amplifier fix (OpenIndiana project)"
-set name=pkg.human-version value="$(GATE_SHORT)+apple-gpio"
+    value="illumos audiohd from illumos-gate $(GATE_SHORT) with the Apple CS4206/CS4207/CS4208 speaker and headphone amplifier fix and HDMI/DisplayPort output on digital pins (OpenIndiana project)"
+set name=pkg.human-version value="$(GATE_SHORT)+apple-gpio+hdmi-dp"
 set name=info.classification value=org.opensolaris.category.2008:Drivers/Media
 set name=illumos-gate.info.git-remote value=https://github.com/illumos/illumos-gate.git
 set name=illumos-gate.info.git-rev value=$(GATE_COMMIT)

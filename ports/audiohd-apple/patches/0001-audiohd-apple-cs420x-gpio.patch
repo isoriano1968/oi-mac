@@ -1,16 +1,5 @@
-From 6de610103d52ea376fce3cbbc9efb9aa9ddd807b Mon Sep 17 00:00:00 2001
-From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
-Date: Mon, 9 Nov 2026 09:28:36 +0100
-Subject: [PATCH] NNNNN audiohd: Apple iMac/MacBook CS4206 speakers silent
- (GPIO amplifier enable)
-
----
- .../uts/common/io/audio/drv/audiohd/audiohd.c | 33 +++++++++++++++++--
- .../uts/common/io/audio/drv/audiohd/audiohd.h | 10 ++++++
- 2 files changed, 40 insertions(+), 3 deletions(-)
-
 diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
-index b569adb446..84dff9bf60 100644
+index b569adb4..9fb4987a 100644
 --- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
 +++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
 @@ -20,6 +20,7 @@
@@ -29,17 +18,18 @@ index b569adb446..84dff9bf60 100644
  static void audiohd_change_speaker_state(audiohd_state_t *, int);
  static int audiohd_allocate_port(audiohd_state_t *);
  static void audiohd_free_port(audiohd_state_t *);
-@@ -124,7 +126,8 @@ static const char *audiohd_dtypes[] = {
+@@ -124,7 +126,9 @@ static const char *audiohd_dtypes[] = {
  
  static audiohd_codec_info_t audiohd_codecs[] = {
  	{0x1002aa01, "ATI R600 HDMI", 0x0},
 -	{0x10134206, "Cirrus CS4206", 0x0},
 +	{0x10134206, "Cirrus CS4206", (APPLE_AMP_GPIO)},
 +	{0x10134207, "Cirrus CS4207", (APPLE_AMP_GPIO)},
++	{0x10134208, "Cirrus CS4208", (APPLE_AMP_GPIO)},
  	{0x10de0002, "nVidia MCP78 HDMI", 0x0},
  	{0x10de0003, "nVidia MCP78 HDMI", 0x0},
  	{0x10de0006, "nVidia MCP78 HDMI", 0x0},
-@@ -2991,6 +2994,9 @@ audiohd_create_codec(audiohd_state_t *statep)
+@@ -2991,6 +2995,9 @@ audiohd_create_codec(audiohd_state_t *statep)
  
  		ASSERT(codec->wid_afg == wid);
  
@@ -49,7 +39,7 @@ index b569adb446..84dff9bf60 100644
  		len = sizeof (audiohd_codecs) / sizeof (audiohd_codec_info_t);
  		for (j = 0; j < len-1; j++) {
  			if (audiohd_codecs[j].devid == codec->vid) {
-@@ -3022,7 +3028,8 @@ audiohd_create_codec(audiohd_state_t *statep)
+@@ -3022,7 +3029,8 @@ audiohd_create_codec(audiohd_state_t *statep)
  			    AUDIOHDC_VERB_SET_UNSOL_ENABLE_MASK,
  			    AUDIOHDC_GPIO_ENABLE);
  			(void) audioha_codec_verb_get(statep, i, wid,
@@ -59,7 +49,7 @@ index b569adb446..84dff9bf60 100644
  			(void) audioha_codec_verb_get(statep, i, wid,
  			    AUDIOHDC_VERB_SET_GPIO_STCK,
  			    AUDIOHDC_GPIO_DATA_CTRL);
-@@ -5301,6 +5308,25 @@ audiohd_reset_pins_ur_cap(audiohd_state_t *statep)
+@@ -5301,6 +5309,27 @@ audiohd_reset_pins_ur_cap(audiohd_state_t *statep)
  		}
  	}
  }
@@ -68,9 +58,11 @@ index b569adb446..84dff9bf60 100644
 + * Apple's boards with a Cirrus CS4206/CS4207 (iMac, MacBook Pro, MacBook
 + * Air, Mac mini of 2010-2013) GPIO3 enables the speaker amplifier and GPIO1
 + * or GPIO2 the headphone amplifier, as in Linux's cs420x fixups (gpio_13,
-+ * gpio_23); left as inputs, both stay off and nothing is heard.  There all
-+ * GPIOs are outputs, and the GPIO data (all ones) turns the amplifiers on.
-+ * These boards are recognized by the codec's subsystem vendor (Apple).
++ * gpio_23); on the CS4208 (Mac Pro Late 2013, MacBook Air 2013-2014) GPIO0
++ * enables the speaker amplifier, as in Linux's cs4208 fixups (mac, mba6).
++ * Left as inputs, they stay off and nothing is heard.  There all GPIOs are
++ * outputs, and the GPIO data (all ones) turns the amplifiers on.  These
++ * boards are recognized by the codec's subsystem vendor (Apple).
 + */
 +static uint_t
 +audiohd_gpio_direction(hda_codec_t *codec)
@@ -85,7 +77,7 @@ index b569adb446..84dff9bf60 100644
  static void
  audiohd_restore_codec_gpio(audiohd_state_t *statep)
  {
-@@ -5328,7 +5354,8 @@ audiohd_restore_codec_gpio(audiohd_state_t *statep)
+@@ -5328,7 +5357,8 @@ audiohd_restore_codec_gpio(audiohd_state_t *statep)
  			(void) audioha_codec_verb_get(statep, i, wid,
  			    AUDIOHDC_VERB_SET_GPIO_MASK, AUDIOHDC_GPIO_ENABLE);
  			(void) audioha_codec_verb_get(statep, i, wid,
@@ -96,7 +88,7 @@ index b569adb446..84dff9bf60 100644
  			    AUDIOHDC_VERB_SET_GPIO_STCK,
  			    AUDIOHDC_GPIO_DATA_CTRL);
 diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
-index 8aac036386..1885126a3e 100644
+index 8aac0363..1885126a 100644
 --- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
 +++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
 @@ -20,6 +20,7 @@

@@ -14,7 +14,9 @@
 #
 
 # audiohd-apple: illumos' audiohd driver with the speaker/headphone amplifier
-# GPIOs of Apple's Cirrus CS4206 turned on (patches/), for the iMac13,2.
+# GPIOs of Apple's Cirrus CS4206/CS4207/CS4208 turned on (patches/0001: iMac,
+# MacBook, Mac mini, Mac Pro Late 2013), and HDMI/DisplayPort output on the
+# GPU codecs' digital pins (patches/0002: e.g. DP audio on the Mac Pro).
 # See notes/imac2019-network.md ("Sound").
 #
 # Pristine source: the illumos-gate snapshot the iMac's kernel was built
@@ -28,11 +30,11 @@
 #   gmake / gmake check / gmake clean     (GNU make, on OpenIndiana)
 
 COMPONENT_NAME=		audiohd-apple
-GATE_COMMIT=		08e59b676b426617f8720d1f2fa14d9e2db2afa2
+GATE_COMMIT=		586678ac1bcbd77644a6ec4dac7f79d676cfb4ec
 COMPONENT_SRC=		illumos-gate-$(GATE_COMMIT)
 COMPONENT_ARCHIVE=	$(COMPONENT_SRC).tar.gz
 COMPONENT_ARCHIVE_HASH=	\
-	sha256:499966dc96a22b075874c6c6e33efcf9f7598fec22dffa1cfc3e4e5b1fbab516
+	sha256:ad278ac9dcb58e92e0a441a5a302c25692ca4c1ee435d7464b79858c04e40acf
 COMPONENT_ARCHIVE_URL=	\
 	https://github.com/illumos/illumos-gate/archive/$(GATE_COMMIT).tar.gz
 COMPONENT_LICENSE=	CDDL-1.0
@@ -132,8 +134,9 @@ check: $(BUILD_DIR)/$(MODULE)
 # (pkg contents -m driver/audio/audiohd: illumos-gate.info.git-rev) must be
 # GATE_COMMIT.  For a new OS build: set both, the archive hash, gmake
 # clean publish, then pkg install the new version (notes, section 6).
-OSNET_VERSION=	0.5.11-2026.0.0.23381
-PKG_VERSION=	$(OSNET_VERSION).1
+OSNET_VERSION=	0.5.11-2026.0.0.23395
+# .1 GPIO fix; .2 + HDMI/DP pins (0002); .3 + HDMI setup and pin log (0003, WIP)
+PKG_VERSION=	$(OSNET_VERSION).3
 GATE_SHORT=	$(shell echo $(GATE_COMMIT) | cut -c1-10)
 REPO?=		$(HOME)/oi-repo
 PUBLISHER?=	oi-gnome
