@@ -135,8 +135,9 @@ check: $(BUILD_DIR)/$(MODULE)
 # GATE_COMMIT.  For a new OS build: set both, the archive hash, gmake
 # clean publish, then pkg install the new version (notes, section 6).
 OSNET_VERSION=	0.5.11-2026.0.0.23395
-# .1 GPIO fix; .2 + HDMI/DP pins (0002); .3 + HDMI setup and pin log (0003, WIP)
-PKG_VERSION=	$(OSNET_VERSION).3
+# .1 GPIO fix; .2 + HDMI/DP pins (0002); .3 + HDMI setup with a bring-up pin log;
+# .4 HDMI setup on ATI/AMD codecs (0003) without the log
+PKG_VERSION=	$(OSNET_VERSION).4
 GATE_SHORT=	$(shell echo $(GATE_COMMIT) | cut -c1-10)
 REPO?=		$(HOME)/oi-repo
 PUBLISHER?=	oi-gnome
