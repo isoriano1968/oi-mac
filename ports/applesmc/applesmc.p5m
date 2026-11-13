@@ -1,0 +1,64 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+# driver/sensor/applesmc: the contents of the patch's
+# usr/src/pkg/manifests/driver-sensor-applesmc.p5m, built out of tree (see
+# the Makefile), plus a devfsadm link module with the patch's /dev/applesmc
+# rule (pkg cannot deliver into /dev).
+
+set name=pkg.fmri value=pkg:/driver/sensor/applesmc@$(PKG_VERSION)
+set name=pkg.summary value="Apple SMC sensor driver"
+set name=pkg.description \
+    value="Read-only driver for the System Management Controller of Intel Macs: temperatures as ksensors, fans and other keys through /dev/applesmc, and smcstat(8)"
+set name=pkg.human-version value="$(GATE_SHORT)+applesmc"
+set name=info.classification value=org.opensolaris.category.2008:System/Hardware
+set name=illumos-gate.info.git-remote value=https://github.com/illumos/illumos-gate.git
+set name=illumos-gate.info.git-rev value=$(GATE_COMMIT)
+set name=variant.arch value=i386
+set name=org.opensolaris.consolidation value=osnet
+set name=variant.opensolaris.zone value=global
+
+dir path=kernel group=sys mode=0755 owner=root
+dir path=kernel/drv group=sys mode=0755 owner=root
+dir path=kernel/drv/amd64 group=sys mode=0755 owner=root
+file applesmc path=kernel/drv/amd64/applesmc group=sys mode=0755 owner=root \
+    reboot-needed=true
+file applesmc.conf path=kernel/drv/applesmc.conf group=sys mode=0644 \
+    owner=root
+dir path=usr group=sys mode=0755 owner=root
+dir path=usr/bin group=bin mode=0755 owner=root
+dir path=usr/lib group=bin mode=0755 owner=root
+dir path=usr/lib/devfsadm group=sys mode=0755 owner=root
+dir path=usr/lib/devfsadm/linkmod group=sys mode=0755 owner=root
+file applesmc_link.so path=usr/lib/devfsadm/linkmod/applesmc_link.so group=sys \
+    mode=0755 owner=root
+file smcstat path=usr/bin/smcstat group=bin mode=0555 owner=root
+dir path=usr/share group=sys mode=0755 owner=root
+dir path=usr/share/man group=bin mode=0755 owner=root
+dir path=usr/share/man/man4d group=bin mode=0755 owner=root facet.doc.man=true
+file applesmc.4d path=usr/share/man/man4d/applesmc.4d group=bin mode=0444 \
+    owner=root facet.doc.man=true
+dir path=usr/share/man/man8 group=bin mode=0755 owner=root facet.doc.man=true
+file smcstat.8 path=usr/share/man/man8/smcstat.8 group=bin mode=0444 \
+    owner=root facet.doc.man=true
+
+driver name=applesmc perms="* 0444 root sys"
+
+license applesmc.license license=CDDL
+
+# the temperatures are ksensors: /dev/sensors needs the ksensor framework
+depend type=require fmri=pkg:/system/ksensor
+depend type=require fmri=pkg:/system/kernel@$(MIN_OSNET)
+depend type=require fmri=pkg:/system/library@$(MIN_OSNET)

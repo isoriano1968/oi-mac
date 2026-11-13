@@ -1,0 +1,1665 @@
+From 8b1fe480358eae6a64794adbb853b0dabc7ec64a Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Fri, 13 Nov 2026 09:06:00 +0100
+Subject: [PATCH] NNNNN want a driver for the Apple SMC (temperatures, fans) on
+ Intel Macs
+
+---
+ usr/src/cmd/Makefile                          |   1 +
+ usr/src/cmd/devfsadm/i386/misc_link_i386.c    |   3 +
+ usr/src/cmd/smcstat/Makefile                  |  36 +
+ usr/src/cmd/smcstat/smcstat.c                 | 388 +++++++++++
+ usr/src/man/man4d/Makefile                    |   1 +
+ usr/src/man/man4d/applesmc.4d                 | 111 +++
+ usr/src/man/man8/Makefile                     |   3 +-
+ usr/src/man/man8/smcstat.8                    |  94 +++
+ .../pkg/manifests/driver-sensor-applesmc.p5m  |  38 +
+ usr/src/pkg/manifests/system-header.p5m       |   1 +
+ usr/src/uts/common/sys/Makefile               |   1 +
+ usr/src/uts/common/sys/applesmc.h             |  59 ++
+ usr/src/uts/i86pc/Makefile.files              |   1 +
+ usr/src/uts/i86pc/Makefile.i86pc              |   1 +
+ usr/src/uts/i86pc/applesmc/Makefile           |  85 +++
+ usr/src/uts/i86pc/io/applesmc.c               | 654 ++++++++++++++++++
+ usr/src/uts/i86pc/io/applesmc.conf            |   8 +
+ 17 files changed, 1484 insertions(+), 1 deletion(-)
+ create mode 100644 usr/src/cmd/smcstat/Makefile
+ create mode 100644 usr/src/cmd/smcstat/smcstat.c
+ create mode 100644 usr/src/man/man4d/applesmc.4d
+ create mode 100644 usr/src/man/man8/smcstat.8
+ create mode 100644 usr/src/pkg/manifests/driver-sensor-applesmc.p5m
+ create mode 100644 usr/src/uts/common/sys/applesmc.h
+ create mode 100644 usr/src/uts/i86pc/applesmc/Makefile
+ create mode 100644 usr/src/uts/i86pc/io/applesmc.c
+ create mode 100644 usr/src/uts/i86pc/io/applesmc.conf
+
+diff --git a/usr/src/cmd/Makefile b/usr/src/cmd/Makefile
+index c7ed536b..958fc464 100644
+--- a/usr/src/cmd/Makefile
++++ b/usr/src/cmd/Makefile
+@@ -502,6 +502,7 @@ i386_SUBDIRS=		\
+ 	rdmsr		\
+ 	rsrvrctl	\
+ 	rtc		\
++	smcstat		\
+ 	ucodeadm	\
+ 	xhci		\
+ 	xvm
+diff --git a/usr/src/cmd/devfsadm/i386/misc_link_i386.c b/usr/src/cmd/devfsadm/i386/misc_link_i386.c
+index fc905400..b6aa65ca 100644
+--- a/usr/src/cmd/devfsadm/i386/misc_link_i386.c
++++ b/usr/src/cmd/devfsadm/i386/misc_link_i386.c
+@@ -87,6 +87,9 @@ static devfsadm_create_t misc_cbt[] = {
+ 	{ "pseudo", "ddi_pseudo", "ucode",
+ 	    TYPE_EXACT | DRV_EXACT, ILEVEL_0, ln_minor_name,
+ 	},
++	{ "pseudo", "ddi_pseudo", "applesmc",
++	    TYPE_EXACT | DRV_EXACT, ILEVEL_0, ln_minor_name,
++	},
+ 	{ "pseudo", "ddi_pseudo", "viona",
+ 	    TYPE_EXACT | DRV_EXACT, ILEVEL_0, ln_minor_name,
+ 	},
+diff --git a/usr/src/cmd/smcstat/Makefile b/usr/src/cmd/smcstat/Makefile
+new file mode 100644
+index 00000000..7ecd6864
+--- /dev/null
++++ b/usr/src/cmd/smcstat/Makefile
+@@ -0,0 +1,36 @@
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright 2026 isoriano1968
++#
++
++PROG=		smcstat
++
++include ../Makefile.cmd
++include ../Makefile.cmd.64
++
++CSTD=		$(CSTD_GNU17)
++CFLAGS64 +=	$(CCVERBOSE)
++
++.KEEP_STATE:
++
++all: $(PROG)
++
++install: all $(ROOTPROG)
++
++check:	$(PROG).c
++	$(CSTYLE) -pP $(PROG).c
++
++clean:
++	$(RM) $(OBJS)
++
++include ../Makefile.targ
+diff --git a/usr/src/cmd/smcstat/smcstat.c b/usr/src/cmd/smcstat/smcstat.c
+new file mode 100644
+index 00000000..eb5e194f
+--- /dev/null
++++ b/usr/src/cmd/smcstat/smcstat.c
+@@ -0,0 +1,388 @@
++/*
++ * This file and its contents are supplied under the terms of the
++ * Common Development and Distribution License ("CDDL"), version 1.0.
++ * You may only use this file in accordance with the terms of version
++ * 1.0 of the CDDL.
++ *
++ * A full copy of the text of the CDDL should have accompanied this
++ * source.  A copy of the CDDL is also available via the Internet at
++ * http://www.illumos.org/license/CDDL.
++ */
++
++/*
++ * Copyright 2026 isoriano1968
++ */
++
++/*
++ * smcstat: show the temperatures and fans of an Intel Mac from its SMC,
++ * through applesmc(4D).
++ *
++ *	smcstat			temperatures and fans
++ *	smcstat -i secs		repeat every secs seconds
++ *	smcstat -p		parsable: key:type:value lines
++ *	smcstat -a		every key, decoded where the type is known
++ *	smcstat KEY ...		just these keys
++ */
++
++#include <sys/types.h>
++#include <sys/applesmc.h>
++#include <fcntl.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <strings.h>
++#include <unistd.h>
++#include <err.h>
++#include <errno.h>
++
++static int smcfd = -1;
++static int pflag;
++
++static const struct {
++	const char *k;
++	const char *desc;
++} names[] = {
++	{ "TA0P", "ambient" },
++	{ "TA0p", "ambient" },
++	{ "TA1P", "ambient 2" },
++	{ "TC0P", "CPU proximity" },
++	{ "TC0p", "CPU proximity" },
++	{ "TC0D", "CPU die" },
++	{ "TC0E", "CPU die (virtual)" },
++	{ "TC0F", "CPU die (filtered)" },
++	{ "TC0H", "CPU heatsink" },
++	{ "TCXC", "CPU PECI" },
++	{ "TCXc", "CPU PECI" },
++	{ "TC1C", "CPU core 1" },
++	{ "TC2C", "CPU core 2" },
++	{ "TC3C", "CPU core 3" },
++	{ "TC4C", "CPU core 4" },
++	{ "TC5C", "CPU core 5" },
++	{ "TC6C", "CPU core 6" },
++	{ "TC7C", "CPU core 7" },
++	{ "TC8C", "CPU core 8" },
++	{ "TG0D", "GPU 0 die" },
++	{ "TG0P", "GPU 0 proximity" },
++	{ "TG0p", "GPU 0 proximity" },
++	{ "TG0H", "GPU 0 heatsink" },
++	{ "TG1D", "GPU 1 die" },
++	{ "TG1P", "GPU 1 proximity" },
++	{ "TG1p", "GPU 1 proximity" },
++	{ "TG1H", "GPU 1 heatsink" },
++	{ "TH0P", "drive proximity" },
++	{ "TH0p", "drive proximity" },
++	{ "TH0F", "drive (filtered)" },
++	{ "TI0P", "Thunderbolt 0" },
++	{ "TI1P", "Thunderbolt 1" },
++	{ "TM0P", "memory proximity" },
++	{ "TM0p", "memory proximity" },
++	{ "TM0S", "memory slot" },
++	{ "TN0P", "northbridge proximity" },
++	{ "TN0D", "northbridge die" },
++	{ "TPCD", "PCH die" },
++	{ "TPCd", "PCH die" },
++	{ "Tp0C", "power supply" },
++	{ "Tp0P", "power supply proximity" },
++	{ "TL0P", "LCD proximity" },
++	{ "TO0P", "optical drive" },
++	{ "TW0P", "wireless proximity" },
++	{ NULL, NULL }
++};
++
++static const char *
++keydesc(const char *k)
++{
++	int i;
++
++	for (i = 0; names[i].k != NULL; i++) {
++		if (strncmp(names[i].k, k, 4) == 0)
++			return (names[i].desc);
++	}
++	return ("");
++}
++
++static int
++smc_read(const char *key, applesmc_key_t *ak)
++{
++	bzero(ak, sizeof (*ak));
++	(void) memcpy(ak->ak_key, key, APPLESMC_KEYLEN);
++	return (ioctl(smcfd, APPLESMC_IOC_READ, ak));
++}
++
++/*
++ * Decode a numeric SMC value; returns 0 and sets *v on success.
++ */
++static int
++decode(const applesmc_key_t *ak, double *v)
++{
++	const uint8_t *d = ak->ak_data;
++	const char *t = ak->ak_type;
++	float f;
++
++	if (strncmp(t, "flt ", 4) == 0 && ak->ak_len == 4) {
++		(void) memcpy(&f, d, 4);	/* little endian, as x86 */
++		*v = f;
++	} else if (strncmp(t, "sp78", 4) == 0 && ak->ak_len == 2) {
++		*v = (int16_t)((d[0] << 8) | d[1]) / 256.0;
++	} else if (strncmp(t, "sp87", 4) == 0 && ak->ak_len == 2) {
++		*v = (int16_t)((d[0] << 8) | d[1]) / 128.0;
++	} else if (strncmp(t, "sp96", 4) == 0 && ak->ak_len == 2) {
++		*v = (int16_t)((d[0] << 8) | d[1]) / 64.0;
++	} else if (strncmp(t, "sp5a", 4) == 0 && ak->ak_len == 2) {
++		*v = (int16_t)((d[0] << 8) | d[1]) / 1024.0;
++	} else if (strncmp(t, "fpe2", 4) == 0 && ak->ak_len == 2) {
++		*v = ((d[0] << 8) | d[1]) / 4.0;
++	} else if (strncmp(t, "fp88", 4) == 0 && ak->ak_len == 2) {
++		*v = ((d[0] << 8) | d[1]) / 256.0;
++	} else if (strncmp(t, "fpc4", 4) == 0 && ak->ak_len == 2) {
++		*v = ((d[0] << 8) | d[1]) / 16.0;
++	} else if (strncmp(t, "ui8 ", 4) == 0 && ak->ak_len == 1) {
++		*v = d[0];
++	} else if (strncmp(t, "ui16", 4) == 0 && ak->ak_len == 2) {
++		*v = (d[0] << 8) | d[1];
++	} else if (strncmp(t, "ui32", 4) == 0 && ak->ak_len == 4) {
++		*v = ((uint32_t)d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3];
++	} else if (strncmp(t, "si8 ", 4) == 0 && ak->ak_len == 1) {
++		*v = (int8_t)d[0];
++	} else if (strncmp(t, "si16", 4) == 0 && ak->ak_len == 2) {
++		*v = (int16_t)((d[0] << 8) | d[1]);
++	} else if (strncmp(t, "flag", 4) == 0 && ak->ak_len == 1) {
++		*v = d[0];
++	} else {
++		return (-1);
++	}
++	return (0);
++}
++
++static void
++print_raw(const applesmc_key_t *ak)
++{
++	int i;
++
++	for (i = 0; i < ak->ak_len; i++)
++		(void) printf("%02x", ak->ak_data[i]);
++}
++
++static void
++show_key(const char *key)
++{
++	applesmc_key_t ak;
++	double v;
++
++	if (smc_read(key, &ak) != 0) {
++		warn("%.4s", key);
++		return;
++	}
++	if (pflag) {
++		(void) printf("%.4s:%.4s:", ak.ak_key, ak.ak_type);
++		if (decode(&ak, &v) == 0)
++			(void) printf("%g\n", v);
++		else {
++			print_raw(&ak);
++			(void) printf("\n");
++		}
++		return;
++	}
++	(void) printf("%.4s  %.4s  %2u  ", ak.ak_key, ak.ak_type, ak.ak_len);
++	if (decode(&ak, &v) == 0)
++		(void) printf("%12.2f", v);
++	else {
++		(void) printf("  ");
++		print_raw(&ak);
++	}
++	(void) printf("\n");
++}
++
++static uint32_t
++nkeys(void)
++{
++	uint32_t n;
++
++	if (ioctl(smcfd, APPLESMC_IOC_NKEYS, &n) != 0)
++		err(EXIT_FAILURE, "APPLESMC_IOC_NKEYS");
++	return (n);
++}
++
++static int
++key_at(uint32_t i, char *key)
++{
++	applesmc_key_t ak;
++
++	bzero(&ak, sizeof (ak));
++	ak.ak_index = i;
++	if (ioctl(smcfd, APPLESMC_IOC_KEYBYIDX, &ak) != 0)
++		return (-1);
++	(void) memcpy(key, ak.ak_key, 4);
++	return (0);
++}
++
++static void
++show_all(void)
++{
++	uint32_t i, n = nkeys();
++	char key[4];
++
++	for (i = 0; i < n; i++) {
++		if (key_at(i, key) == 0)
++			show_key(key);
++	}
++}
++
++static void
++show_temps(void)
++{
++	uint32_t i, n = nkeys();
++	applesmc_key_t ak;
++	char key[4];
++	double v;
++
++	if (!pflag)
++		(void) printf("%-4s  %8s  %s\n", "KEY", "CELSIUS", "SENSOR");
++	for (i = 0; i < n; i++) {
++		if (key_at(i, key) != 0 || key[0] != 'T')
++			continue;
++		if (smc_read(key, &ak) != 0 || decode(&ak, &v) != 0)
++			continue;
++		if (strncmp(ak.ak_type, "sp78", 4) != 0 &&
++		    strncmp(ak.ak_type, "flt ", 4) != 0)
++			continue;
++		if (v <= 0.0 || v >= 150.0)	/* not populated */
++			continue;
++		if (pflag)
++			(void) printf("temp:%.4s:%.2f\n", key, v);
++		else
++			(void) printf("%.4s  %8.2f  %s\n", key, v,
++			    keydesc(key));
++	}
++}
++
++/*
++ * Fan keys are F<n>.., n a single digit (show_fans stops at 10 fans).
++ */
++static int
++fan_value(int fan, char what, double *v)
++{
++	char key[5];
++	applesmc_key_t ak;
++
++	(void) snprintf(key, sizeof (key), "F%c%c%c", '0' + fan, what,
++	    what == 'A' ? 'c' : what == 'M' ? 'n' : 'g');
++	if (smc_read(key, &ak) != 0)
++		return (-1);
++	return (decode(&ak, v));
++}
++
++static int
++fan_named(int fan, const char *suffix, double *v)
++{
++	char key[5];
++	applesmc_key_t ak;
++
++	(void) snprintf(key, sizeof (key), "F%c%.2s", '0' + fan, suffix);
++	if (smc_read(key, &ak) != 0)
++		return (-1);
++	return (decode(&ak, v));
++}
++
++static void
++show_fans(void)
++{
++	applesmc_key_t ak;
++	double cur, mn, mx, tg;
++	int nfans, i;
++
++	if (smc_read("FNum", &ak) != 0 || ak.ak_len < 1) {
++		if (!pflag)
++			(void) printf("no fans reported\n");
++		return;
++	}
++	nfans = ak.ak_data[0];
++	if (!pflag)
++		(void) printf("\n%-4s  %8s  %8s  %8s  %8s  %s\n", "FAN", "RPM",
++		    "TARGET", "MIN", "MAX", "NAME");
++	for (i = 0; i < nfans && i < 10; i++) {
++		char idk[5], name[17] = "";
++
++		if (fan_value(i, 'A', &cur) != 0)
++			continue;
++		if (fan_named(i, "Mn", &mn) != 0)
++			mn = -1;
++		if (fan_named(i, "Mx", &mx) != 0)
++			mx = -1;
++		if (fan_named(i, "Tg", &tg) != 0)
++			tg = -1;
++		(void) snprintf(idk, sizeof (idk), "F%cID", '0' + i);
++		if (smc_read(idk, &ak) == 0 && ak.ak_len >= 16) {
++			/* {type, zone, location, pad, char name[12]} */
++			(void) memcpy(name, &ak.ak_data[4], 12);
++			name[12] = '\0';
++		}
++		if (pflag)
++			(void) printf("fan:%d:%.0f:%.0f:%.0f:%.0f:%s\n", i, cur,
++			    tg, mn, mx, name);
++		else
++			(void) printf("F%d    %8.0f  %8.0f  %8.0f  %8.0f  %s\n",
++			    i, cur, tg, mn, mx, name);
++	}
++}
++
++static void
++usage(void)
++{
++	(void) fprintf(stderr, "usage: smcstat [-ap] [-i secs] [KEY ...]\n");
++	exit(2);
++}
++
++int
++main(int argc, char **argv)
++{
++	int c, aflag = 0, interval = 0;
++
++	while ((c = getopt(argc, argv, "api:")) != -1) {
++		switch (c) {
++		case 'a':
++			aflag = 1;
++			break;
++		case 'p':
++			pflag = 1;
++			break;
++		case 'i':
++			interval = atoi(optarg);
++			if (interval <= 0)
++				usage();
++			break;
++		default:
++			usage();
++		}
++	}
++	argc -= optind;
++	argv += optind;
++
++	if ((smcfd = open("/dev/applesmc", O_RDONLY)) < 0)
++		err(EXIT_FAILURE, "/dev/applesmc");
++
++	for (;;) {
++		if (argc > 0) {
++			int i;
++
++			for (i = 0; i < argc; i++) {
++				if (strlen(argv[i]) != 4)
++					errx(2, "%s: keys have 4 characters",
++					    argv[i]);
++				show_key(argv[i]);
++			}
++		} else if (aflag) {
++			show_all();
++		} else {
++			show_temps();
++			show_fans();
++		}
++		if (interval == 0)
++			break;
++		(void) fflush(stdout);
++		(void) sleep(interval);
++		if (!pflag)
++			(void) printf("\n");
++	}
++	return (0);
++}
+diff --git a/usr/src/man/man4d/Makefile b/usr/src/man/man4d/Makefile
+index 3be25cbc..8b4cf7a7 100644
+--- a/usr/src/man/man4d/Makefile
++++ b/usr/src/man/man4d/Makefile
+@@ -170,6 +170,7 @@ i386_MANFILES=	ahci.4d		\
+ 		amdnbtemp.4d	\
+ 		amdzen.4d	\
+ 		amr.4d		\
++		applesmc.4d	\
+ 		arcmsr.4d	\
+ 		arn.4d		\
+ 		asy.4d		\
+diff --git a/usr/src/man/man4d/applesmc.4d b/usr/src/man/man4d/applesmc.4d
+new file mode 100644
+index 00000000..e448d657
+--- /dev/null
++++ b/usr/src/man/man4d/applesmc.4d
+@@ -0,0 +1,111 @@
++.\"
++.\" This file and its contents are supplied under the terms of the
++.\" Common Development and Distribution License ("CDDL"), version 1.0.
++.\" You may only use this file in accordance with the terms of version
++.\" 1.0 of the CDDL.
++.\"
++.\" A full copy of the text of the CDDL should have accompanied this
++.\" source.  A copy of the CDDL is also available via the Internet at
++.\" http://www.illumos.org/license/CDDL.
++.\"
++.\"
++.\" Copyright 2026 isoriano1968
++.\"
++.Dd November 13, 2026
++.Dt APPLESMC 4D
++.Os
++.Sh NAME
++.Nm applesmc
++.Nd Apple System Management Controller sensor driver
++.Sh SYNOPSIS
++.Pa /dev/applesmc
++.Pp
++.Pa /dev/sensors/temperature/smc/*
++.Sh DESCRIPTION
++The
++.Nm
++driver gives read-only access to the System Management Controller
++.Pq SMC
++of Intel-based Apple Macintosh computers.
++The SMC runs the fans and the thermal protection of the machine on its own
++and keeps its measurements as four-character keys, for example
++.Sy TC0P
++.Pq CPU proximity temperature
++or
++.Sy F0Ac
++.Pq current speed of fan 0 .
++Each key has a length, a four-character type such as
++.Sy sp78 ,
++.Sy fpe2
++or
++.Sy flt ,
++and flags.
++.Pp
++The driver finds the SMC through the ACPI device
++.Sy APP0001
++and its I/O port window
++.Pq normally 0x300 to 0x31f .
++On machines without that device it does not attach.
++It never writes keys: fan control stays with the SMC.
++.Pp
++Every temperature key of type
++.Sy sp78
++or
++.Sy flt
++that reads a plausible value at attach time is registered as a kernel
++sensor and appears under
++.Pa /dev/sensors/temperature/smc/ ,
++named after its key; it can be read with the
++.Dv SENSOR_IOCTL_SCALAR
++interface of
++.In sys/sensors.h
++and is visible to the fault management framework.
++.Pp
++The character device
++.Pa /dev/applesmc
++offers every key through the following
++.Xr ioctl 2
++commands, defined in
++.In sys/applesmc.h .
++Values are returned raw, as the SMC sends them; decoding by type is left to
++the consumer.
++.Bl -tag -width Dv
++.It Dv APPLESMC_IOC_NKEYS
++Return the number of keys as a
++.Vt uint32_t .
++.It Dv APPLESMC_IOC_KEYBYIDX
++Return in
++.Fa ak_key
++the name of the key at index
++.Fa ak_index .
++.It Dv APPLESMC_IOC_KEYINFO
++Return the type, length and flags of the key
++.Fa ak_key .
++.It Dv APPLESMC_IOC_READ
++Return the type, length, flags and up to
++.Dv APPLESMC_MAXDATA
++bytes of data of the key
++.Fa ak_key .
++.El
++.Pp
++The interface is private and may change.
++.Sh FILES
++.Bl -tag -width Pa
++.It Pa /kernel/drv/amd64/applesmc
++Device driver
++.Pq x86 .
++.It Pa /kernel/drv/applesmc.conf
++Driver configuration file.
++.It Pa /dev/applesmc
++Key access.
++.It Pa /dev/sensors/temperature/smc/
++Temperature sensors.
++.El
++.Sh ARCHITECTURE
++x86
++.Sh INTERFACE STABILITY
++.Sy Uncommitted
++.Sh SEE ALSO
++.Xr ioctl 2 ,
++.Xr smcstat 8 ,
++.Xr ksensor 9E
+diff --git a/usr/src/man/man8/Makefile b/usr/src/man/man8/Makefile
+index 7c7d9829..cf5682a3 100644
+--- a/usr/src/man/man8/Makefile
++++ b/usr/src/man/man8/Makefile
+@@ -548,7 +548,8 @@ i386_MANFILES=			\
+ 		bhyvectl.8	\
+ 		nvmeadm.8	\
+ 		pptadm.8	\
+-		rdmsr.8
++		rdmsr.8		\
++		smcstat.8
+ 
+ MANFILES=	$(_MANFILES) $($(MACH)_MANFILES)
+ 
+diff --git a/usr/src/man/man8/smcstat.8 b/usr/src/man/man8/smcstat.8
+new file mode 100644
+index 00000000..0e7f12ed
+--- /dev/null
++++ b/usr/src/man/man8/smcstat.8
+@@ -0,0 +1,94 @@
++.\"
++.\" This file and its contents are supplied under the terms of the
++.\" Common Development and Distribution License ("CDDL"), version 1.0.
++.\" You may only use this file in accordance with the terms of version
++.\" 1.0 of the CDDL.
++.\"
++.\" A full copy of the text of the CDDL should have accompanied this
++.\" source.  A copy of the CDDL is also available via the Internet at
++.\" http://www.illumos.org/license/CDDL.
++.\"
++.\"
++.\" Copyright 2026 isoriano1968
++.\"
++.Dd November 13, 2026
++.Dt SMCSTAT 8
++.Os
++.Sh NAME
++.Nm smcstat
++.Nd show temperatures and fans of an Intel Mac
++.Sh SYNOPSIS
++.Nm
++.Op Fl ap
++.Op Fl i Ar secs
++.Op Ar key ...
++.Sh DESCRIPTION
++The
++.Nm
++utility reads the System Management Controller of an Intel-based Apple
++Macintosh through
++.Xr applesmc 4D .
++Without options it lists every populated temperature key with its value in
++degrees Celsius and a short description where the key is known, followed by
++the fans with their current, target, minimum and maximum speed in RPM and
++the name the SMC gives them.
++.Pp
++With
++.Ar key
++arguments only those keys are shown, each with its type, length and value,
++decoded where the type is known and in hexadecimal otherwise.
++.Sh OPTIONS
++.Bl -tag -width Fl
++.It Fl a
++Show every key of the SMC.
++.It Fl i Ar secs
++Repeat every
++.Ar secs
++seconds.
++.It Fl p
++Parsable output, one colon-separated record per line:
++.Sm off
++.Sy temp : Ar key : Ar celsius
++.Sm on
++for temperatures,
++.Sm off
++.Sy fan : Ar n : Ar rpm : Ar target : Ar min : Ar max : Ar name
++.Sm on
++for fans
++.Pq \-1 where the SMC has no value ,
++and
++.Sm off
++.Ar key : Ar type : Ar value
++.Sm on
++for keys given as arguments or with
++.Fl a .
++.El
++.Sh FILES
++.Bl -tag -width Pa
++.It Pa /dev/applesmc
++SMC device.
++.El
++.Sh EXIT STATUS
++.Ex -std
++.Sh EXAMPLES
++.Bl -tag -width 0n
++.It Sy Example 1 No Temperatures and fans
++.Bd -literal
++$ smcstat
++.Ed
++.It Sy Example 2 No Two keys every five seconds
++.Bd -literal
++$ smcstat -i 5 TC0P F0Ac
++.Ed
++.El
++.Sh INTERFACE STABILITY
++The command line is
++.Sy Uncommitted .
++The output is
++.Sy Not-An-Interface ,
++except with
++.Fl p ,
++which is
++.Sy Uncommitted .
++.Sh SEE ALSO
++.Xr applesmc 4D
+diff --git a/usr/src/pkg/manifests/driver-sensor-applesmc.p5m b/usr/src/pkg/manifests/driver-sensor-applesmc.p5m
+new file mode 100644
+index 00000000..f40acab4
+--- /dev/null
++++ b/usr/src/pkg/manifests/driver-sensor-applesmc.p5m
+@@ -0,0 +1,38 @@
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright 2026 isoriano1968
++#
++
++<include global_zone_only_component>
++set name=pkg.fmri value=pkg:/driver/sensor/applesmc@$(PKGVERS)
++set name=pkg.summary value="Apple SMC sensor driver"
++set name=pkg.description \
++    value="Read-only driver for the System Management Controller of Intel Macs: temperatures as ksensors, fans and other keys through /dev/applesmc, and smcstat(8)"
++set name=info.classification value=org.opensolaris.category.2008:System/Hardware
++set name=variant.arch value=i386
++dir  path=kernel group=sys
++dir  path=kernel/drv group=sys
++dir  path=kernel/drv/$(ARCH64) group=sys
++file path=kernel/drv/$(ARCH64)/applesmc group=sys
++file path=kernel/drv/applesmc.conf group=sys
++dir  path=usr group=sys
++dir  path=usr/bin
++file path=usr/bin/smcstat mode=0555
++dir  path=usr/share/man
++dir  path=usr/share/man/man4d
++file path=usr/share/man/man4d/applesmc.4d
++dir  path=usr/share/man/man8
++file path=usr/share/man/man8/smcstat.8
++driver name=applesmc perms="* 0444 root sys"
++depend type=require fmri=system/ksensor
++license lic_CDDL license=lic_CDDL
+diff --git a/usr/src/pkg/manifests/system-header.p5m b/usr/src/pkg/manifests/system-header.p5m
+index 01d4cf32..f704846b 100644
+--- a/usr/src/pkg/manifests/system-header.p5m
++++ b/usr/src/pkg/manifests/system-header.p5m
+@@ -691,6 +691,7 @@ file path=usr/include/sys/aio.h
+ file path=usr/include/sys/aio_impl.h
+ file path=usr/include/sys/aio_req.h
+ file path=usr/include/sys/aiocb.h
++$(i386_ONLY)file path=usr/include/sys/applesmc.h
+ file path=usr/include/sys/archsystm.h
+ file path=usr/include/sys/ascii.h
+ file path=usr/include/sys/asm_linkage.h
+diff --git a/usr/src/uts/common/sys/Makefile b/usr/src/uts/common/sys/Makefile
+index 909961c3..1422802d 100644
+--- a/usr/src/uts/common/sys/Makefile
++++ b/usr/src/uts/common/sys/Makefile
+@@ -45,6 +45,7 @@ FILEMODE=644
+ #
+ 
+ i386_HDRS=			\
++	applesmc.h		\
+ 	asy.h			\
+ 	avintr.h		\
+ 	fd_debug.h		\
+diff --git a/usr/src/uts/common/sys/applesmc.h b/usr/src/uts/common/sys/applesmc.h
+new file mode 100644
+index 00000000..be7b336d
+--- /dev/null
++++ b/usr/src/uts/common/sys/applesmc.h
+@@ -0,0 +1,59 @@
++/*
++ * This file and its contents are supplied under the terms of the
++ * Common Development and Distribution License ("CDDL"), version 1.0.
++ * You may only use this file in accordance with the terms of version
++ * 1.0 of the CDDL.
++ *
++ * A full copy of the text of the CDDL should have accompanied this
++ * source.  A copy of the CDDL is also available via the Internet at
++ * http://www.illumos.org/license/CDDL.
++ */
++
++/*
++ * Copyright 2026 isoriano1968
++ */
++
++#ifndef _SYS_APPLESMC_H
++#define	_SYS_APPLESMC_H
++
++/*
++ * Read-only interface to the Apple System Management Controller (SMC) of
++ * Intel Macs, through /dev/applesmc. The SMC holds temperatures, fan speeds,
++ * voltages, currents and power values as four-character keys ("TC0P",
++ * "F0Ac"); each key has a length, a four-character type ("sp78", "fpe2",
++ * "flt ", "ui8 ", ...) and flags. Values are returned raw, as the SMC sends
++ * them; decoding by type is left to the consumer.
++ *
++ * This interface is private and may change.
++ */
++
++#include <sys/types.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define	APPLESMC_IOC		(('s' << 24) | ('m' << 16) | ('c' << 8))
++#define	APPLESMC_IOC_NKEYS	(APPLESMC_IOC | 0x01)	/* uint32_t */
++#define	APPLESMC_IOC_KEYBYIDX	(APPLESMC_IOC | 0x02)	/* applesmc_key_t */
++#define	APPLESMC_IOC_KEYINFO	(APPLESMC_IOC | 0x03)	/* applesmc_key_t */
++#define	APPLESMC_IOC_READ	(APPLESMC_IOC | 0x04)	/* applesmc_key_t */
++
++#define	APPLESMC_KEYLEN		4
++#define	APPLESMC_MAXDATA	32
++
++typedef struct applesmc_key {
++	uint32_t	ak_index;	/* in: KEYBYIDX */
++	char		ak_key[APPLESMC_KEYLEN];	/* in; out: KEYBYIDX */
++	char		ak_type[APPLESMC_KEYLEN];	/* out: KEYINFO, READ */
++	uint8_t		ak_len;		/* out: KEYINFO, READ */
++	uint8_t		ak_flags;	/* out: KEYINFO, READ */
++	uint8_t		ak_pad[2];
++	uint8_t		ak_data[APPLESMC_MAXDATA];	/* out: READ */
++} applesmc_key_t;
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _SYS_APPLESMC_H */
+diff --git a/usr/src/uts/i86pc/Makefile.files b/usr/src/uts/i86pc/Makefile.files
+index 4db8575f..5bd3ec7a 100644
+--- a/usr/src/uts/i86pc/Makefile.files
++++ b/usr/src/uts/i86pc/Makefile.files
+@@ -212,6 +212,7 @@ APIX_OBJS += apix.o apic_regops.o psm_common.o apix_intr.o apix_utils.o \
+ 
+ 
+ ACPI_DRV_OBJS	+= acpi_drv.o acpi_video.o
++APPLESMC_OBJS	+= applesmc.o
+ ACPINEX_OBJS	+= acpinex_drv.o acpinex_event.o
+ 
+ CPUDRV_OBJS	+= \
+diff --git a/usr/src/uts/i86pc/Makefile.i86pc b/usr/src/uts/i86pc/Makefile.i86pc
+index 4fbc5930..718a463d 100644
+--- a/usr/src/uts/i86pc/Makefile.i86pc
++++ b/usr/src/uts/i86pc/Makefile.i86pc
+@@ -237,6 +237,7 @@ DRV_KMODS	+= pci-ide
+ DRV_KMODS	+= xsvc
+ DRV_KMODS	+= tzmon
+ DRV_KMODS	+= acpi_drv
++DRV_KMODS	+= applesmc
+ DRV_KMODS	+= acpinex
+ DRV_KMODS	+= amd_iommu
+ DRV_KMODS	+= dr
+diff --git a/usr/src/uts/i86pc/applesmc/Makefile b/usr/src/uts/i86pc/applesmc/Makefile
+new file mode 100644
+index 00000000..10330c76
+--- /dev/null
++++ b/usr/src/uts/i86pc/applesmc/Makefile
+@@ -0,0 +1,85 @@
++#
++# CDDL HEADER START
++#
++# The contents of this file are subject to the terms of the
++# Common Development and Distribution License (the "License").
++# You may not use this file except in compliance with the License.
++#
++# You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
++# or http://www.opensolaris.org/os/licensing.
++# See the License for the specific language governing permissions
++# and limitations under the License.
++#
++# When distributing Covered Code, include this CDDL HEADER in each
++# file and include the License file at usr/src/OPENSOLARIS.LICENSE.
++# If applicable, add the following below this CDDL HEADER, with the
++# fields enclosed by brackets "[]" replaced with your own identifying
++# information: Portions Copyright [yyyy] [name of copyright owner]
++#
++# CDDL HEADER END
++#
++
++#
++# Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
++# Use is subject to license terms.
++#
++# Copyright (c) 2018, Joyent, Inc.
++# Copyright 2019 OmniOS Community Edition (OmniOSce) Association.
++#
++
++#	This makefile drives the production of the applesmc
++#	driver kernel module.
++#
++#	i86pc architecture dependent
++#
++
++#
++#	Path to the base of the uts directory tree (usually /usr/src/uts).
++#
++UTSBASE	= ../..
++
++#
++#	Define the module and object file sets.
++#
++MODULE		= applesmc
++OBJECTS		= $(APPLESMC_OBJS:%=$(OBJS_DIR)/%)
++ROOTMODULE	= $(ROOT_DRV_DIR)/$(MODULE)
++CONF_SRCDIR	= $(UTSBASE)/i86pc/io
++
++#
++#	Include common rules.
++#
++include $(UTSBASE)/i86pc/Makefile.i86pc
++
++#
++#	Define targets
++#
++ALL_TARGET	= $(BINARY) $(CONFMOD)
++INSTALL_TARGET	= $(BINARY) $(ROOTMODULE) $(ROOT_CONFFILE)
++
++
++
++
++# needs work
++
++LDFLAGS		+= -N misc/acpica
++
++#
++#	Default build targets.
++#
++.KEEP_STATE:
++
++def:		$(DEF_DEPS)
++
++all:		$(ALL_DEPS)
++
++clean:		$(CLEAN_DEPS)
++
++clobber:	$(CLOBBER_DEPS)
++
++install:	$(INSTALL_DEPS)
++
++#
++#	Include common targets.
++#
++include $(UTSBASE)/i86pc/Makefile.targ
+diff --git a/usr/src/uts/i86pc/io/applesmc.c b/usr/src/uts/i86pc/io/applesmc.c
+new file mode 100644
+index 00000000..3ac934f5
+--- /dev/null
++++ b/usr/src/uts/i86pc/io/applesmc.c
+@@ -0,0 +1,654 @@
++/*
++ * This file and its contents are supplied under the terms of the
++ * Common Development and Distribution License ("CDDL"), version 1.0.
++ * You may only use this file in accordance with the terms of version
++ * 1.0 of the CDDL.
++ *
++ * A full copy of the text of the CDDL should have accompanied this
++ * source.  A copy of the CDDL is also available via the Internet at
++ * http://www.illumos.org/license/CDDL.
++ */
++
++/*
++ * Copyright 2026 isoriano1968
++ */
++
++/*
++ * Apple System Management Controller (SMC), read only.
++ *
++ * Intel Macs describe the SMC in ACPI as device APP0001, with an I/O port
++ * window (normally 0x300-0x31f): the data port at the base and the
++ * command/status port at base + 4. The protocol is the one the Linux applesmc
++ * driver uses: send a command byte, the four key bytes and a length, then
++ * read the data bytes while the status port says data is waiting.
++ *
++ * The SMC runs the fans and thermal protection on its own; this driver never
++ * writes keys. It offers:
++ *
++ *  - one ksensor per temperature key ('T...', type sp78 or flt), so that the
++ *    temperatures show up in /dev/sensors/temperature/smc/ and in FMA;
++ *  - /dev/applesmc, with ioctls to count, enumerate, describe and read keys
++ *    (fans, power, voltages), for tools such as smcstat(8).
++ *
++ * The driver is a pseudo device that looks for APP0001 itself, as acpi_drv
++ * does for batteries; on machines without an SMC it does not attach.
++ */
++
++#include <sys/types.h>
++#include <sys/file.h>
++#include <sys/errno.h>
++#include <sys/open.h>
++#include <sys/cred.h>
++#include <sys/stat.h>
++#include <sys/conf.h>
++#include <sys/modctl.h>
++#include <sys/ddi.h>
++#include <sys/sunddi.h>
++#include <sys/sensors.h>
++#include <sys/sysmacros.h>
++#include <sys/acpi/acpi.h>
++#include <sys/acpica.h>
++#include <sys/applesmc.h>
++
++#define	SMC_DEFAULT_BASE	0x300
++#define	SMC_DATA(s)		((s)->smc_base)
++#define	SMC_CMD(s)		((s)->smc_base + 4)
++
++#define	SMC_CMD_READ		0x10
++#define	SMC_CMD_KEYBYIDX	0x12
++#define	SMC_CMD_KEYINFO		0x13
++
++#define	SMC_ST_AWAITING_DATA	0x01
++#define	SMC_ST_IB_CLOSED	0x02
++#define	SMC_ST_BUSY		0x04
++
++#define	SMC_MIN_WAIT		16	/* microseconds */
++#define	SMC_MAX_SENSORS		128
++#define	SMC_MAX_ERRORS		8	/* give up the sensor scan after this */
++
++typedef struct smc_sensor {
++	struct applesmc	*ss_smc;
++	char		ss_key[APPLESMC_KEYLEN];
++	char		ss_type[APPLESMC_KEYLEN];
++	uint8_t		ss_len;
++	id_t		ss_id;
++} smc_sensor_t;
++
++typedef struct applesmc {
++	dev_info_t	*smc_dip;
++	kmutex_t	smc_lock;
++	uint16_t	smc_base;
++	uint32_t	smc_nkeys;
++	uint_t		smc_nsensors;
++	smc_sensor_t	smc_sensors[SMC_MAX_SENSORS];
++} applesmc_t;
++
++static applesmc_t *applesmc;
++
++/*
++ * Wait until (status & mask) == val. The SMC usually answers within a few
++ * microseconds; back off up to about half a second before giving up.
++ */
++static int
++smc_wait(applesmc_t *smc, uint8_t val, uint8_t mask)
++{
++	clock_t us = SMC_MIN_WAIT;
++	int i;
++
++	for (i = 0; i < 24; i++) {
++		if ((inb(SMC_CMD(smc)) & mask) == val)
++			return (0);
++		if (us < 1000)
++			drv_usecwait(us);
++		else
++			delay(drv_usectohz(us));
++		if (i > 9)
++			us <<= 1;
++	}
++	return (EIO);
++}
++
++static int
++smc_send_cmd(applesmc_t *smc, uint8_t cmd)
++{
++	if (smc_wait(smc, 0, SMC_ST_IB_CLOSED) != 0)
++		return (EIO);
++	outb(SMC_CMD(smc), cmd);
++	return (0);
++}
++
++static int
++smc_send_byte(applesmc_t *smc, uint8_t b)
++{
++	if (smc_wait(smc, 0, SMC_ST_IB_CLOSED) != 0)
++		return (EIO);
++	/*
++	 * A separate read for BUSY after IB_CLOSED has fallen; folding both
++	 * into one wait can miss it when the SMC raises both at once.
++	 */
++	if (smc_wait(smc, SMC_ST_BUSY, SMC_ST_BUSY) != 0)
++		return (EIO);
++	outb(SMC_DATA(smc), b);
++	return (0);
++}
++
++/*
++ * Bring the SMC into a known idle state before a transaction.
++ */
++static int
++smc_sane(applesmc_t *smc)
++{
++	if (smc_wait(smc, 0, SMC_ST_BUSY) == 0)
++		return (0);
++	if (smc_send_cmd(smc, SMC_CMD_READ) != 0)
++		return (EIO);
++	return (smc_wait(smc, 0, SMC_ST_BUSY));
++}
++
++static int
++smc_xfer(applesmc_t *smc, uint8_t cmd, const uint8_t arg[APPLESMC_KEYLEN],
++    uint8_t *buf, uint8_t len)
++{
++	int i;
++
++	ASSERT(MUTEX_HELD(&smc->smc_lock));
++
++	if (smc_sane(smc) != 0)
++		return (EIO);
++	if (smc_send_cmd(smc, cmd) != 0)
++		return (EIO);
++	for (i = 0; i < APPLESMC_KEYLEN; i++) {
++		if (smc_send_byte(smc, arg[i]) != 0)
++			return (EIO);
++	}
++	/* Older SMCs need the length; newer ones (2012 on) ignore it. */
++	if (smc_send_byte(smc, len) != 0)
++		return (EIO);
++
++	for (i = 0; i < len; i++) {
++		if (smc_wait(smc, SMC_ST_AWAITING_DATA | SMC_ST_BUSY,
++		    SMC_ST_AWAITING_DATA | SMC_ST_BUSY) != 0)
++			return (EIO);
++		buf[i] = inb(SMC_DATA(smc));
++	}
++
++	/* Drain anything the SMC still wants to hand us. */
++	for (i = 0; i < 16; i++) {
++		drv_usecwait(SMC_MIN_WAIT);
++		if ((inb(SMC_CMD(smc)) & SMC_ST_AWAITING_DATA) == 0)
++			break;
++		(void) inb(SMC_DATA(smc));
++	}
++
++	return (smc_wait(smc, 0, SMC_ST_BUSY));
++}
++
++static int
++smc_read_key(applesmc_t *smc, const char *key, uint8_t *buf, uint8_t len)
++{
++	return (smc_xfer(smc, SMC_CMD_READ, (const uint8_t *)key, buf, len));
++}
++
++static int
++smc_key_info(applesmc_t *smc, const char *key, uint8_t *len, char *type,
++    uint8_t *flags)
++{
++	uint8_t info[6];
++	int ret;
++
++	if ((ret = smc_xfer(smc, SMC_CMD_KEYINFO, (const uint8_t *)key,
++	    info, sizeof (info))) != 0)
++		return (ret);
++	*len = info[0];
++	bcopy(&info[1], type, APPLESMC_KEYLEN);
++	*flags = info[5];
++	return (0);
++}
++
++static int
++smc_key_by_index(applesmc_t *smc, uint32_t idx, char *key)
++{
++	uint8_t be[4];
++
++	be[0] = idx >> 24;
++	be[1] = idx >> 16;
++	be[2] = idx >> 8;
++	be[3] = idx;
++	return (smc_xfer(smc, SMC_CMD_KEYBYIDX, be, (uint8_t *)key,
++	    APPLESMC_KEYLEN));
++}
++
++/*
++ * Convert a little-endian IEEE single ("flt ") to a value in 1/256 units,
++ * without using the FPU in the kernel.
++ */
++static int64_t
++smc_flt_to_q8(const uint8_t *b)
++{
++	uint32_t bits = b[0] | (b[1] << 8) | (b[2] << 16) |
++	    ((uint32_t)b[3] << 24);
++	int exp = (bits >> 23) & 0xff;
++	int64_t m = (bits & 0x7fffff) | 0x800000;
++	int shift;
++	int64_t v;
++
++	if (exp == 0 || exp == 0xff)
++		return (0);
++	/* value = m * 2^(exp - 150); times 256 = m * 2^(exp - 142) */
++	shift = exp - 142;
++	if (shift >= 32)
++		v = INT32_MAX;
++	else if (shift >= 0)
++		v = m << shift;
++	else if (shift > -32)
++		v = m >> -shift;
++	else
++		v = 0;
++	return ((bits & 0x80000000U) ? -v : v);
++}
++
++static int
++smc_temp_q8(applesmc_t *smc, smc_sensor_t *ss, int64_t *q8)
++{
++	uint8_t buf[4];
++	int ret;
++
++	mutex_enter(&smc->smc_lock);
++	ret = smc_read_key(smc, ss->ss_key, buf, ss->ss_len);
++	mutex_exit(&smc->smc_lock);
++	if (ret != 0)
++		return (ret);
++
++	if (bcmp(ss->ss_type, "sp78", 4) == 0)
++		*q8 = (int16_t)((buf[0] << 8) | buf[1]);
++	else
++		*q8 = smc_flt_to_q8(buf);
++	return (0);
++}
++
++static int
++smc_sensor_read(void *arg, sensor_ioctl_scalar_t *scalar)
++{
++	smc_sensor_t *ss = arg;
++	int64_t q8;
++	int ret;
++
++	if ((ret = smc_temp_q8(ss->ss_smc, ss, &q8)) != 0)
++		return (ret);
++	scalar->sis_unit = SENSOR_UNIT_CELSIUS;
++	scalar->sis_gran = 256;
++	scalar->sis_prec = 0;
++	scalar->sis_value = q8;
++	return (0);
++}
++
++static const ksensor_ops_t smc_temp_ops = {
++	.kso_kind = ksensor_kind_temperature,
++	.kso_scalar = smc_sensor_read
++};
++
++static boolean_t
++smc_key_ok(const char *key)
++{
++	int i;
++
++	for (i = 0; i < APPLESMC_KEYLEN; i++) {
++		if (key[i] < 0x20 || key[i] > 0x7e)
++			return (B_FALSE);
++	}
++	return (B_TRUE);
++}
++
++/*
++ * Register every temperature key that reads as a plausible value. Keys the
++ * board does not populate read as 0 or -127 and are skipped.
++ */
++static void
++smc_create_sensors(applesmc_t *smc)
++{
++	uint32_t i;
++	uint_t errors = 0;
++
++	for (i = 0; i < smc->smc_nkeys &&
++	    smc->smc_nsensors < SMC_MAX_SENSORS; i++) {
++		smc_sensor_t *ss = &smc->smc_sensors[smc->smc_nsensors];
++		char name[APPLESMC_KEYLEN + 1];
++		uint8_t flags;
++		int64_t q8;
++		int j, ret;
++
++		mutex_enter(&smc->smc_lock);
++		ret = smc_key_by_index(smc, i, ss->ss_key);
++		if (ret == 0 && ss->ss_key[0] == 'T' && smc_key_ok(ss->ss_key))
++			ret = smc_key_info(smc, ss->ss_key, &ss->ss_len,
++			    ss->ss_type, &flags);
++		else if (ret == 0)
++			ret = ENOENT;
++		mutex_exit(&smc->smc_lock);
++		if (ret == EIO && ++errors >= SMC_MAX_ERRORS) {
++			dev_err(smc->smc_dip, CE_WARN, "SMC stopped answering "
++			    "at key %u, sensor scan aborted", i);
++			break;
++		}
++		if (ret != 0)
++			continue;
++
++		if (!((bcmp(ss->ss_type, "sp78", 4) == 0 && ss->ss_len == 2) ||
++		    (bcmp(ss->ss_type, "flt ", 4) == 0 && ss->ss_len == 4)))
++			continue;
++
++		ss->ss_smc = smc;
++		if (smc_temp_q8(smc, ss, &q8) != 0 || q8 <= 0 ||
++		    q8 >= 150 * 256)
++			continue;
++
++		for (j = 0; j < APPLESMC_KEYLEN; j++) {
++			char c = ss->ss_key[j];
++			name[j] = ((c >= '0' && c <= '9') ||
++			    (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) ?
++			    c : '_';
++		}
++		name[APPLESMC_KEYLEN] = '\0';
++
++		if (ksensor_create(smc->smc_dip, &smc_temp_ops, ss, name,
++		    "ddi_sensor:temperature:smc", &ss->ss_id) != 0) {
++			dev_err(smc->smc_dip, CE_WARN, "!failed to create "
++			    "sensor %s", name);
++			continue;
++		}
++		smc->smc_nsensors++;
++	}
++}
++
++/*
++ * ACPI: find APP0001 and the start of its first I/O port range.
++ */
++static ACPI_STATUS
++smc_crs_cb(ACPI_RESOURCE *res, void *ctx)
++{
++	uint16_t *basep = ctx;
++
++	if (res->Type == ACPI_RESOURCE_TYPE_IO && *basep == 0) {
++		*basep = res->Data.Io.Minimum;
++		return (AE_CTRL_TERMINATE);
++	}
++	if (res->Type == ACPI_RESOURCE_TYPE_FIXED_IO && *basep == 0) {
++		*basep = res->Data.FixedIo.Address;
++		return (AE_CTRL_TERMINATE);
++	}
++	return (AE_OK);
++}
++
++static ACPI_STATUS
++smc_find_cb(ACPI_HANDLE hdl, UINT32 lvl, void *ctx, void **rv)
++{
++	_NOTE(ARGUNUSED(lvl, rv));
++	*(ACPI_HANDLE *)ctx = hdl;
++	return (AE_CTRL_TERMINATE);
++}
++
++static boolean_t
++smc_find(uint16_t *basep)
++{
++	ACPI_HANDLE hdl = NULL;
++
++	if (AcpiSubsystemStatus() != AE_OK)
++		return (B_FALSE);
++	if (ACPI_FAILURE(AcpiGetDevices("APP0001", smc_find_cb, &hdl, NULL)) ||
++	    hdl == NULL)
++		return (B_FALSE);
++
++	*basep = 0;
++	(void) AcpiWalkResources(hdl, "_CRS", smc_crs_cb, basep);
++	if (*basep == 0)
++		*basep = SMC_DEFAULT_BASE;
++	return (B_TRUE);
++}
++
++static int
++applesmc_open(dev_t *devp, int flag, int otyp, cred_t *cr)
++{
++	_NOTE(ARGUNUSED(cr));
++
++	if (applesmc == NULL || getminor(*devp) != 0)
++		return (ENXIO);
++	if (otyp != OTYP_CHR)
++		return (EINVAL);
++	/* Read only: nothing here ever writes an SMC key. */
++	if (flag & FWRITE)
++		return (EPERM);
++	return (0);
++}
++
++static int
++applesmc_close(dev_t dev, int flag, int otyp, cred_t *cr)
++{
++	_NOTE(ARGUNUSED(dev, flag, otyp, cr));
++	return (0);
++}
++
++static int
++applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
++    int *rvalp)
++{
++	applesmc_t *smc = applesmc;
++	applesmc_key_t ak;
++	int ret = 0;
++
++	_NOTE(ARGUNUSED(dev, cr, rvalp));
++
++	if (smc == NULL)
++		return (ENXIO);
++
++	if (cmd == APPLESMC_IOC_NKEYS) {
++		if (ddi_copyout(&smc->smc_nkeys, (void *)arg,
++		    sizeof (uint32_t), mode & FKIOCTL) != 0)
++			return (EFAULT);
++		return (0);
++	}
++
++	if (cmd != APPLESMC_IOC_KEYBYIDX && cmd != APPLESMC_IOC_KEYINFO &&
++	    cmd != APPLESMC_IOC_READ)
++		return (ENOTTY);
++
++	if (ddi_copyin((void *)arg, &ak, sizeof (ak), mode & FKIOCTL) != 0)
++		return (EFAULT);
++
++	mutex_enter(&smc->smc_lock);
++	switch (cmd) {
++	case APPLESMC_IOC_KEYBYIDX:
++		if (ak.ak_index >= smc->smc_nkeys) {
++			ret = EINVAL;
++			break;
++		}
++		ret = smc_key_by_index(smc, ak.ak_index, ak.ak_key);
++		break;
++	case APPLESMC_IOC_KEYINFO:
++	case APPLESMC_IOC_READ:
++		if (!smc_key_ok(ak.ak_key)) {
++			ret = EINVAL;
++			break;
++		}
++		ret = smc_key_info(smc, ak.ak_key, &ak.ak_len, ak.ak_type,
++		    &ak.ak_flags);
++		if (ret != 0 || cmd == APPLESMC_IOC_KEYINFO)
++			break;
++		if (ak.ak_len == 0 || ak.ak_len > APPLESMC_MAXDATA) {
++			ret = EOVERFLOW;
++			break;
++		}
++		bzero(ak.ak_data, sizeof (ak.ak_data));
++		ret = smc_read_key(smc, ak.ak_key, ak.ak_data, ak.ak_len);
++		break;
++	}
++	mutex_exit(&smc->smc_lock);
++
++	if (ret == 0 && ddi_copyout(&ak, (void *)arg, sizeof (ak),
++	    mode & FKIOCTL) != 0)
++		ret = EFAULT;
++	return (ret);
++}
++
++static int
++applesmc_getinfo(dev_info_t *dip, ddi_info_cmd_t cmd, void *arg, void **res)
++{
++	_NOTE(ARGUNUSED(dip, arg));
++
++	switch (cmd) {
++	case DDI_INFO_DEVT2DEVINFO:
++		if (applesmc == NULL)
++			return (DDI_FAILURE);
++		*res = applesmc->smc_dip;
++		return (DDI_SUCCESS);
++	case DDI_INFO_DEVT2INSTANCE:
++		*res = (void *)0;
++		return (DDI_SUCCESS);
++	default:
++		return (DDI_FAILURE);
++	}
++}
++
++static void
++applesmc_cleanup(applesmc_t *smc)
++{
++	(void) ksensor_remove(smc->smc_dip, KSENSOR_ALL_IDS);
++	ddi_remove_minor_node(smc->smc_dip, NULL);
++	mutex_destroy(&smc->smc_lock);
++	kmem_free(smc, sizeof (*smc));
++}
++
++static int
++applesmc_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
++{
++	applesmc_t *smc;
++	uint16_t base;
++	uint8_t be[4];
++
++	switch (cmd) {
++	case DDI_RESUME:
++		return (DDI_SUCCESS);
++	case DDI_ATTACH:
++		break;
++	default:
++		return (DDI_FAILURE);
++	}
++
++	if (ddi_get_instance(dip) != 0 || applesmc != NULL)
++		return (DDI_FAILURE);
++	if (!smc_find(&base))
++		return (DDI_FAILURE);
++
++	smc = kmem_zalloc(sizeof (*smc), KM_SLEEP);
++	smc->smc_dip = dip;
++	smc->smc_base = base;
++	mutex_init(&smc->smc_lock, NULL, MUTEX_DRIVER, NULL);
++
++	mutex_enter(&smc->smc_lock);
++	if (smc_read_key(smc, "#KEY", be, sizeof (be)) != 0) {
++		mutex_exit(&smc->smc_lock);
++		dev_err(dip, CE_WARN, "SMC at 0x%x does not answer", base);
++		applesmc_cleanup(smc);
++		return (DDI_FAILURE);
++	}
++	mutex_exit(&smc->smc_lock);
++	smc->smc_nkeys = ((uint32_t)be[0] << 24) | (be[1] << 16) |
++	    (be[2] << 8) | be[3];
++
++	if (ddi_create_minor_node(dip, "applesmc", S_IFCHR, 0, DDI_PSEUDO,
++	    0) != DDI_SUCCESS) {
++		dev_err(dip, CE_WARN, "failed to create minor node");
++		applesmc_cleanup(smc);
++		return (DDI_FAILURE);
++	}
++
++	smc_create_sensors(smc);
++	applesmc = smc;
++	ddi_report_dev(dip);
++	dev_err(dip, CE_CONT, "?SMC at 0x%x: %u keys, %u temperature "
++	    "sensors\n", base, smc->smc_nkeys, smc->smc_nsensors);
++	return (DDI_SUCCESS);
++}
++
++static int
++applesmc_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
++{
++	applesmc_t *smc = applesmc;
++
++	switch (cmd) {
++	case DDI_SUSPEND:
++		return (DDI_SUCCESS);
++	case DDI_DETACH:
++		break;
++	default:
++		return (DDI_FAILURE);
++	}
++
++	if (smc == NULL || smc->smc_dip != dip)
++		return (DDI_FAILURE);
++	applesmc = NULL;
++	applesmc_cleanup(smc);
++	return (DDI_SUCCESS);
++}
++
++static struct cb_ops applesmc_cb_ops = {
++	.cb_open = applesmc_open,
++	.cb_close = applesmc_close,
++	.cb_strategy = nodev,
++	.cb_print = nodev,
++	.cb_dump = nodev,
++	.cb_read = nodev,
++	.cb_write = nodev,
++	.cb_ioctl = applesmc_ioctl,
++	.cb_devmap = nodev,
++	.cb_mmap = nodev,
++	.cb_segmap = nodev,
++	.cb_chpoll = nochpoll,
++	.cb_prop_op = ddi_prop_op,
++	.cb_flag = D_MP,
++	.cb_rev = CB_REV,
++	.cb_aread = nodev,
++	.cb_awrite = nodev
++};
++
++static struct dev_ops applesmc_dev_ops = {
++	.devo_rev = DEVO_REV,
++	.devo_refcnt = 0,
++	.devo_getinfo = applesmc_getinfo,
++	.devo_identify = nulldev,
++	.devo_probe = nulldev,
++	.devo_attach = applesmc_attach,
++	.devo_detach = applesmc_detach,
++	.devo_reset = nodev,
++	.devo_cb_ops = &applesmc_cb_ops,
++	.devo_power = NULL,
++	.devo_quiesce = ddi_quiesce_not_needed
++};
++
++static struct modldrv applesmc_modldrv = {
++	.drv_modops = &mod_driverops,
++	.drv_linkinfo = "Apple SMC sensors",
++	.drv_dev_ops = &applesmc_dev_ops
++};
++
++static struct modlinkage applesmc_modlinkage = {
++	.ml_rev = MODREV_1,
++	.ml_linkage = { &applesmc_modldrv, NULL }
++};
++
++int
++_init(void)
++{
++	return (mod_install(&applesmc_modlinkage));
++}
++
++int
++_info(struct modinfo *modinfop)
++{
++	return (mod_info(&applesmc_modlinkage, modinfop));
++}
++
++int
++_fini(void)
++{
++	return (mod_remove(&applesmc_modlinkage));
++}
+diff --git a/usr/src/uts/i86pc/io/applesmc.conf b/usr/src/uts/i86pc/io/applesmc.conf
+new file mode 100644
+index 00000000..f24e748d
+--- /dev/null
++++ b/usr/src/uts/i86pc/io/applesmc.conf
+@@ -0,0 +1,8 @@
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++#
++# Copyright 2026 isoriano1968
++#
++name="applesmc" parent="pseudo" instance=0;
++ddi-forceattach=1;
+-- 
+2.56.0
+

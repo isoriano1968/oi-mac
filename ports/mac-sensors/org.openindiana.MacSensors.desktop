@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Mac Sensors
+GenericName=Hardware Sensors
+Comment=Temperatures and fans of Intel Macs and other machines
+Exec=mac-sensors
+Icon=org.openindiana.MacSensors
+Terminal=false
+Categories=System;Monitor;GTK;
+Keywords=temperature;fan;smc;sensors;applesmc;coretemp;

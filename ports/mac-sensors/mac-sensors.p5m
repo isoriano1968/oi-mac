@@ -1,0 +1,50 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+set name=pkg.fmri value=pkg:/desktop/system-monitor/mac-sensors@$(PKG_VERSION)
+set name=pkg.summary value="Mac Sensors: temperatures and fans"
+set name=pkg.description \
+    value="GTK 4 application that shows the temperatures and fans of an Intel Mac (Apple SMC, applesmc(4D)) and the illumos ksensors of any machine on a drawing of the machine"
+set name=pkg.human-version value=$(COMPONENT_VERSION)
+set name=info.classification \
+    value="org.opensolaris.category.2008:Applications/System Utilities"
+set name=org.opensolaris.consolidation value=userland
+set name=variant.arch value=i386
+
+dir path=usr group=sys mode=0755 owner=root
+dir path=usr/bin group=bin mode=0755 owner=root
+file path=usr/bin/mac-sensors group=bin mode=0555 owner=root
+dir path=usr/share group=sys mode=0755 owner=root
+dir path=usr/share/applications group=other mode=0755 owner=root
+file path=usr/share/applications/$(APP_ID).desktop group=bin mode=0444 \
+    owner=root restart_fmri=svc:/application/desktop-cache/desktop-mime-cache:default
+dir path=usr/share/icons group=other mode=0755 owner=root
+dir path=usr/share/icons/hicolor group=other mode=0755 owner=root
+dir path=usr/share/icons/hicolor/scalable group=other mode=0755 owner=root
+dir path=usr/share/icons/hicolor/scalable/apps group=other mode=0755 \
+    owner=root
+file path=usr/share/icons/hicolor/scalable/apps/$(APP_ID).svg group=bin \
+    mode=0444 owner=root \
+    restart_fmri=svc:/application/desktop-cache/icon-cache:default
+
+license mac-sensors.license license=CDDL
+
+depend type=require fmri=pkg:/runtime/python-39
+depend type=require fmri=pkg:/library/python/pygobject-39
+depend type=require fmri=pkg:/library/python/pycairo-39
+depend type=require fmri=pkg:/library/desktop/gtk4
+# the data sources: the Apple SMC (Macs only) and the CPU/chipset ksensors
+depend type=optional fmri=pkg:/driver/sensor/applesmc
+depend type=optional fmri=pkg:/driver/cpu/sensor

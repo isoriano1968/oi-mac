@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Mac Sensors application icon.  Own drawing (fan and thermometer), no
+  Apple artwork.  Copyright 2026 isoriano1968, CDDL-1.0 as the app.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a4b50"/>
+      <stop offset="1" stop-color="#232427"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a8c92"/>
+      <stop offset="1" stop-color="#3a3b40"/>
+    </linearGradient>
+    <linearGradient id="heat" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#f66151"/>
+      <stop offset="0.55" stop-color="#ffa348"/>
+      <stop offset="1" stop-color="#f9f06b"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#62a0ea" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#62a0ea" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- base plate -->
+  <rect x="8" y="12" width="112" height="108" rx="22" fill="#000" opacity="0.25"/>
+  <rect x="8" y="8" width="112" height="108" rx="22" fill="url(#rim)"/>
+  <rect x="11" y="11" width="106" height="102" rx="19" fill="url(#body)"/>
+  <!-- fan -->
+  <circle cx="54" cy="62" r="40" fill="url(#glow)"/>
+  <circle cx="54" cy="62" r="36" fill="#1a1b1e" stroke="#6b6d73" stroke-width="3"/>
+  <g fill="#62a0ea" transform="translate(54 62)">
+    <path id="blade" d="M 0 -4 C 6 -18 20 -30 30 -24 C 24 -16 12 -8 4 -2 Z"/>
+    <use href="#blade" transform="rotate(72)"/>
+    <use href="#blade" transform="rotate(144)"/>
+    <use href="#blade" transform="rotate(216)"/>
+    <use href="#blade" transform="rotate(288)"/>
+  </g>
+  <circle cx="54" cy="62" r="7" fill="#3a3b40" stroke="#9a9ca2" stroke-width="2"/>
+  <!-- thermometer -->
+  <rect x="88" y="22" width="20" height="72" rx="10" fill="#f6f5f4"/>
+  <rect x="93" y="44" width="10" height="44" rx="5" fill="url(#heat)"/>
+  <circle cx="98" cy="96" r="15" fill="#f6f5f4"/>
+  <circle cx="98" cy="96" r="10" fill="#f66151"/>
+  <g stroke="#9a9996" stroke-width="2" stroke-linecap="round">
+    <line x1="104" y1="32" x2="108" y2="32"/>
+    <line x1="104" y1="42" x2="108" y2="42"/>
+    <line x1="104" y1="52" x2="108" y2="52"/>
+    <line x1="104" y1="62" x2="108" y2="62"/>
+  </g>
+</svg>
