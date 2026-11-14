@@ -1,0 +1,112 @@
+BDF     TYPE           INSTANCE       DEVICE
+0/0/0   PCIe unknown   --             Xeon E7 v2/Xeon E5 v2/Core i7 DMI2
+0/1/0   PCIe Gen 3x8   pcieb0         Xeon E7 v2/Xeon E5 v2/Core i7 PCI Express Root Port 1a
+10/0/0  PCIe Gen 3x8   pcieb7         PEX 8723 24-Lane, 6-Port PCI Express Gen 3 (8 GT/s) Switch
+11/1/0  PCIe Gen 2x1   pcieb8         PEX 8723 24-Lane, 6-Port PCI Express Gen 3 (8 GT/s) Switch
+12/0/0  PCIe Gen 2x1   xhci1          FL1100 USB 3.0 Host Controller
+11/2/0  PCIe unknown   pcieb9         PEX 8723 24-Lane, 6-Port PCI Express Gen 3 (8 GT/s) Switch
+14/0/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+15/0/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+16/0/0  PCI            --             DSL5520 Thunderbolt 2 NHI [Falcon Ridge 4C 2013]
+15/3/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+15/4/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+15/5/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+15/6/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+11/8/0  PCIe unknown   pcieb10        PEX 8723 24-Lane, 6-Port PCI Express Gen 3 (8 GT/s) Switch
+11/9/0  PCIe unknown   pcieb11        PEX 8723 24-Lane, 6-Port PCI Express Gen 3 (8 GT/s) Switch
+5b/0/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+5c/0/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+5d/0/0  PCI            --             DSL5520 Thunderbolt 2 NHI [Falcon Ridge 4C 2013]
+5c/3/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+5c/4/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+5c/5/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+5c/6/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+11/a/0  PCIe unknown   pcieb12        PEX 8723 24-Lane, 6-Port PCI Express Gen 3 (8 GT/s) Switch
+BDF     TYPE           INSTANCE       DEVICE
+a2/0/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+a3/0/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+a4/0/0  PCI            --             DSL5520 Thunderbolt 2 NHI [Falcon Ridge 4C 2013]
+a3/3/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+a3/4/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+a3/5/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+a3/6/0  PCI            --             DSL5520 Thunderbolt 2 Bridge [Falcon Ridge 4C 2013]
+0/2/0   PCIe Gen 3x16  pcieb1         Xeon E7 v2/Xeon E5 v2/Core i7 PCI Express Root Port 2a
+2/0/0   PCIe Gen 3x16  amdgpu0        Tahiti LE [Radeon HD 7870 XT]
+2/0/1   PCIe Gen 3x16  audiohd1       Tahiti HDMI Audio [Radeon HD 7870 XT / 7950/7970]
+0/3/0   PCIe Gen 3x16  pcieb2         Xeon E7 v2/Xeon E5 v2/Core i7 PCI Express Root Port 3a
+6/0/0   PCIe Gen 3x16  amdgpu1        Tahiti LE [Radeon HD 7870 XT]
+6/0/1   PCIe Gen 3x16  audiohd2       Tahiti HDMI Audio [Radeon HD 7870 XT / 7950/7970]
+0/4/0   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 0
+0/4/1   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 1
+0/4/2   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 2
+0/4/3   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 3
+0/4/4   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 4
+0/4/5   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 5
+0/4/6   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 6
+0/4/7   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Crystal Beach DMA Channel 7
+0/5/0   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 VTd/Memory Map/Misc
+0/5/1   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Memory Hotplug
+BDF     TYPE           INSTANCE       DEVICE
+0/5/2   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 IIO RAS
+0/5/4   PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 IOAPIC
+0/11/0  PCIe Gen 1x1   --             C600/X79 series chipset PCI Express Virtual Root Port
+0/16/0  PCI            --             C600/X79 series chipset MEI Controller #1
+0/1b/0  PCI            audiohd0       C600/X79 series chipset High Definition Audio Controller
+0/1c/0  PCIe Gen 1x1   pcieb3         C600/X79 series chipset PCI Express Root Port 1
+b/0/0   PCIe Gen 1x1   bge0           NetXtreme BCM57762 Gigabit Ethernet PCIe
+0/1c/1  PCIe Gen 1x1   pcieb4         C600/X79 series chipset PCI Express Root Port 2
+c/0/0   PCIe Gen 1x1   bge1           NetXtreme BCM57762 Gigabit Ethernet PCIe
+0/1c/2  PCIe Gen 1x1   pcieb5         C600/X79 series chipset PCI Express Root Port 3
+d/0/0   PCIe Gen 1x1   --             BCM4360 802.11ac Dual Band Wireless Network Adapter
+0/1c/4  PCIe Gen 2x4   pcieb6         C600/X79 series chipset PCI Express Root Port 5
+e/0/0   PCIe Gen 2x4   nvme0          P1 NVMe PCIe SSD[Frampton]
+0/1d/0  PCI            ehci0          C600/X79 series chipset USB2 Enhanced Host Controller #1
+0/1e/0  PCI            pci_pci0       82801 PCI Bridge
+0/1f/0  PCI            isa0           C600/X79 series chipset LPC Controller
+0/1f/3  PCI            pchsmbus1      C600/X79 series chipset SMBus Host Controller
+ff/8/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Link 0
+ff/8/3  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Link Reut 0
+ff/8/4  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Link Reut 0
+ff/9/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Link 1
+ff/9/3  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Link 1
+ff/9/4  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Link Reut 1
+BDF     TYPE           INSTANCE       DEVICE
+ff/a/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Power Control Unit 0
+ff/a/1  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Power Control Unit 1
+ff/a/2  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Power Control Unit 2
+ff/a/3  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Power Control Unit 3
+ff/b/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 UBOX Registers
+ff/b/3  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 UBOX Registers
+ff/c/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Unicast Registers
+ff/c/1  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Unicast Registers
+ff/c/2  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Unicast Registers
+ff/d/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Unicast Registers
+ff/d/1  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Unicast Registers
+ff/d/2  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Unicast Registers
+ff/e/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Home Agent 0
+ff/e/1  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Home Agent 0
+ff/f/0  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 0 Target Address/Thermal Registers
+ff/f/1  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 0 RAS Registers
+ff/f/2  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 0 Channel Target Address Decoder Registers
+ff/f/3  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 0 Channel Target Address Decoder Registers
+ff/f/4  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 0 Channel Target Address Decoder Registers
+ff/f/5  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 0 Channel Target Address Decoder Registers
+ff/f/6  PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 DDRIO Registers
+ff/10/0 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 Thermal Control 0
+ff/10/1 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 Thermal Control 1
+BDF     TYPE           INSTANCE       DEVICE
+ff/10/2 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 ERROR Registers 0
+ff/10/3 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 ERROR Registers 1
+ff/10/4 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 Thermal Control 2
+ff/10/5 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 Thermal Control 3
+ff/10/6 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 ERROR Registers 2
+ff/10/7 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Integrated Memory Controller 1 Channel 0-3 ERROR Registers 3
+ff/11/0 PCI            --             Unknown device: 0xeb8
+ff/13/0 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 R2PCIe
+ff/13/1 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 R2PCIe
+ff/13/4 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Ring Registers
+ff/13/5 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Ring Performance Ring Monitoring
+ff/13/6 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 QPI Ring Performance Ring Monitoring
+ff/16/0 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 System Address Decoder
+ff/16/1 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Broadcast Registers
+ff/16/2 PCI            --             Xeon E7 v2/Xeon E5 v2/Core i7 Broadcast Registers

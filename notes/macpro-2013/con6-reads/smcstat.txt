@@ -1,0 +1,81 @@
+KEY    CELSIUS  SENSOR
+TA0P     32.50  ambient
+TA0V     24.12  
+TA0p     32.50  ambient
+TA1P     39.50  ambient 2
+TA1p     39.50  
+TA2P     33.50  
+TA2p     33.50  
+TC0J      1.12  
+TC0P     54.25  CPU proximity
+TC0T      0.02  
+TC0c     51.00  
+TC0p     54.25  CPU proximity
+TC1P     56.75  
+TC1c     57.00  
+TC1p     56.75  
+TC2c     54.00  
+TC3c     58.00  
+TCSc     55.00  
+TCXc     58.16  CPU PECI
+TG0D     57.00  GPU 0 die
+TG0E     57.03  
+TG0F     57.19  
+TG0J      0.16  
+TG0M     54.75  
+TG0P     53.88  GPU 0 proximity
+TG0R     55.12  
+TG0d     57.00  
+TG0m     54.75  
+TG0p     53.88  GPU 0 proximity
+TG0r     55.12  
+TG1D     59.62  GPU 1 die
+TG1E     59.61  
+TG1F     60.02  
+TG1J      0.41  
+TG1M     59.00  
+TG1P     58.38  GPU 1 proximity
+TG1R     59.25  
+TG1d     59.62  
+TG1m     59.00  
+TG1p     58.38  GPU 1 proximity
+TG1r     59.25  
+TH0V     50.62  
+TI0P     46.38  Thunderbolt 0
+TI0T     44.50  
+TI0p     46.38  
+TI0t     44.50  
+TI1P     45.75  Thunderbolt 1
+TI1p     45.75  
+TM0P     54.12  memory proximity
+TM0R     49.25  
+TM0V     56.03  
+TM0p     54.12  memory proximity
+TM0r     49.25  
+TM1P     54.62  
+TM1R     48.25  
+TM1a     70.08  
+TM1p     54.62  
+TM1r     48.25  
+TM2a     64.21  
+TM2b     56.09  
+TM2c     60.86  
+TM2e     62.86  
+TM2f     61.86  
+TM3a     58.20  
+TM3b     59.19  
+TM4b     56.03  
+TMXP     54.62  
+TPCD     68.00  PCH die
+TPCd     68.00  PCH die
+TS0V     40.17  
+Te0T     66.75  
+Te0t     66.75  
+Tm0P     31.25  
+Tm0p     31.25  
+Tp0F     58.81  
+Tp0T     58.75  
+Tp0t     58.75  
+
+FAN        RPM    TARGET       MIN       MAX  NAME
+F0         837       834       790      1900  Main 

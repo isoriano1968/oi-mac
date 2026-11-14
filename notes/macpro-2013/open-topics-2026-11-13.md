@@ -577,3 +577,15 @@ Dell named in GNOME and plays, empty HDMI output hidden, VTs switch,
 console-login vt2-vt6 online from the site profile. con5 made default (NR),
 amdgpu-con3 destroyed. Still open: vtxlock (not in con5, unlock asks for
 root), "Failed to store PCI saved state", nothing committed.
+
+### 11.3 Noted 2026-11-14
+- Files (nautilus) lists the ZFS pools of attached disks (rpool) in its left
+  panel, and they can't be mounted: HAL/gvfs should hide zfs_member volumes.
+- The Verbatim stick now holds LMDE 7 (Linux test T2); the OI install on it
+  (gnome-llvm) was erased with the user's OK. The AMD iMac stick gets built
+  from packages later.
+- NVIDIA require-any (2026-11-14): uninstalling nvidia-470 in a BE makes pkg
+  install nvidia-580 (and removing that, nvidia-535): an OI X/OpenGL package
+  has a require-any on the NVIDIA drivers. User: leave it for now (harmless,
+  no NVIDIA card); for OI upstream, systems without NVIDIA must be able to
+  rely on libdrm/Mesa alone. con6 carries nvidia-580 because of this.

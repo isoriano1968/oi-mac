@@ -1,0 +1,2 @@
+smcstat: illegal option -- h
+usage: smcstat [-ap] [-i secs] [KEY ...]

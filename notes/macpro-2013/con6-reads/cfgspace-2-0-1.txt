@@ -1,0 +1,408 @@
+Device 2/0/1 -- Type 0 Header
+  Vendor ID: 0x1002 -- Advanced Micro Devices, Inc. [AMD/ATI]
+  Device ID: 0xaaa0 -- Tahiti HDMI Audio [Radeon HD 7870 XT / 7950/7970]
+  Command: 0x47
+    |--> I/O Space: enabled (0x1)
+    |--> Memory Space: enabled (0x2)
+    |--> Bus Master: enabled (0x4)
+    |--> Special Cycle: disabled (0x0)
+    |--> Memory Write and Invalidate: disabled (0x0)
+    |--> VGA Palette Snoop: disabled (0x0)
+    |--> Parity Error Response: enabled (0x40)
+    |--> IDSEL Stepping/Wait Cycle Control: unsupported (0x0)
+    |--> SERR# Enable: disabled (0x0)
+    |--> Fast Back-to-Back Transactions: disabled (0x0)
+    |--> Interrupt X: enabled (0x0)
+  Status: 0x10
+    |--> Immediate Readiness: unsupported (0x0)
+    |--> Interrupt Status: not pending (0x0)
+    |--> Capabilities List: supported (0x10)
+    |--> 66 MHz Capable: unsupported (0x0)
+    |--> Fast Back-to-Back Capable: unsupported (0x0)
+    |--> Master Data Parity Error: no error (0x0)
+    |--> DEVSEL# Timing: fast (0x0)
+    |--> Signaled Target Abort: no (0x0)
+    |--> Received Target Abort: no (0x0)
+    |--> Received Master Abort: no (0x0)
+    |--> Signaled System Error: no (0x0)
+    |--> Detected Parity Error: no (0x0)
+  Revision ID: 0x0
+  Class Code: 0x40300
+    |--> Class Code: 0x4
+    |--> Sub-Class Code: 0x3
+    |--> Programming Interface: 0x0
+  Cache Line Size: 0x80 bytes
+  Latency Timer: 0x0 cycles
+  Header Type: 0x80
+    |--> Header Layout: Device (0x0)
+    |--> Multi-Function Device: yes (0x80)
+  BIST: 0x0
+    |--> Completion Code: 0x0
+    |--> Start BIST: 0x0
+    |--> BIST Capable: unsupported (0x0)
+  Base Address Register 0
+    |--> Space: Memory Space (0x0)
+    |--> Address: 0xa0760000
+    |--> Memory Type: 64-bit (0x2)
+    |--> Prefetchable: no (0x0)
+  Base Address Register 2
+    |--> Space: Memory Space (0x0)
+    |--> Address: 0x0
+    |--> Memory Type: 32-bit (0x0)
+    |--> Prefetchable: no (0x0)
+  Base Address Register 3
+    |--> Space: Memory Space (0x0)
+    |--> Address: 0x0
+    |--> Memory Type: 32-bit (0x0)
+    |--> Prefetchable: no (0x0)
+  Base Address Register 4
+    |--> Space: Memory Space (0x0)
+    |--> Address: 0x0
+    |--> Memory Type: 32-bit (0x0)
+    |--> Prefetchable: no (0x0)
+  Base Address Register 5
+    |--> Space: Memory Space (0x0)
+    |--> Address: 0x0
+    |--> Memory Type: 32-bit (0x0)
+    |--> Prefetchable: no (0x0)
+  Cardbus CIS Pointer: 0x0
+  Subsystem Vendor ID: 0x106b -- Apple Inc.
+  Subsystem Device ID: 0x126
+  Expansion ROM: 0x0
+    |--> Enable: disabled (0x0)
+    |--> Validation Status: not supported (0x0)
+    |--> Validation Details: 0x0
+    |--> Base Address: 0x0
+  Capabilities Pointer: 0x48
+  Interrupt Line: 0x0
+  Interrupt Pin: 0x2 -- INTB
+  Min_Gnt: 0x0
+  Min_Lat: 0x0
+Vendor Specific Capability (0x9)
+  Length: 0x8
+PCI Power Management Capability (0x1)
+  Power Management Capabilities: 0x603
+    |--> Version: 0x3
+    |--> PME Clock: not required (0x0)
+    |--> Immediate Readiness on Return to D0: no (0x0)
+    |--> Device Specific Initialization: no (0x0)
+    |--> Auxiliary Current: 0 (0x0)
+    |--> D1: supported (0x200)
+    |--> D2: supported (0x400)
+    |--> PME Support: 0x0
+PCI Express Capability (0x10)
+  Capability Register: 0x12
+    |--> Version: 0x2
+    |--> Device/Port Type: Legacy PCIe Endpoint (0x10)
+    |--> Slot Implemented: No (0x0)
+    |--> Interrupt Message Number: 0x0
+  Device Capabilities: 0x8fa1
+    |--> Max Payload Size Supported: 256 bytes (0x1)
+    |--> Phantom Functions Supported: No (0x0)
+    |--> Extended Tag Field: 8-bit (0x20)
+    |--> L0s Acceptable Latency: 4 us (0x180)
+    |--> L1 Acceptable Latency: No limit (0xe00)
+    |--> Role Based Error Reporting: supported (0x8000)
+    |--> ERR_COR Subclass: unsupported (0x0)
+    |--> Captured Slot Power Limit: 0x0
+    |--> Captured Slot Power Limit Scale: 1.0x (0x0)
+    |--> Function Level Reset: unsupported (0x0)
+  Device Control: 0x2037
+    |--> Correctable Error Reporting: enabled (0x1)
+    |--> Non-Fatal Error Reporting: enabled (0x2)
+    |--> Fatal Error Reporting: enabled (0x4)
+    |--> Unsupported Request Reporting: disabled (0x0)
+    |--> Relaxed Ordering: enabled (0x10)
+    |--> Max Payload Size: 256 bytes (0x20)
+    |--> Extended Tag Field: disabled (0x0)
+    |--> Phantom Functions: disabled (0x0)
+    |--> Aux Power PM: disabled (0x0)
+    |--> No Snoop: disabled (0x0)
+    |--> Max Read Request Size: 512 bytes (0x2000)
+    |--> Bridge Configuration Retry / Function Level Reset: 0x0
+  Device Status: 0x0
+    |--> Correctable Error Detected: no (0x0)
+    |--> Non-Fatal Error Detected: no (0x0)
+    |--> Fatal Error Detected: no (0x0)
+    |--> Unsupported Request Detected: no (0x0)
+    |--> AUX Power Detected: no (0x0)
+    |--> Transactions Pending: no (0x0)
+    |--> Emergency Power Reduction Detected: no (0x0)
+  Link Capabilities: 0x400d03
+    |--> Maximum Link Speed: 8.0 GT/s (0x3)
+    |--> Maximum Link Width: 0x10
+    |--> ASPM Support: L0s/L1 (0xc00)
+    |--> L0s Exit Latency: <64ns (0x0)
+    |--> L1 Exit Latency: <1us (0x0)
+    |--> Clock Power Management: unsupported (0x0)
+    |--> Surprise Down Error Reporting: unsupported (0x0)
+    |--> Data Link Layer Active Reporting: unsupported (0x0)
+    |--> Link Bandwidth Notification Capability: unsupported (0x0)
+    |--> ASPM Optionality Compliance: compliant (0x400000)
+    |--> Port Number: 0x0
+  Link Control: 0x0
+    |--> ASPM Control: None (0x0)
+    |--> Read Completion Boundary: 64 byte (0x0)
+    |--> Link Disable: not force disabled (0x0)
+    |--> Retrain Link: 0x0
+    |--> Common Clock Configuration: asynchronous (0x0)
+    |--> Extended Sync: disabled (0x0)
+    |--> Clock Power Management: disabled (0x0)
+    |--> Hardware Autonomous Width: enabled (0x0)
+    |--> Link Bandwidth Management Interrupt: disabled (0x0)
+    |--> Link Autonomous Bandwidth Interrupt: disabled (0x0)
+    |--> DRS Signaling Control: not reported (0x0)
+  Link Status: 0x1103
+    |--> Link Speed: 8.0 GT/s (0x3)
+    |--> Link Width: 0x10
+    |--> Link Training: no (0x0)
+    |--> Slot Clock Configuration: common (0x1000)
+    |--> Data Link Layer Link Active: no (0x0)
+    |--> Link Bandwidth Management Status: no change (0x0)
+    |--> Link Autonomous Bandwidth Status: no change (0x0)
+  Slot Capabilities: 0x0
+    |--> Attention Button Present: no (0x0)
+    |--> Power Controller Present: no (0x0)
+    |--> MRL Sensor Present: no (0x0)
+    |--> Attention Indicator Present: no (0x0)
+    |--> Power Indicator Present: no (0x0)
+    |--> Hot-Plug Surprise: unsupported (0x0)
+    |--> Hot-Plug Capable : unsupported (0x0)
+    |--> Slot Power Limit Value: 0x0
+    |--> Slot Power Limit Scale: 0x0
+    |--> Electromechanical Interlock Present: no (0x0)
+    |--> No Command Completed: unsupported (0x0)
+    |--> Physical Slot Number: 0x0
+  Slot Control: 0x0
+    |--> Attention Button Pressed Reporting: disabled (0x0)
+    |--> Power Fault Detected Reporting: disabled (0x0)
+    |--> MRL Sensor Changed Reporting: disabled (0x0)
+    |--> Presence Detect Changed Reporting: disabled (0x0)
+    |--> Command Complete Interrupt: disabled (0x0)
+    |--> Hot Plug Interrupt Enable: disabled (0x0)
+    |--> Attention Indicator Control: reserved (0x0)
+    |--> Power Indicator Control: reserved (0x0)
+    |--> Power Controller Control: power on (0x0)
+    |--> Electromechanical Interlock Control: 0x0
+    |--> Data Link Layer State Changed: disabled (0x0)
+    |--> Auto Slot Power Limit: enabled (0x0)
+    |--> In-Band PD: enabled (0x0)
+  Slot Status: 0x0
+    |--> Attention Button Pressed: no (0x0)
+    |--> Power Fault Detected: no (0x0)
+    |--> MRL Sensor Changed: no (0x0)
+    |--> Presence Detect Changed: no (0x0)
+    |--> Command Complete: no (0x0)
+    |--> MRL Sensor State: closed (0x0)
+    |--> Presence Detect State: not present (0x0)
+    |--> Electromechanical Interlock: disengaged (0x0)
+    |--> Data Link Layer State Changed: no (0x0)
+  Root Control: 0x0
+    |--> CRS Software Visibility: disabled (0x0)
+  Root Capabilities: 0x0
+    |--> System Error on Correctable Error: disabled (0x0)
+    |--> System Error on Non-Fatal Error: disabled (0x0)
+    |--> System Error on Fatal Error: disabled (0x0)
+    |--> PME Interrupt: disabled (0x0)
+    |--> CRS Software Visibility: disabled (0x0)
+  Root Status: 0x0
+    |--> PME Requester ID: 0x0
+    |--> PME Status: deasserted (0x0)
+    |--> PME Pending: no (0x0)
+  Device Capabilities 2: 0x700000
+    |--> Completion Timeout Ranges Supported: 0x0
+    |--> Completion Timeout Disable: unsupported (0x0)
+    |--> ARI Forwarding: unsupported (0x0)
+    |--> AtomicOp Routing: unsupported (0x0)
+    |--> 32-bit AtomicOp Completer: unsupported (0x0)
+    |--> 64-bit AtomicOp Completer: unsupported (0x0)
+    |--> 128-bit CAS Completer: unsupported (0x0)
+    |--> No Ro-enabld PR-PR Passing: unsupported (0x0)
+    |--> LTR Mechanism: unsupported (0x0)
+    |--> TPH Completer: unsupported (0x0)
+    |--> LN System CLS: unsupported (0x0)
+    |--> 10-bit Tag Completer: unsupported (0x0)
+    |--> 10-bit Tag Requester: unsupported (0x0)
+    |--> OBFF: unsupported (0x0)
+    |--> Extended Fmt Field Supported: supported (0x100000)
+    |--> End-End TLP Prefix Supported: supported (0x200000)
+    |--> Max End-End TLP Prefixes: 1 (0x400000)
+    |--> Emergency Power Reduction: unsupported (0x0)
+    |--> Emergency Power Reduction Initialization Required: yes (0x200000)
+    |--> Function Readiness Status: unsupported (0x0)
+  Device Control 2: 0x0
+    |--> Completion Timeout: 50us-50ms (0x0)
+    |--> Completion Timeout Disabled: not disabled (0x0)
+    |--> ARI Forwarding: disabled (0x0)
+    |--> AtomicOp Requester: disabled (0x0)
+    |--> AtomicOp Egress Blocking: unblocked (0x0)
+    |--> ID-Based Ordering Request: disabled (0x0)
+    |--> ID-Based Ordering Completion: disabled (0x0)
+    |--> LTR Mechanism: disabled (0x0)
+    |--> Emergency Power Reduction: not requested (0x0)
+    |--> 10-bit Tag Requester: disabled (0x0)
+    |--> OBFF: disabled (0x0)
+    |--> End-End TLP Prefix Blocking: unblocked (0x0)
+  Device Status 2: 0x0
+  Link Capabilities 2: 0xe
+    |--> Supported Link Speeds: 0xe
+      |--> 2.5 GT/s (0x2)
+      |--> 5.0 GT/s (0x4)
+      |--> 8.0 GT/s (0x8)
+    |--> Crosslink: unsupported (0x0)
+    |--> Lower SKP OS Generation Supported Speeds Vector: 0x0
+    |--> Lower SKP OS Reception Supported Speeds Vector: 0x0
+    |--> Retimer Presence Detect Supported: unsupported (0x0)
+    |--> Two Retimers Presence Detect Supported: unsupported (0x0)
+    |--> Device Readiness Status: unsupported (0x0)
+  Link Control 2: 0x0
+    |--> Target Link Speed: reserved (0x0)
+    |--> Enter Compliance: no (0x0)
+    |--> Hardware Autonomous Speed Disable: not disabled (0x0)
+    |--> Selectable De-emphasis: -6 dB (0x0)
+    |--> TX Margin: 0x0
+    |--> Enter Modified Compliance: no (0x0)
+    |--> Compliance SOS: disabled (0x0)
+    |--> Compliance Preset/De-emphasis: 0x0
+  Link Status 2: 0x1
+    |--> Current De-emphasis Level: -3.5 dB (0x1)
+    |--> Equalization 8.0 GT/s Complete: no (0x0)
+    |--> Equalization 8.0 GT/s Phase 1: unsuccessful (0x0)
+    |--> Equalization 8.0 GT/s Phase 2: unsuccessful (0x0)
+    |--> Equalization 8.0 GT/s Phase 3: unsuccessful (0x0)
+    |--> Link Equalization Request 8.0 GT/s: not requested (0x0)
+    |--> Retimer Presence Detected: no (0x0)
+    |--> Two Retimers Presence Detected: no (0x0)
+    |--> Crosslink Resolution: unsupported (0x0)
+    |--> Downstream Component Presence: link down - undetermined (0x0)
+    |--> DRS Message Received: no (0x0)
+  Slot Capabilities 2: 0x0
+    |--> In-Band PD Disable: unsupported (0x0)
+  Slot Control 2: 0x0
+  Slot Status 2: 0x0
+Message Signaled Interrupts Capability (0x5)
+  Message Control: 0x80
+    |--> MSI Enable: disabled (0x0)
+    |--> Multiple Message Capable: 1 vector (0x0)
+    |--> Multiple Message Enabled: 1 vector (0x0)
+    |--> 64-bit Address Capable: supported (0x80)
+    |--> Per-Vector Masking Capable: unsupported (0x0)
+    |--> Extended Message Data Capable: unsupported (0x0)
+    |--> extended Message Data Enable: unsupported (0x0)
+  Message Address: 0x0
+  Upper Message Address: 0x0
+  Message Data: 0x0
+Vendor Specific Extended Capability Capability (0xb)
+  Capability Header: 0x1501000b
+    |--> Capability ID: 0xb
+    |--> Capability Version: 0x1
+    |--> Next Capability Offset: 0x150
+  Vendor-Specific Header: 0x1010001
+    |--> ID: 0x1
+    |--> Revision: 0x1
+    |--> Length: 0x10
+Advanced Error Reporting Capability (0x1)
+  Capability Header: 0x20001
+    |--> Capability ID: 0x1
+    |--> Capability Version: 0x2
+    |--> Next Capability Offset: 0x0
+  Uncorrectable Error Status: 0x0
+    |--> Data Link Protocol Error: 0x0
+    |--> Surprise Down Error: 0x0
+    |--> Poisoned TLP Received: 0x0
+    |--> Flow Control Protocol Error: 0x0
+    |--> Completion Timeout: 0x0
+    |--> Completion Abort: 0x0
+    |--> Unexpected Completion: 0x0
+    |--> Receiver Overflow: 0x0
+    |--> Malformed TLP: 0x0
+    |--> ECRC Error: 0x0
+    |--> Unsupported Request Error: 0x0
+    |--> ACS Violation: 0x0
+    |--> Uncorrectable Internal Error: 0x0
+    |--> MC Blocked TLP: 0x0
+    |--> AtomicOp Egress Blocked: 0x0
+    |--> TLP Prefix Blocked Error: 0x0
+    |--> Poisoned TLP Egress Blocked: 0x0
+  Uncorrectable Error Mask: 0x180000
+    |--> Data Link Protocol Error: 0x0
+    |--> Surprise Down Error: 0x0
+    |--> Poisoned TLP Received: 0x0
+    |--> Flow Control Protocol Error: 0x0
+    |--> Completion Timeout: 0x0
+    |--> Completion Abort: 0x0
+    |--> Unexpected Completion: 0x0
+    |--> Receiver Overflow: 0x0
+    |--> Malformed TLP: 0x0
+    |--> ECRC Error: 0x1
+    |--> Unsupported Request Error: 0x1
+    |--> ACS Violation: 0x0
+    |--> Uncorrectable Internal Error: 0x0
+    |--> MC Blocked TLP: 0x0
+    |--> AtomicOp Egress Blocked: 0x0
+    |--> TLP Prefix Blocked Error: 0x0
+    |--> Poisoned TLP Egress Blocked: 0x0
+  Uncorrectable Error Severity: 0x462030
+    |--> Data Link Protocol Error: 0x1
+    |--> Surprise Down Error: 0x1
+    |--> Poisoned TLP Received: 0x0
+    |--> Flow Control Protocol Error: 0x1
+    |--> Completion Timeout: 0x0
+    |--> Completion Abort: 0x0
+    |--> Unexpected Completion: 0x0
+    |--> Receiver Overflow: 0x1
+    |--> Malformed TLP: 0x1
+    |--> ECRC Error: 0x0
+    |--> Unsupported Request Error: 0x0
+    |--> ACS Violation: 0x0
+    |--> Uncorrectable Internal Error: 0x1
+    |--> MC Blocked TLP: 0x0
+    |--> AtomicOp Egress Blocked: 0x0
+    |--> TLP Prefix Blocked Error: 0x0
+    |--> Poisoned TLP Egress Blocked: 0x0
+  Correctable Error Status: 0x0
+    |--> Receiver Error: 0x0
+    |--> Bad TLP: 0x0
+    |--> Bad DLLP: 0x0
+    |--> REPLAY_NUM Rollover: 0x0
+    |--> Replay timer Timeout: 0x0
+    |--> Advisory Non-Fatal Error: 0x0
+    |--> Correctable Internal Error: 0x0
+    |--> Header Log Overflow: 0x0
+  Correctable Error Mask: 0x0
+    |--> Receiver Error: 0x0
+    |--> Bad TLP: 0x0
+    |--> Bad DLLP: 0x0
+    |--> REPLAY_NUM Rollover: 0x0
+    |--> Replay timer Timeout: 0x0
+    |--> Advisory Non-Fatal Error: 0x0
+    |--> Correctable Internal Error: 0x0
+    |--> Header Log Overflow: 0x0
+  Advanced Error Capabilities and Control: 0xa0
+    |--> First Error Pointer: 0x0
+    |--> ECRC Generation Capable: supported (0x20)
+    |--> ECRC Generation Enable: disabled (0x0)
+    |--> ECRC Check Capable: supported (0x80)
+    |--> ECRC Check Enable: disabled (0x0)
+  Header Log 0: 0x0
+  Header Log 1: 0x0
+  Header Log 2: 0x0
+  Header Log 3: 0x0
+  Root Error Command: 0x0
+    |--> Correctable Error Reporting: disabled (0x0)
+    |--> Non-Fatal Error Reporting: disabled (0x0)
+    |--> Fatal Error Reporting: disabled (0x0)
+  Root Error Status: 0x0
+    |--> ERR_COR Received: 0x0
+    |--> Multiple ERR_COR Received: 0x0
+    |--> ERR_FATAL/NONFATAL Received: 0x0
+    |--> Multiple ERR_FATAL/NONFATAL Received: 0x0
+    |--> First Uncorrectable Fatal: 0x0
+    |--> Non-Fatal Error Messages Received: 0x0
+    |--> Fatal Error Messages Received: 0x0
+    |--> ERR_COR Subclass: ECS Legacy (0x0)
+    |--> Advanced Error Interrupt Message: 0x0
+  TLP Prefix Log 0: 0x0
+  TLP Prefix Log 1: 0x0
+  TLP Prefix Log 2: 0x0
+  TLP Prefix Log 3: 0x0

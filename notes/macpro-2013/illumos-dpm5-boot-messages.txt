@@ -1,0 +1,1032 @@
+# illumos amdgpu-dpm5 boot (quirks 0, patches 0020+0021), complete /var/adm/messages of that boot (from line 9839, first line of 08:20, to the end)
+Nov 14 08:20:18 <host> genunix: [ID 107833 kern.notice] ^MOpenIndiana Hipster 2026.10 Version illumos-586678ac1b-macpro 64-bit
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: lgpg
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: tsc
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: msr
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: mtrr
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: pge
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: de
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: cmov
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: mmx
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: mca
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: pae
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: cv8
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: pat
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: sep
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: sse
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: sse2
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: htt
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: asysc
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: nx
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: sse3
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: cx16
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: cmp
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: tscp
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: mwait
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: cpuid
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: ssse3
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: sse4_1
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: sse4_2
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: 1gpg
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: clfsh
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: 64
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: aes
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: pclmulqdq
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: xsave
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: avx
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: vmx
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: f16c
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: rdrand
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: x2apic
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: smep
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: xsaveopt
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: pcid
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: ibrs
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: ibpb
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: stibp
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: ssbd
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: flush_cmd
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: fsgsbase
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: md_clear
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: core_thermal
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: pkg_thermal
+Nov 14 08:20:18 <host> unix: [ID 223955 kern.info] x86_feature: lfence_serializing
+Nov 14 08:20:18 <host> unix: [ID 168242 kern.info] mem = 134188120K (0x1ffe316000)
+Nov 14 08:20:18 <host> unix: [ID 936943 kern.info] TSC calibrated using PIT; freq is 3499968601 Hz
+Nov 14 08:20:18 <host> acpica: [ID 963997 kern.notice] ACPI: RSDP 0x000000007E58E014 000024 (v02 APPLE )
+Nov 14 08:20:18 <host> acpica: [ID 404375 kern.notice] ACPI: XSDT 0x000000007E58E1C0 000094 (v01 APPLE  Apple00  00000000      01000013)
+Nov 14 08:20:18 <host> acpica: [ID 696352 kern.notice] ACPI: FACP 0x000000007E58D000 0000F4 (v04 APPLE  Apple00  00000000 Loki 0000005F)
+Nov 14 08:20:18 <host> acpica: [ID 118488 kern.notice] ACPI: DSDT 0x000000007E583000 0063B8 (v01 APPLE  Apple00  00060001 Loki 0000005F)
+Nov 14 08:20:18 <host> acpica: [ID 264818 kern.notice] ACPI: FACS 0x000000007E14F000 000040
+Nov 14 08:20:18 <host> acpica: [ID 538696 kern.notice] ACPI: HPET 0x000000007E58C000 000038 (v01 APPLE  Apple00  00000001 Loki 0000005F)
+Nov 14 08:20:18 <host> acpica: [ID 965338 kern.notice] ACPI: APIC 0x000000007E58B000 0001A8 (v02 APPLE  Apple00  00000000 Loki 0000005F)
+Nov 14 08:20:18 <host> acpica: [ID 183681 kern.notice] ACPI: MCFG 0x000000007E58A000 00003C (v01 APPLE  Apple00  00000001 Loki 0000005F)
+Nov 14 08:20:18 <host> acpica: [ID 841395 kern.notice] ACPI: SSDT 0x000000007E582000 00010B (v01 SataRe SataAhci 00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 993415 kern.notice] ACPI: SSDT 0x000000007E581000 000024 (v01 Apple  SmcDppt  00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 180717 kern.notice] ACPI: SSDT 0x000000007E57E000 000396 (v01 Apple  UsbFl110 00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 824373 kern.notice] ACPI: SSDT 0x000000007E57D000 0003AF (v01 Apple  UsbRmh   00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 458282 kern.notice] ACPI: SSDT 0x000000007E57C000 000032 (v01 Apple  SsdtS3   00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 624014 kern.notice] ACPI: SSDT 0x000000007E574000 0075B6 (v01 Apple  TbtPEG10 00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 179487 kern.notice] ACPI: SSDT 0x000000007E56B000 0000B8 (v01 INTEL  Sdxc     00001000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 956718 kern.notice] ACPI: SSDT 0x000000007E53D000 02D9D3 (v01 PmRef  CpuPm    00003000 INTL 20100915)
+Nov 14 08:20:18 <host> acpica: [ID 875605 kern.notice] ACPI: DMAR 0x000000007E53C000 000088 (v01 APPLE  Apple00  00000001 Loki 0000005F)
+Nov 14 08:20:18 <host> acpica: [ID 174623 kern.notice] ACPI: VFCT 0x000000007E51B000 0200A0 (v01 APPLE  Apple00  00000001 AMD  31504F47)
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/11/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/11/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/11/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/1e/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/1e/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/1e/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[11/08/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[11/08/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[11/08/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/03/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/03/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/03/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/04/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/04/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/04/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/05/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/05/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/05/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/06/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/06/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[15/06/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/03/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/03/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/03/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/04/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/04/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/04/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/05/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/05/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/05/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/06/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/06/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[5c/06/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/03/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/03/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/03/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/04/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/04/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/04/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/05/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/05/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/05/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/06/0]: DISABLE  I/O range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/06/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[a3/06/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> acpica: [ID 557203 kern.notice] ACPI: 9 ACPI AML tables successfully acquired and loaded
+Nov 14 08:20:18 <host> acpica: [ID 276754 kern.notice] ACPI: Enabled 1 GPEs in block 00 to 3F
+Nov 14 08:20:18 <host> unix: [ID 190185 kern.info] SMBIOS v2.4 loaded (3525 bytes)
+Nov 14 08:20:18 <host> unix: [ID 972737 kern.info] Skipping psm: xpv_psm
+Nov 14 08:20:18 <host> rootnex: [ID 466748 kern.info] root nexus = i86pc
+Nov 14 08:20:18 <host> iommulib: [ID 321598 kern.info] NOTICE: iommulib_nexus_register: rootnex-1: Succesfully registered NEXUS i86pc nexops=fffffffffbd40080
+Nov 14 08:20:18 <host> rootnex: [ID 349649 kern.info] pseudo0 at root
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] pseudo0 is /pseudo
+Nov 14 08:20:18 <host> rootnex: [ID 349649 kern.info] scsi_vhci0 at root
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] scsi_vhci0 is /scsi_vhci
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 525517 kern.info] NOTICE: ppb[00/11/0]: PROGRAM  I/O range 0xb000 ~ 0xbfff
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/11/0]: DISABLE  MEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 948575 kern.info] NOTICE: ppb[00/11/0]: DISABLE PMEM range
+Nov 14 08:20:18 <host> pci_autoconfig: [ID 649095 kern.info] NOTICE: ppb[00/1e/0]: PROGRAM  MEM range 0xa0824000 ~ 0xa0823fff (subtractive bridge)
+Nov 14 08:20:18 <host> genunix: [ID 596552 kern.info] Reading Intel IOMMU boot options
+Nov 14 08:20:18 <host> rootnex: [ID 349649 kern.info] npe0 at root: space 0 offset 0
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] npe0 is /pci@0,0
+Nov 14 08:20:18 <host> npe: [ID 236367 kern.info] PCI Express-device: isa@1f, isa0
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 0 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 1 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 2 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 3 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 4 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 5 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 6 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 7 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 8 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 9 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 10 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 11 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 12 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 13 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 14 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 15 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 16 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 17 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 18 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 19 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 20 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 21 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 22 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 615120 kern.info] NOTICE: apic: local nmi: 23 0xd 1
+Nov 14 08:20:18 <host> apix: [ID 468339 kern.info] NOTICE: apic: Using ACPI (MADT) for SMP configuration
+Nov 14 08:20:18 <host> apix: [ID 179576 kern.info] NOTICE: apic: Using APIC interrupt routing mode
+Nov 14 08:20:18 <host> amd_iommu: [ID 251261 kern.info] NOTICE: amd_iommu: No AMD IOMMU ACPI IVRS table
+Nov 14 08:20:18 <host> pseudo: [ID 129642 kern.info] pseudo-device: acpippm0
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] acpippm0 is /pseudo/acpippm@0
+Nov 14 08:20:18 <host> pseudo: [ID 129642 kern.info] pseudo-device: ppm0
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] ppm0 is /pseudo/ppm@0
+Nov 14 08:20:18 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,e02@1, pcieb0
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] pcieb0 is /pci@0,0/pci8086,e02@1
+Nov 14 08:20:18 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci10b5,8723@0, pcieb7
+Nov 14 08:20:18 <host> npe: [ID 236367 kern.info] PCI Express-device: pci10b5,8723@0, pcieb7
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] pcieb7 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0
+Nov 14 08:20:18 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci10b5,8723@1, pcieb8
+Nov 14 08:20:18 <host> npe: [ID 236367 kern.info] PCI Express-device: pci10b5,8723@1, pcieb8
+Nov 14 08:20:18 <host> genunix: [ID 936769 kern.info] pcieb8 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 device (usb1a81,1026) operating at full speed (USB 1.x) on USB 3.0 root hub: device@2, usb_mid2 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] usb_mid2 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2 (usb_mid2) online
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 2.10 device (usb781,55b0) operating at hi speed (USB 2.x) on USB 3.0 root hub: storage@1, scsa2usb5 at bus address 3
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] SanDisk Portable SSD 323134353359343033323938
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] scsa2usb5 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@1
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@1 (scsa2usb5) online
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 2.10 device (usb18a5,250) operating at hi speed (USB 2.x) on USB 3.0 root hub: storage@3, scsa2usb4 at bus address 4
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Verbatim STORE N GO 25110413780245
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] scsa2usb4 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@3
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@3 (scsa2usb4) online
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 3.0 device (usbbc2,2344) operating at super speed (USB 3.x) on USB 3.0 root hub: storage@8, scsa2usb7 at bus address 5
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Seagate Portable NAAHYWP0
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] scsa2usb7 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8 (scsa2usb7) online
+Nov 14 08:20:19 <host> scsi: [ID 583861 kern.info] sd7 at scsa2usb4: target 0 lun 0
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] sd7 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@3/disk@0,0
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.0) operating at full speed (USB 1.x) on USB 3.0 root hub: keyboard@0, hid5 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid5 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/keyboard@0
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.1) operating at full speed (USB 1.x) on USB 3.0 root hub: mouse@1, hid6 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid6 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/mouse@1
+Nov 14 08:20:19 <host> scsi: [ID 583861 kern.info] sd10 at scsa2usb7: target 0 lun 0
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] sd10 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8/disk@0,0
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@3/disk@0,0 (sd7) online
+Nov 14 08:20:19 <host> scsi: [ID 583861 kern.info] sd8 at scsa2usb5: target 0 lun 0
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] sd8 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@1/disk@0,0
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8/disk@0,0 (sd10) online
+Nov 14 08:20:19 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@1/disk@0,0 (sd8) online
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.0) operating at full speed (USB 1.x) on USB 3.0 root hub: keyboard@0, hid5 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid5 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/keyboard@0
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.1) operating at full speed (USB 1.x) on USB 3.0 root hub: mouse@1, hid6 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid6 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/mouse@1
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.0) operating at full speed (USB 1.x) on USB 3.0 root hub: keyboard@0, hid5 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid5 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/keyboard@0
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.1) operating at full speed (USB 1.x) on USB 3.0 root hub: mouse@1, hid6 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid6 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/mouse@1
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.0) operating at full speed (USB 1.x) on USB 3.0 root hub: keyboard@0, hid5 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid5 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/keyboard@0
+Nov 14 08:20:19 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.1) operating at full speed (USB 1.x) on USB 3.0 root hub: mouse@1, hid6 at bus address 2
+Nov 14 08:20:19 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:19 <host> genunix: [ID 936769 kern.info] hid6 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/mouse@1
+Nov 14 08:20:19 <host> genunix: [ID 308332 kern.info] root on rpool/ROOT/amdgpu-dpm5 fstype zfs
+Nov 14 08:20:20 <host> rootnex: [ID 349649 kern.info] acpinex0 at root
+Nov 14 08:20:20 <host> genunix: [ID 936769 kern.info] acpinex0 is /fw
+Nov 14 08:20:20 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@0, cpudrv4
+Nov 14 08:20:20 <host> genunix: [ID 408114 kern.info] /fw/cpu@0 (cpudrv4) online
+Nov 14 08:20:20 <host> pseudo: [ID 129642 kern.info] pseudo-device: dld0
+Nov 14 08:20:20 <host> genunix: [ID 936769 kern.info] dld0 is /pseudo/dld@0
+Nov 14 08:20:20 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,e08@3, pcieb2
+Nov 14 08:20:20 <host> genunix: [ID 936769 kern.info] pcieb2 is /pci@0,0/pci8086,e08@3
+Nov 14 08:20:20 <host> pcieb: [ID 586369 kern.info] PCIE-device: display@0, amdgpu1
+Nov 14 08:20:20 <host> npe: [ID 236367 kern.info] PCI Express-device: display@0, amdgpu1
+Nov 14 08:20:20 <host> genunix: [ID 936769 kern.info] amdgpu1 is /pci@0,0/pci8086,e08@3/display@0
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: initializing kernel modesetting (TAHITI 0x1002:0x679E 0x106B:0x0125 0x00).
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: register mmio base: 0xA0600000
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: register mmio size: 262144
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 0 <common_v1_0_0> (si_common)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 1 <gmc_v6_0_0> (gmc_v6_0)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 2 <ih_v1_0_0> (si_ih)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 3 <gfx_v6_0_0> (gfx_v6_0)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 4 <sdma_v1_0_0> (si_dma)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 5 <smu_v6_0_0> (si_dpm)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 6 <dce_v6_0_0> (dce_v6_0)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 7 <uvd_v3_1_0> (uvd_v3_1)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: detected ip block number 8 <vce_v1_0_0> (vce_v1_0)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: Fetched VBIOS from VFCT
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] ATOM BIOS: 113-C3861LB-029, build: 357430  , ver: 015.048.000.070.000000, 2016/08/26
+Nov 14 08:20:20 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu1: disabled ip block: 7 <uvd_v3_1>
+Nov 14 08:20:20 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu1: disabled ip block: 8 <vce_v1_0>
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: Trusted Memory Zone (TMZ) feature not supported
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: PCIE atomic ops is not supported
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: vm size is 512 GB, 2 levels, block size is 10-bit, fragment size is 9-bit
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: VRAM: 3072M 0x000000F400000000 - 0x000000F4BFFFFFFF (3072M used)
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: GART: 1024M 0x0000000000000000 - 0x000000003FFFFFFF
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Detected VRAM RAM=3072M, BAR=256M
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] RAM width 384bits GDDR5
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1:  3072M of VRAM memory ready
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1:  65517M of GTT memory ready.
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] GART: num cpu pages 262144, num gpu pages 262144
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] PCIE GART of 1024M enabled (table at 0x000000F400800000).
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Internal thermal controller with fan control
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm quirks 0x0: PowerTune 1, CAC 1, DTE 1, SQ ramping 1; TDP 129 W, near TDP 87 W, TDP OD 20 %, CAC leakage 1800, SQ ramping threshold 50000
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] si dpm initialized
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] AMDGPU Display Connectors
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Connector 0:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DP-1
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   HPD1
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DDC: 0x1954 0x1954 0x1955 0x1955 0x1956 0x1956 0x1957 0x1957
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   Encoders:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]     DFP1: INTERNAL_UNIPHY1
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Connector 1:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DP-2
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   HPD2
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DDC: 0x1958 0x1958 0x1959 0x1959 0x195a 0x195a 0x195b 0x195b
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   Encoders:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]     DFP2: INTERNAL_UNIPHY1
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Connector 2:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DP-3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   HPD3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DDC: 0x194c 0x194c 0x194d 0x194d 0x194e 0x194e 0x194f 0x194f
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   Encoders:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]     DFP3: INTERNAL_UNIPHY2
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Connector 3:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DP-4
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   HPD4
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DDC: 0x1950 0x1950 0x1951 0x1951 0x1952 0x1952 0x1953 0x1953
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   Encoders:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]     DFP4: INTERNAL_UNIPHY2
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Connector 4:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DP-5
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   HPD5
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DDC: 0x195c 0x195c 0x195d 0x195d 0x195e 0x195e 0x195f 0x195f
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   Encoders:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]     DFP5: INTERNAL_UNIPHY
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] Connector 5:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DP-6
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   HPD6
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   DDC: 0x1960 0x1960 0x1961 0x1961 0x1962 0x1962 0x1963 0x1963
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]   Encoders:
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm]     DFP6: INTERNAL_UNIPHY
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm xclk 2700 (10 kHz), bsp 27000 bsu 0, pbsp 42187 pbsu 4
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0 aT 0x000009ca (up 2506 down 0)
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1 aT 0x04c50fe4 (up 4068 down 1221)
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2 aT 0x093512c8 (up 4808 down 2357)
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3 aT 0x16bbffff (up 65535 down 5819)
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: SE 2, SH per SE 2, CU per SH 8, active_cu_number 24
+Nov 14 08:20:20 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu1: Unable to register hwmon device: -19
+Nov 14 08:20:20 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu1: registering pm sysfs failed (-19).
+Nov 14 08:20:20 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu1: Failed to store PCI saved state
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: runtime pm is manually disabled
+Nov 14 08:20:20 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: Runtime PM not available
+Nov 14 08:20:20 <host> amdgpu: [ID 664146 kern.info] NOTICE: amdgpu1: console: the loader framebuffer (1600x900, 6400 bytes per line) is the illumos console
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,7270@1d, ehci0
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] ehci0 is /pci@0,0/pci8086,7270@1d
+Nov 14 08:20:22 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.0) operating at full speed (USB 1.x) on USB 3.0 root hub: keyboard@0, hid5 at bus address 2
+Nov 14 08:20:22 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] hid5 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/keyboard@0
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/keyboard@0 (hid5) online
+Nov 14 08:20:22 <host> usba: [ID 912658 kern.info] USB 1.10 interface (usbif1a81,1026.config1.1) operating at full speed (USB 1.x) on USB 3.0 root hub: mouse@1, hid6 at bus address 2
+Nov 14 08:20:22 <host> usba: [ID 349649 kern.info] Lenovo Lenovo Essential Wireless Combo Keyboard & Mouse Gen2
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] hid6 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/mouse@1
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/device@2/mouse@1 (hid6) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu0: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu0: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 551322 kern.info] KPTI enabled (PCID in use, INVPCID not supported)
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@1, cpudrv5
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@1 (cpudrv5) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu1: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu1: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu1 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@2, cpudrv6
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@2 (cpudrv6) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu2: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu2: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu2 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@3, cpudrv7
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@3 (cpudrv7) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu3: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu3: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu3 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@4, cpudrv8
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@4 (cpudrv8) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu4: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu4: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu4 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@5, cpudrv9
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@5 (cpudrv9) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu5: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu5: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu5 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@6, cpudrv10
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@6 (cpudrv10) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu6: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu6: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu6 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@7, cpudrv11
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@7 (cpudrv11) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu7: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu7: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu7 initialization complete - online
+Nov 14 08:20:22 <host> pseudo: [ID 129642 kern.info] pseudo-device: audio0
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] audio0 is /pseudo/audio@0
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@8, cpudrv12
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@8 (cpudrv12) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu8: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu8: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu8 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@9, cpudrv13
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@9 (cpudrv13) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu9: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu9: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu9 initialization complete - online
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@10, cpudrv14
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@10 (cpudrv14) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu10: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu10: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu10 initialization complete - online
+Nov 14 08:20:22 <host> drmach_acpi: [ID 779328 kern.warning] WARNING: drmach_init: number of logical CPUs (12) in physical processor is not power of 2.
+Nov 14 08:20:22 <host> acpinex: [ID 328922 kern.info] acpinex: cpu@11, cpudrv15
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /fw/cpu@11 (cpudrv15) online
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu11: x86 (chipid 0x0 GenuineIntel 306E4 family 6 model 62 step 4 clock 3500 MHz)
+Nov 14 08:20:22 <host> unix: [ID 950921 kern.info] cpu11: Intel(r) Xeon(r) CPU E5-1650 v2 @ 3.50GHz
+Nov 14 08:20:22 <host> unix: [ID 557947 kern.info] cpu11 initialization complete - online
+Nov 14 08:20:22 <host> unix: [ID 118163 kern.info] NOTICE: SMT enabled
+Nov 14 08:20:22 <host> pcie: [ID 303961 kern.info] NOTICE: pcieb1: slot 3: power fault detected cannot be cleared; not enabling power fault detection
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,e04@2, pcieb1
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] pcieb1 is /pci@0,0/pci8086,e04@2
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,1d10@1c, pcieb3
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] pcieb3 is /pci@0,0/pci8086,1d10@1c
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,1d12@1c,1, pcieb4
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] pcieb4 is /pci@0,0/pci8086,1d12@1c,1
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,1d14@1c,2, pcieb5
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] pcieb5 is /pci@0,0/pci8086,1d14@1c,2
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,1d18@1c,4, pcieb6
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] pcieb6 is /pci@0,0/pci8086,1d18@1c,4
+Nov 14 08:20:22 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci10b5,8723@8, pcieb10
+Nov 14 08:20:22 <host> npe: [ID 236367 kern.info] PCI Express-device: pci10b5,8723@8, pcieb10
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] pcieb10 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@8
+Nov 14 08:20:22 <host> pseudo: [ID 129642 kern.info] pseudo-device: stmf_sbd0
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] stmf_sbd0 is /pseudo/stmf_sbd@0
+Nov 14 08:20:22 <host> usba: [ID 912658 kern.info] USB 2.0 device (usb8087,24) operating at hi speed (USB 2.x) on USB 2.0 root hub: hub@1, hubd0 at bus address 2
+Nov 14 08:20:22 <host> genunix: [ID 936769 kern.info] hubd0 is /pci@0,0/pci8086,7270@1d/hub@1
+Nov 14 08:20:22 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,7270@1d/hub@1 (hubd0) online
+Nov 14 08:20:23 <host> pseudo: [ID 129642 kern.info] pseudo-device: applesmc0
+Nov 14 08:20:23 <host> genunix: [ID 936769 kern.info] applesmc0 is /pseudo/applesmc@0
+Nov 14 08:20:23 <host> applesmc: [ID 337119 kern.info] applesmc0: SMC at 0x300: 770 keys, 78 temperature sensors
+Nov 14 08:20:23 <host> usba: [ID 912658 kern.info] USB 2.0 device (usba5c,4500) operating at full speed (USB 1.x) on USB 2.0 external hub: hub@1, hubd1 at bus address 3
+Nov 14 08:20:23 <host> usba: [ID 349649 kern.info] Apple Inc. BRCM20702 Hub
+Nov 14 08:20:23 <host> genunix: [ID 936769 kern.info] hubd1 is /pci@0,0/pci8086,7270@1d/hub@1/hub@1
+Nov 14 08:20:23 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,7270@1d/hub@1/hub@1 (hubd1) online
+Nov 14 08:20:24 <host> usba: [ID 912658 kern.info] USB 2.0 device (usb5ac,820a) operating at full speed (USB 1.x) on USB 2.0 external hub: keyboard@1, hid3 at bus address 4
+Nov 14 08:20:24 <host> genunix: [ID 936769 kern.info] hid3 is /pci@0,0/pci8086,7270@1d/hub@1/hub@1/keyboard@1
+Nov 14 08:20:24 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,7270@1d/hub@1/hub@1/keyboard@1 (hid3) online
+Nov 14 08:20:24 <host> usba: [ID 912658 kern.info] USB 2.0 device (usb5ac,820b) operating at full speed (USB 1.x) on USB 2.0 external hub: mouse@2, hid4 at bus address 5
+Nov 14 08:20:24 <host> genunix: [ID 936769 kern.info] hid4 is /pci@0,0/pci8086,7270@1d/hub@1/hub@1/mouse@2
+Nov 14 08:20:24 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,7270@1d/hub@1/hub@1/mouse@2 (hid4) online
+Nov 14 08:20:24 <host> usba: [ID 912658 kern.info] USB 2.0 device (usb5ac,828d) operating at full speed (USB 1.x) on USB 2.0 external hub: device@3, usb_mid1 at bus address 6
+Nov 14 08:20:24 <host> usba: [ID 349649 kern.info] Apple Inc. Bluetooth USB Host Controller
+Nov 14 08:20:24 <host> genunix: [ID 936769 kern.info] usb_mid1 is /pci@0,0/pci8086,7270@1d/hub@1/hub@1/device@3
+Nov 14 08:20:24 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,7270@1d/hub@1/hub@1/device@3 (usb_mid1) online
+Nov 14 08:20:24 <host> usba: [ID 349649 kern.info] usba:	no driver found for interface 0 (nodename: 'interface') of Apple Inc. Bluetooth USB Host Controller
+Nov 14 08:20:24 <host> usba: [ID 349649 kern.info] usba:	no driver found for interface 1 (nodename: 'wireless') of Apple Inc. Bluetooth USB Host Controller
+Nov 14 08:20:24 <host> usba: [ID 349649 kern.info] usba:	no driver found for interface 2 (nodename: 'interface') of Apple Inc. Bluetooth USB Host Controller
+Nov 14 08:20:24 <host> usba: [ID 349649 kern.info] usba:	no driver found for interface 3 (nodename: 'firmware') of Apple Inc. Bluetooth USB Host Controller
+Nov 14 08:20:25 <host> pseudo: [ID 129642 kern.info] pseudo-device: zfs0
+Nov 14 08:20:25 <host> genunix: [ID 936769 kern.info] zfs0 is /pseudo/zfs@0
+Nov 14 08:20:25 <host> drmach_acpi: [ID 779328 kern.warning] WARNING: drmach_init: number of logical CPUs (12) in physical processor is not power of 2.
+Nov 14 08:20:25 <host> mac: [ID 469746 kern.info] NOTICE: bge0 registered
+Nov 14 08:20:25 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci14e4,1682@0, bge0
+Nov 14 08:20:25 <host> npe: [ID 236367 kern.info] PCI Express-device: pci14e4,1682@0, bge0
+Nov 14 08:20:25 <host> genunix: [ID 936769 kern.info] bge0 is /pci@0,0/pci8086,1d10@1c/pci14e4,1682@0
+Nov 14 08:20:25 <host> genunix: [ID 241855 kern.info] This illumos instance has UUID <uuid>
+Nov 14 08:20:26 <host> mac: [ID 469746 kern.info] NOTICE: bge1 registered
+Nov 14 08:20:26 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci14e4,1682@0, bge1
+Nov 14 08:20:26 <host> npe: [ID 236367 kern.info] PCI Express-device: pci14e4,1682@0, bge1
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] bge1 is /pci@0,0/pci8086,1d12@1c,1/pci14e4,1682@0
+Nov 14 08:20:26 <host> genunix: [ID 454863 kern.info] dump on /dev/zvol/dsk/rpool/dump size 8192 MB
+Nov 14 08:20:26 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci106b,125@0,1, audiohd2
+Nov 14 08:20:26 <host> npe: [ID 236367 kern.info] PCI Express-device: pci106b,125@0,1, audiohd2
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] audiohd2 is /pci@0,0/pci8086,e08@3/pci106b,125@0,1
+Nov 14 08:20:26 <host> pseudo: [ID 129642 kern.info] pseudo-device: pm0
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] pm0 is /pseudo/pm@0
+Nov 14 08:20:26 <host> rootnex: [ID 349649 kern.info] xsvc0 at root: space 0 offset 0
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] xsvc0 is /xsvc@0,0
+Nov 14 08:20:26 <host> genunix: [ID 127566 kern.info] device pciex1002,679e.106b.125@0(display#1) keeps up device sd@0,0(disk#7), but the former is not power managed
+Nov 14 08:20:26 <host> pseudo: [ID 129642 kern.info] pseudo-device: power0
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] power0 is /pseudo/power@0
+Nov 14 08:20:26 <host> pseudo: [ID 129642 kern.info] pseudo-device: srn0
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] srn0 is /pseudo/srn@0
+Nov 14 08:20:26 <host> pcieb: [ID 586369 kern.info] PCIE-device: display@0, amdgpu0
+Nov 14 08:20:26 <host> npe: [ID 236367 kern.info] PCI Express-device: display@0, amdgpu0
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] amdgpu0 is /pci@0,0/pci8086,e04@2/display@0
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: initializing kernel modesetting (TAHITI 0x1002:0x679E 0x106B:0x0126 0x00).
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: register mmio base: 0xA0700000
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: register mmio size: 262144
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 0 <common_v1_0_0> (si_common)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 1 <gmc_v6_0_0> (gmc_v6_0)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 2 <ih_v1_0_0> (si_ih)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 3 <gfx_v6_0_0> (gfx_v6_0)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 4 <sdma_v1_0_0> (si_dma)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 5 <smu_v6_0_0> (si_dpm)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 6 <dce_v6_0_0> (dce_v6_0)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 7 <uvd_v3_1_0> (uvd_v3_1)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: detected ip block number 8 <vce_v1_0_0> (vce_v1_0)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: Fetched VBIOS from VFCT
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] ATOM BIOS: 113-C3861LA-029, build: 357431  , ver: 015.048.000.070.000000, 2016/08/26
+Nov 14 08:20:26 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu0: disabled ip block: 7 <uvd_v3_1>
+Nov 14 08:20:26 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu0: disabled ip block: 8 <vce_v1_0>
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: Trusted Memory Zone (TMZ) feature not supported
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: PCIE atomic ops is not supported
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: vm size is 512 GB, 2 levels, block size is 10-bit, fragment size is 9-bit
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: VRAM: 3072M 0x000000F400000000 - 0x000000F4BFFFFFFF (3072M used)
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: GART: 1024M 0x0000000000000000 - 0x000000003FFFFFFF
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Detected VRAM RAM=3072M, BAR=256M
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] RAM width 384bits GDDR5
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0:  3072M of VRAM memory ready
+Nov 14 08:20:26 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0:  65517M of GTT memory ready.
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] GART: num cpu pages 262144, num gpu pages 262144
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] PCIE GART of 1024M enabled (table at 0x000000F400000000).
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Internal thermal controller with fan control
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm quirks 0x0: PowerTune 1, CAC 1, DTE 1, SQ ramping 1; TDP 129 W, near TDP 87 W, TDP OD 20 %, CAC leakage 1800, SQ ramping threshold 50000
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] si dpm initialized
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] AMDGPU Display Connectors
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Connector 0:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DP-7
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   HPD1
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DDC: 0x1954 0x1954 0x1955 0x1955 0x1956 0x1956 0x1957 0x1957
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   Encoders:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]     DFP1: INTERNAL_UNIPHY1
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Connector 1:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DP-8
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   HPD2
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DDC: 0x1958 0x1958 0x1959 0x1959 0x195a 0x195a 0x195b 0x195b
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   Encoders:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]     DFP2: INTERNAL_UNIPHY1
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Connector 2:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DP-9
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   HPD3
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DDC: 0x194c 0x194c 0x194d 0x194d 0x194e 0x194e 0x194f 0x194f
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   Encoders:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]     DFP3: INTERNAL_UNIPHY2
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Connector 3:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DP-10
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   HPD4
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DDC: 0x1950 0x1950 0x1951 0x1951 0x1952 0x1952 0x1953 0x1953
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   Encoders:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]     DFP4: INTERNAL_UNIPHY2
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Connector 4:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DP-11
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   HPD5
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DDC: 0x195c 0x195c 0x195d 0x195d 0x195e 0x195e 0x195f 0x195f
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   Encoders:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]     DFP5: INTERNAL_UNIPHY
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] Connector 5:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DP-12
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   HPD6
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   DDC: 0x1960 0x1960 0x1961 0x1961 0x1962 0x1962 0x1963 0x1963
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]   Encoders:
+Nov 14 08:20:26 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm]     DFP6: INTERNAL_UNIPHY
+Nov 14 08:20:26 <host> pseudo: [ID 129642 kern.info] pseudo-device: devinfo0
+Nov 14 08:20:26 <host> genunix: [ID 936769 kern.info] devinfo0 is /pseudo/devinfo@0
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm xclk 2700 (10 kHz), bsp 27000 bsu 0, pbsp 42187 pbsu 4
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1006 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1006 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1006 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1006 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: SE 2, SH per SE 2, CU per SH 8, active_cu_number 24
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1006 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1006 vddci 800 pcie gen 3
+Nov 14 08:20:27 <host> pseudo: [ID 129642 kern.info] pseudo-device: pool0
+Nov 14 08:20:27 <host> genunix: [ID 936769 kern.info] pool0 is /pseudo/pool@0
+Nov 14 08:20:27 <host> pseudo: [ID 129642 kern.info] pseudo-device: eventfd0
+Nov 14 08:20:27 <host> genunix: [ID 936769 kern.info] eventfd0 is /pseudo/eventfd@0
+Nov 14 08:20:27 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu0: Unable to register hwmon device: -19
+Nov 14 08:20:27 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu0: registering pm sysfs failed (-19).
+Nov 14 08:20:27 <host> linuxkpi: [ID 702911 kern.warning] WARNING: amdgpu0: Failed to store PCI saved state
+Nov 14 08:20:27 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: runtime pm is manually disabled
+Nov 14 08:20:27 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: Runtime PM not available
+Nov 14 08:20:27 <host> pcieb: [ID 586369 kern.info] PCIE-device: pci106b,126@0,1, audiohd1
+Nov 14 08:20:27 <host> npe: [ID 236367 kern.info] PCI Express-device: pci106b,126@0,1, audiohd1
+Nov 14 08:20:27 <host> genunix: [ID 936769 kern.info] audiohd1 is /pci@0,0/pci8086,e04@2/pci106b,126@0,1
+Nov 14 08:20:27 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,7270@1b, audiohd0
+Nov 14 08:20:27 <host> genunix: [ID 936769 kern.info] audiohd0 is /pci@0,0/pci8086,7270@1b
+Nov 14 08:20:27 <host> rootnex: [ID 349649 kern.info] iscsi0 at root
+Nov 14 08:20:27 <host> genunix: [ID 936769 kern.info] iscsi0 is /iscsi
+Nov 14 08:20:28 <host> ipf: [ID 774698 kern.info] IP Filter: v4.1.9, running.
+Nov 14 08:20:29 <host> bge: [ID 801725 kern.info] NOTICE: bge0: bge_check_copper: link now down speed 0 duplex 0
+Nov 14 08:20:29 <host> pseudo: [ID 129642 kern.info] pseudo-device: dtrace0
+Nov 14 08:20:29 <host> genunix: [ID 936769 kern.info] dtrace0 is /pseudo/dtrace@0
+Nov 14 08:20:29 <host> bge: [ID 801725 kern.info] NOTICE: bge1: bge_check_copper: link now down speed 0 duplex 0
+Nov 14 08:20:30 <host> pseudo: [ID 129642 kern.info] pseudo-device: ucode0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] ucode0 is /pseudo/ucode@0
+Nov 14 08:20:30 <host> rootnex: [ID 349649 kern.info] npe1 at root: space ff offset 0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] npe1 is /pci@ff,0
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: sb@0, acpinex1
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex1 is /fw/sb@0
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: usbroothub@XHC1, acpinex6
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex6 is /fw/sb@0/usbroothub@XHC1
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: usbroothub@EHC1, acpinex7
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex7 is /fw/sb@0/usbroothub@EHC1
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@1, acpinex8
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex8 is /fw/sb@0/usbroothub@XHC1/port@1
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@2, acpinex9
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex9 is /fw/sb@0/usbroothub@XHC1/port@2
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@3, acpinex10
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex10 is /fw/sb@0/usbroothub@XHC1/port@3
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@1, acpinex16
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex16 is /fw/sb@0/usbroothub@EHC1/port@1
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@4, acpinex11
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex11 is /fw/sb@0/usbroothub@XHC1/port@4
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@1, acpinex17
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex17 is /fw/sb@0/usbroothub@EHC1/port@1/port@1
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@5, acpinex12
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex12 is /fw/sb@0/usbroothub@XHC1/port@5
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@2, acpinex18
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex18 is /fw/sb@0/usbroothub@EHC1/port@1/port@2
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@6, acpinex13
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex13 is /fw/sb@0/usbroothub@XHC1/port@6
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@3, acpinex19
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex19 is /fw/sb@0/usbroothub@EHC1/port@1/port@3
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@7, acpinex14
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex14 is /fw/sb@0/usbroothub@XHC1/port@7
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@4, acpinex20
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex20 is /fw/sb@0/usbroothub@EHC1/port@1/port@4
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@8, acpinex15
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex15 is /fw/sb@0/usbroothub@XHC1/port@8
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@5, acpinex21
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex21 is /fw/sb@0/usbroothub@EHC1/port@1/port@5
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@6, acpinex22
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex22 is /fw/sb@0/usbroothub@EHC1/port@1/port@6
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@7, acpinex23
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex23 is /fw/sb@0/usbroothub@EHC1/port@1/port@7
+Nov 14 08:20:30 <host> acpinex: [ID 328922 kern.info] acpinex: port@8, acpinex24
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] acpinex24 is /fw/sb@0/usbroothub@EHC1/port@1/port@8
+Nov 14 08:20:30 <host> pseudo: [ID 129642 kern.info] pseudo-device: pseudo1
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] pseudo1 is /pseudo/zconsnex@1
+Nov 14 08:20:30 <host> npe: [ID 236367 kern.info] PCI Express-device: pci8086,244e@1e, pci_pci0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] pci_pci0 is /pci@0,0/pci8086,244e@1e
+Nov 14 08:20:30 <host> isa: [ID 202937 kern.info] ISA-device: pit_beep0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] pit_beep0 is /pci@0,0/isa@1f/pit_beep
+Nov 14 08:20:30 <host> pseudo: [ID 129642 kern.info] pseudo-device: dcpc0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] dcpc0 is /pseudo/dcpc@0
+Nov 14 08:20:30 <host> nvme: [ID 259564 kern.info] nvme0: NVMe spec version 1.3
+Nov 14 08:20:30 <host> efi: [ID 579043 kern.info] efi: 64-bit firmware rev 1.10, SystemTable@0x7e68ee10, RuntimeServices@0x7e68eb90
+Nov 14 08:20:30 <host> efi: [ID 784438 kern.info] efi: mapped 7 runtime range(s), alt CR3 = 0x2019d2d000
+Nov 14 08:20:30 <host> pseudo: [ID 129642 kern.info] pseudo-device: efi0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] efi0 is /pseudo/efi@0
+Nov 14 08:20:30 <host> blkdev: [ID 643073 kern.info] NOTICE: blkdev0: dynamic LUN expansion
+Nov 14 08:20:30 <host> blkdev: [ID 348765 kern.info] Block device: blkdev@w00A07520E4CB500C,0, blkdev0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] blkdev0 is /pci@0,0/pci8086,1d18@1c,4/pcic0a9,2263@0/blkdev@w00A07520E4CB500C,0
+Nov 14 08:20:30 <host> genunix: [ID 408114 kern.info] /pci@0,0/pci8086,1d18@1c,4/pcic0a9,2263@0/blkdev@w00A07520E4CB500C,0 (blkdev0) online
+Nov 14 08:20:30 <host> pseudo: [ID 129642 kern.info] pseudo-device: fasttrap0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] fasttrap0 is /pseudo/fasttrap@0
+Nov 14 08:20:30 <host> pseudo: [ID 129642 kern.info] pseudo-device: fbt0
+Nov 14 08:20:30 <host> genunix: [ID 936769 kern.info] fbt0 is /pseudo/fbt@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: fcp0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] fcp0 is /pseudo/fcp@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: fcsm0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] fcsm0 is /pseudo/fcsm@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: fct0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] fct0 is /pseudo/fct@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: llc10
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] llc10 is /pseudo/llc1@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: lockstat0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] lockstat0 is /pseudo/lockstat@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: lofi0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] lofi0 is /pseudo/lofi@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: profile0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] profile0 is /pseudo/profile@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: ramdisk1024
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] ramdisk1024 is /pseudo/ramdisk@1024
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: sdt0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] sdt0 is /pseudo/sdt@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: stmf0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] stmf0 is /pseudo/stmf@0
+Nov 14 08:20:31 <host> pseudo: [ID 129642 kern.info] pseudo-device: systrace0
+Nov 14 08:20:31 <host> genunix: [ID 936769 kern.info] systrace0 is /pseudo/systrace@0
+Nov 14 08:20:32 <host> pseudo: [ID 129642 kern.info] pseudo-device: nvidia255
+Nov 14 08:20:32 <host> genunix: [ID 936769 kern.info] nvidia255 is /pseudo/nvidia@255
+Nov 14 08:20:32 <host> nvidia_modeset: [ID 107833 kern.notice] Loading NVIDIA Kernel Mode Setting Driver for UNIX platforms  470.256.02  Thu May  2 14:30:39 UTC 2024
+Nov 14 08:20:32 <host> pseudo: [ID 129642 kern.info] pseudo-device: bpf0
+Nov 14 08:20:32 <host> genunix: [ID 936769 kern.info] bpf0 is /pseudo/bpf@0
+Nov 14 08:20:32 <host> pseudo: [ID 129642 kern.info] pseudo-device: fssnap0
+Nov 14 08:20:32 <host> genunix: [ID 936769 kern.info] fssnap0 is /pseudo/fssnap@0
+Nov 14 08:20:33 <host> pseudo: [ID 129642 kern.info] pseudo-device: nsmb0
+Nov 14 08:20:33 <host> genunix: [ID 936769 kern.info] nsmb0 is /pseudo/nsmb@0
+Nov 14 08:20:33 <host> pseudo: [ID 129642 kern.info] pseudo-device: signalfd0
+Nov 14 08:20:33 <host> genunix: [ID 936769 kern.info] signalfd0 is /pseudo/signalfd@0
+Nov 14 08:20:33 <host> pseudo: [ID 129642 kern.info] pseudo-device: timerfd0
+Nov 14 08:20:33 <host> genunix: [ID 936769 kern.info] timerfd0 is /pseudo/timerfd@0
+Nov 14 08:20:33 <host> fuse: [ID 983544 kern.info] Fuse kernel 1.7 interface 7.8
+Nov 14 08:20:33 <host> fuse: [ID 820968 kern.info] Fuse kernel init at 0xfffffffff6973b00, vfs_modldrv at 0xffffffffc03b8160 temp_vnodeops_template at 0xfffffffff697c840
+Nov 14 08:20:36 <host> bge: [ID 801725 kern.info] NOTICE: bge1: bge_check_copper: link now up speed 100 duplex 2
+Nov 14 08:20:36 <host> mac: [ID 435574 kern.info] NOTICE: bge1 link up, 100 Mbps, full duplex
+Nov 14 08:20:37 <host> in.routed[883]: [ID 749644 daemon.notice] bge1 has a bad address 0.0.0.0
+Nov 14 08:20:37 <host> in.routed[883]: [ID 464608 daemon.error] route 0.0.0.0/8 --> 0.0.0.0 nexthop is not directly connected
+Nov 14 08:20:37 <host> /sbin/dhcpagent[1468]: [ID 716041 daemon.warning] accept_v4_acknak: NAK on interface bge1
+Nov 14 08:20:37 <host> in.routed[883]: [ID 749644 daemon.notice] bge1 has a bad address 0.0.0.0
+Nov 14 08:20:37 <host> nwamd[113]: [ID 723571 daemon.error] 1: nwamd_down_interface: ipadm_delete_addr failed on bge1: Could not communicate with dhcpagent
+Nov 14 08:20:37 <host> nwamd[113]: [ID 136847 daemon.error] 11: start_dhcp: ipadm_create_addr on bge1 returned: Could not communicate with dhcpagent, retrying in 10 sec
+Nov 14 08:20:37 <host> in.ndpd[828]: [ID 169330 daemon.error] Interface bge1 has been removed from kernel. in.ndpd will no longer use it
+Nov 14 08:20:37 <host> in.routed[883]: [ID 749644 daemon.notice] bge1 has a bad address 0.0.0.0
+Nov 14 08:20:38 <host> ipf: [ID 774698 kern.info] IP Filter: v4.1.9, running.
+Nov 14 08:20:38 <host> nvidia_modeset: [ID 107833 kern.notice] Unloading
+Nov 14 08:20:41 <host> pseudo: [ID 129642 kern.info] pseudo-device: devinfo0
+Nov 14 08:20:41 <host> genunix: [ID 936769 kern.info] devinfo0 is /pseudo/devinfo@0
+Nov 14 08:20:41 <host> ipf: [ID 774698 kern.info] IP Filter: v4.1.9, running.
+Nov 14 08:20:42 <host> fuse: [ID 983544 kern.info] Fuse kernel 1.7 interface 7.8
+Nov 14 08:20:42 <host> fuse: [ID 820968 kern.info] Fuse kernel init at 0xfffffffff43feb00, vfs_modldrv at 0xffffffffc00ee160 temp_vnodeops_template at 0xfffffffff4407840
+Nov 14 08:20:42 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Version 2026.9.28 external FUSE 27
+Nov 14 08:20:42 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Requested device /dev/dsk/c7t0d0s1 canonicalized as /devices/pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8/disk@0,0:b
+Nov 14 08:20:42 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Mounted /devices/pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8/disk@0,0:b (Read-Write, label "5TBSTORAGE", NTFS 3.1)
+Nov 14 08:20:42 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Cmdline options: nosuid
+Nov 14 08:20:42 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Mount options: nosuid,allow_other,nonempty,relatime,fsname=/dev/dsk/c7t0d0s1
+Nov 14 08:20:42 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Ownership and permissions disabled, configuration type 5
+Nov 14 08:20:43 <host> drm_core: [ID 517869 kern.info] NOTICE: [drm] Please enable CONFIG_MTRR and CONFIG_X86_PAT for better performance thanks to write-combining
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: DP audio DTO: module 500000 (dispclk 600000 kHz, VBIOS default 500000 kHz)
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0 aT 0x0000096c (up 2412 down 0)
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1 aT 0x04d00fe4 (up 4068 down 1232)
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 317 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:20:45 <host> scsi: [ID 583861 kern.info] sd7 at scsa2usb4: target 0 lun 0
+Nov 14 08:20:45 <host> genunix: [ID 936769 kern.info] sd7 is /pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@3/disk@0,0
+Nov 14 08:20:45 <host> genunix: [ID 127566 kern.info] device pciex1002,679e.106b.125@0(display#1) keeps up device sd@0,0(disk#7), but the former is not power managed
+Nov 14 08:20:46 <host> gnome-session-binary[2089]: [ID 702911 daemon.warning] WARNING: GsmConsoleKit: Calling GetSessionClass failed.
+Nov 14 08:20:46 <host> gnome-session-binary[2089]: [ID 702911 daemon.warning] WARNING: Could not get session class: Not owner
+Nov 14 08:20:46 <host> gnome-session-binary[2089]: [ID 702911 daemon.warning] WARNING: Desktop file /usr/share/gdm/greeter/autostart/orca-autostart.desktop for application orca-autostart.desktop could not be parsed or references a missing TryExec binary
+Nov 14 08:20:47 <host> nwamd[113]: [ID 566052 daemon.error] 11: start_dhcp: ipadm_create_addr failed for bge1: Address object already exists
+Nov 14 08:20:49 <host> pseudo: [ID 129642 kern.info] pseudo-device: timerfd0
+Nov 14 08:20:49 <host> genunix: [ID 936769 kern.info] timerfd0 is /pseudo/timerfd@0
+Nov 14 08:20:54 <host> ipf: [ID 774698 kern.info] IP Filter: v4.1.9, running.
+Nov 14 08:27:04 <host> genunix: [ID 198645 kern.notice] pfexecd not running; pid 3316 privileges not elevated
+Nov 14 08:27:04 <host> ntfs-3g[2076]: [ID 702911 daemon.notice] Unmounting /devices/pci@0,0/pci8086,e02@1/pci10b5,8723@0/pci10b5,8723@1/pci1b73,1100@0/storage@8/disk@0,0:b (5TBSTORAGE)
+Nov 14 08:27:04 <host> pulseaudio[2112]: [ID 295310 user.error] [(null)] stdin-util.c: Lost I/O connection in module "module-gsettings"
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0 aT 0x000009ca (up 2506 down 0)
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1 aT 0x04c50fe4 (up 4068 down 1221)
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 0: sclk 300 mclk 150 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 1: sclk 450 mclk 1270 vddc 900 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 2: sclk 650 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:04 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm level 3: sclk 725 mclk 1270 vddc 1075 vddci 800 pcie gen 3
+Nov 14 08:27:39 <host> pseudo: [ID 129642 kern.info] pseudo-device: pm0
+Nov 14 08:27:39 <host> genunix: [ID 936769 kern.info] pm0 is /pseudo/pm@0
+Nov 14 08:27:39 <host> syslogd: going down on signal 15
+
+# prtconf -v display@0 nodes (taken in con5, same hardware)
+display, instance #1
+    System software properties:
+        name='ddi-no-autodetach' type=int items=1
+            value=00000001
+    Driver properties:
+        name='ddi-no-autodetach' type=int items=1 dev=none
+            value=00000001
+        name='fm-errcb-capable' type=boolean dev=none
+        name='fm-ereport-capable' type=boolean dev=none
+        name='primary-controller' type=int items=1 dev=none
+            value=00000001
+    Hardware properties:
+        name='pci-msi-capid-pointer' type=int items=1
+            value=000000a0
+        name='pcie-aspm-state' type=string items=1
+            value='disabled'
+        name='pcie-aspm-support' type=string items=1
+            value='l0s,l1'
+        name='pcie-link-supported-speeds' type=int64 items=3
+            value=000000009502f900.000000012a05f200.00000001dcd65000
+        name='pcie-link-target-speed' type=int64 items=1
+            value=00000001dcd65000
+        name='pcie-link-maximum-speed' type=int64 items=1
+            value=00000001dcd65000
+        name='pcie-link-current-speed' type=int64 items=1
+            value=00000001dcd65000
+        name='pcie-link-current-width' type=int items=1
+            value=00000010
+        name='pcie-link-maximum-width' type=int items=1
+            value=00000010
+        name='acpi-namespace' type=string items=1
+            value='\_SB_.PCI0.GFXB.GFX2'
+        name='assigned-addresses' type=int items=30
+            value=c3060010.00000000.90000000.00000000.10000000.83060018.00000000.a0600000.00000000.00040000.81060020.00000000.00002000.00000000.00000100.a1060000.00000000.000003b0.00000000.0000000c.a1060000.00000000.000003c0.00000000.00000020.a2060000.00000000.000a0000.00000000.00020000
+        name='reg' type=int items=35
+            value=00060000.00000000.00000000.00000000.00000000.43060010.00000000.00000000.00000000.10000000.03060018.00000000.00000000.00000000.00040000.01060020.00000000.00000000.00000000.00000100.a1060000.00000000.000003b0.00000000.0000000c.a1060000.00000000.000003c0.00000000.00000020.a2060000.00000000.000a0000.00000000.00020000
+        name='compatible' type=string items=15
+            value='pciex1002,679e.106b.125.0' + 'pciex1002,679e.106b.125' + 'pciex1002,679e.0' + 'pciex1002,679e' + 'pciexclass,030000' + 'pciexclass,0300' + 'pci1002,679e.106b.125.0' + 'pci1002,679e.106b.125' + 'pci106b,125,s' + 'pci106b,125' + 'pci1002,679e.0' + 'pci1002,679e,p' + 'pci1002,679e' + 'pciclass,030000' + 'pciclass,0300'
+        name='power-consumption' type=int items=2
+            value=00000001.00000001
+        name='model' type=string items=1
+            value='VGA compatible controller'
+        name='device_type' type=string items=1
+            value='display'
+        name='interrupts' type=int items=1
+            value=00000001
+        name='devsel-speed' type=int items=1
+            value=00000000
+        name='pcie-type' type=int items=1
+            value=00000001
+        name='unit-address' type=string items=1
+            value='0'
+        name='subsystem-id' type=int items=1
+            value=00000125
+        name='subsystem-vendor-id' type=int items=1
+            value=0000106b
+        name='class-code' type=int items=1
+            value=00030000
+        name='revision-id' type=int items=1
+            value=00000000
+        name='device-id' type=int items=1
+            value=0000679e
+        name='vendor-id' type=int items=1
+            value=00001002
+        name='vendor-name' type=string items=1
+            value='Advanced Micro Devices, Inc. [AMD/ATI]'
+        name='device-name' type=string items=1
+            value='Tahiti LE [Radeon HD 7870 XT]'
+        name='subsystem-name' type=string items=1
+            value='FirePro D500'
+    Device Minor Nodes:
+        dev=(334,257)
+            dev_path=/pci@0,0/pci8086,e08@3/display@0:gfx1
+                spectype=chr type=minor
+                dev_link=/dev/fbs/gfx1
+                dev_link=/dev/fb
+                dev_link=/dev/fb3
+        dev=(334,0)
+            dev_path=/pci@0,0/pci8086,e08@3/display@0:card0
+                spectype=chr type=minor
+                dev_link=/dev/dri/card0
+        dev=(334,128)
+            dev_path=/pci@0,0/pci8086,e08@3/display@0:renderD128
+                spectype=chr type=minor
+                dev_link=/dev/dri/renderD128
+display, instance #0
+    System software properties:
+        name='ddi-no-autodetach' type=int items=1
+            value=00000001
+    Driver properties:
+        name='fm-errcb-capable' type=boolean dev=none
+        name='fm-ereport-capable' type=boolean dev=none
+    Hardware properties:
+        name='pci-msi-capid-pointer' type=int items=1
+            value=000000a0
+        name='pcie-aspm-state' type=string items=1
+            value='disabled'
+        name='pcie-aspm-support' type=string items=1
+            value='l0s,l1'
+        name='pcie-link-supported-speeds' type=int64 items=3
+            value=000000009502f900.000000012a05f200.00000001dcd65000
+        name='pcie-link-target-speed' type=int64 items=1
+            value=00000001dcd65000
+        name='pcie-link-maximum-speed' type=int64 items=1
+            value=00000001dcd65000
+        name='pcie-link-current-speed' type=int64 items=1
+            value=00000001dcd65000
+        name='pcie-link-current-width' type=int items=1
+            value=00000010
+        name='pcie-link-maximum-width' type=int items=1
+            value=00000010
+        name='acpi-namespace' type=string items=1
+            value='\_SB_.PCI0.GFXA.GFX1'
+        name='assigned-addresses' type=int items=30
+            value=c3020010.00000000.80000000.00000000.10000000.83020018.00000000.a0700000.00000000.00040000.81020020.00000000.00003000.00000000.00000100.a1020000.00000000.000003b0.00000000.0000000c.a1020000.00000000.000003c0.00000000.00000020.a2020000.00000000.000a0000.00000000.00020000
+        name='reg' type=int items=35
+            value=00020000.00000000.00000000.00000000.00000000.43020010.00000000.00000000.00000000.10000000.03020018.00000000.00000000.00000000.00040000.01020020.00000000.00000000.00000000.00000100.a1020000.00000000.000003b0.00000000.0000000c.a1020000.00000000.000003c0.00000000.00000020.a2020000.00000000.000a0000.00000000.00020000
+        name='compatible' type=string items=15
+            value='pciex1002,679e.106b.126.0' + 'pciex1002,679e.106b.126' + 'pciex1002,679e.0' + 'pciex1002,679e' + 'pciexclass,030000' + 'pciexclass,0300' + 'pci1002,679e.106b.126.0' + 'pci1002,679e.106b.126' + 'pci106b,126,s' + 'pci106b,126' + 'pci1002,679e.0' + 'pci1002,679e,p' + 'pci1002,679e' + 'pciclass,030000' + 'pciclass,0300'
+        name='power-consumption' type=int items=2
+            value=00000001.00000001
+        name='model' type=string items=1
+            value='VGA compatible controller'
+        name='device_type' type=string items=1
+            value='display'
+        name='interrupts' type=int items=1
+            value=00000001
+        name='devsel-speed' type=int items=1
+            value=00000000
+        name='pcie-type' type=int items=1
+            value=00000001
+        name='unit-address' type=string items=1
+            value='0'
+        name='subsystem-id' type=int items=1
+            value=00000126
+        name='subsystem-vendor-id' type=int items=1
+            value=0000106b
+        name='class-code' type=int items=1
+            value=00030000
+        name='revision-id' type=int items=1
+            value=00000000
+        name='device-id' type=int items=1
+            value=0000679e
+        name='vendor-id' type=int items=1
+            value=00001002
+        name='vendor-name' type=string items=1
+            value='Advanced Micro Devices, Inc. [AMD/ATI]'
+        name='device-name' type=string items=1
+            value='Tahiti LE [Radeon HD 7870 XT]'
+        name='subsystem-name' type=string items=1
+            value='FirePro D500'
+    Device Minor Nodes:
+        dev=(334,1)
+            dev_path=/pci@0,0/pci8086,e04@2/display@0:card1
+                spectype=chr type=minor
+                dev_link=/dev/dri/card1
+        dev=(334,129)
+            dev_path=/pci@0,0/pci8086,e04@2/display@0:renderD129
+                spectype=chr type=minor
+                dev_link=/dev/dri/renderD129
