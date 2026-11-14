@@ -1,0 +1,21 @@
+gpuburn: AMD Radeon HD 7800 Series (radeonsi, tahiti, ACO, DRM 3.64), 2048x2048, 64 iterations per pixel
+gpuburn: t=2 s  80.2 fps  21.5 G pixel-iterations/s
+gpuburn: t=4 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=6 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=8 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=10 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=12 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=14 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=16 s  80.0 fps  21.5 G pixel-iterations/s
+gpuburn: t=18 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=20 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=22 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=24 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=26 s  80.2 fps  21.5 G pixel-iterations/s
+gpuburn: t=28 s  80.2 fps  21.5 G pixel-iterations/s
+gpuburn: t=30 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=32 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=34 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=36 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: t=38 s  80.1 fps  21.5 G pixel-iterations/s
+gpuburn: 3205 frames in 40.0 s = 80.1 fps, GL error 0x0

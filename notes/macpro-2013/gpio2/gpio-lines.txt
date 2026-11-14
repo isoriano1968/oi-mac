@@ -1,0 +1,4 @@
+Nov 14 14:34:55 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm GPIOPAD STRENGTH 0x000000a9 MASK 0x00000000 A 0x00000000 EN 0x00000000 Y 0x40519841; HARDWAREDC 1, ac_power 1
+Nov 14 14:34:55 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm sent RunningOnAC, SMC answer 0x01
+Nov 14 14:35:02 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm GPIOPAD STRENGTH 0x000000a9 MASK 0x00000000 A 0x00000000 EN 0x00000000 Y 0x40519843; HARDWAREDC 1, ac_power 1
+Nov 14 14:35:02 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm sent RunningOnAC, SMC answer 0x01

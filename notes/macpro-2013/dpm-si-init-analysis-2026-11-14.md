@@ -760,3 +760,29 @@ hot). Boot 2 of section 15 (`amdgpu_illumos_si_running_on_ac = 1`) tells
 the SMC "AC" directly, whatever the pin says: if the levels then step up,
 the AC/DC input was the cause after all; if they stay at 0 with the SMC
 answering OK, the AC/DC input is ruled out for both polarities.
+
+## 17. gpio2 result, and what is left (2026-11-14 14:35)
+
+gpio2 (clone of con8 + gpio p5p, `amdgpu_illumos_si_running_on_ac = 1`):
+both GPUs "si_dpm sent RunningOnAC, SMC answer 0x01" (accepted). Under
+gpuburn: renderD128 317/1270 MHz, 84.2 fps; renderD129 300/150 MHz,
+80.1 fps; 62-66 C. Unchanged. **The AC/DC input is ruled out for both
+polarities.** (amdgpu1's GPIOPAD_Y bit 28 differs from gpio1, 0x5051.. ->
+0x4051..; not a pin the dpm flags name.)
+
+What is left, ranked. Everything else (sections 2, 9, 10, 12, 14, 16) is
+equal to the working Linux boot or shown not to reach the SMC.
+
+| # | Left | Why it is still possible | How it can be decided |
+|---|---|---|---|
+| 1 | The VR-hot input (GPIO 6, REGULATOR_HOT + PROG_GPIO, vr_hot_gpio 6) read as "hot" | The pin reads 1 constantly; no driver passes a VR-hot polarity, so it depends on the SMC firmware's default, which no source documents (only the cap's name VRHOT_POLARITY_HIGH, not set, suggests active-low). An asserted VR hot makes the SMC hold the lowest level, which matches L0 under load and refused forcing. Both drivers already drop REGULATOR_HOT for two boards (Pitcairn 0x6818/0x6819 in si_init_smc_table), so a wrong VR-hot input is a known case. Against it: Linux radeon set the same flag on this Mac and stepped up; that holds only if the board drives GPIO 6 the same under both OSes, which was never measured on Linux. | Source: no (SMC firmware binary). Read-only: no register reports the SMC's throttle source. One test: a switch (default off) that leaves REGULATOR_HOT and REGULATOR_HOT_PROG_GPIO out of systemFlags, one boot, gpuburn as before. Step-up = the VR-hot input; none = ruled out. Cost: the regulator-hot protection is off for that boot only; the GPU's own thermal trip (CG_THERMAL_INT 90/120 C, DIG_THERM_DPM) and the Apple SMC's fan control stay, the test runs 40 s at 62-66 C. |
+| 2 | A difference in the SMC's runtime state that only a Linux SRAM dump would show | sram2 compared the SRAM with the firmware image and the driver's writes, not with Linux's SRAM | A Linux boot with the 0026b-style dump (radeon or amdgpu); declined by the user (no Linux boots). |
+| 3 | Linux amdgpu's SI path itself (not our port) | Everything comparable from source says amdgpu = radeon on this path | A Linux boot with `amdgpu.si_support=1`; declined by the user. |
+
+Nothing else driver-side is left that can be decided without Linux.
+
+**Recommendation:** #1, one test boot, as the last driver-side test. If
+the levels stay at 0 with REGULATOR_HOT off, park SI dpm: it is stable
+at L0 (317.5/300 MHz sclk; mclk 1270 MHz on the display GPU), 80-84 fps
+in gpuburn, and the evidence (this document, sections 1-17) is enough
+for an upstream question to the amd-gfx list with the dumps attached.
