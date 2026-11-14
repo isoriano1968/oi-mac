@@ -17,12 +17,16 @@ Data sources:
   - the Apple SMC through `smcstat -p` (applesmc(4D)): temperatures, fans;
   - illumos ksensors under /dev/sensors (coretemp, pchtemp, ...), read with
     SENSOR_IOCTL_SCALAR: works on any machine (needs read access).
+Fan presets (Auto, Cool, Cooler, Max) through smcfan(8), run with pfexec(1)
+and the rights profile "Apple SMC Fan Control"; hidden where smcfan cannot
+set the fans (no SMC, or a driver without fan control).
 Profiles by SMBIOS product name: MacPro6,1, iMac*, Sun Ultra 24; others get
 cards without a drawing.  All drawings are our own; no Apple artwork.
 """
 
 import collections
 import fcntl
+import getpass
 import math
 import os
 import re
@@ -80,6 +84,10 @@ window.macsensors { background: %(bg)s; color: #ffffff; }
 .caps { font-size: 0.85em; font-weight: bold; letter-spacing: 1px; color: #c0bfbc; }
 .ok { color: #8ff0a4; font-size: 0.85em; }
 .keys { font-size: 0.85em; color: #deddda; }
+.over { color: %(hot)s; font-weight: bold; }
+.presets button { padding: 2px 10px; }
+.presets button:checked { background: #1c71d8; color: #ffffff; }
+.warnmsg { color: #ffa348; font-size: 0.8em; }
 """ % {"bg": BG, "panel": PANEL, "card": CARD, "hot": HOT}
 
 # ------------------------------------------------------------------ data
@@ -139,6 +147,32 @@ def read_smc():
         except ValueError:
             continue
     return temps, fans
+
+
+SMCFAN = "/usr/sbin/smcfan"
+PFEXEC = "/usr/bin/pfexec"
+FAN_PROFILE = "Apple SMC Fan Control"
+PRESETS = (("auto", "Auto"), ("cool", "Cool"), ("cooler", "Cooler"),
+           ("max", "Max"))
+SMCFAN_NOTSUP, SMCFAN_PERM = 3, 4	# smcfan(8) exit status
+
+
+def read_fan_preset():
+    """The active fan preset from the `preset:` line of smcfan(8): a name
+    of PRESETS or "manual"; None where the fans cannot be set."""
+    if not os.access(SMCFAN, os.X_OK):
+        return None
+    try:
+        res = subprocess.run([SMCFAN], capture_output=True, text=True,
+                             timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if res.returncode != 0:
+        return None
+    for line in res.stdout.splitlines():
+        if line.startswith("preset:"):
+            return line.split(":", 1)[1].strip()
+    return None
 
 
 def read_model():
@@ -592,13 +626,22 @@ class Card(Gtk.Box):
             self.big.set_label("—")
             self.bar.set(0, COOL)
             self.detail.set_label(detail)
+            self.note.set_label("")
+            self.note.remove_css_class("over")
+            self.remove_css_class("hot")
             return COOL
         col = level_color(value, self.limit)
         self.big.set_markup('<span foreground="%s">%.0f</span>' % (col, value))
         self.bar.set(value / self.limit, col)
         self.detail.set_label(detail)
         near = value >= 0.9 * self.limit
-        self.note.set_label("%.0f °C below limit" % (self.limit - value) if near else "")
+        if value >= self.limit:
+            self.note.set_label("%.0f °C above limit" % (value - self.limit))
+            self.note.add_css_class("over")
+        else:
+            self.note.set_label("%.0f °C below limit" % (self.limit - value)
+                                if near else "")
+            self.note.remove_css_class("over")
         if near:
             self.add_css_class("hot")
         else:
@@ -609,14 +652,16 @@ class Card(Gtk.Box):
 
 class FanCard(Gtk.Box):
     def __init__(self):
-        super().__init__(spacing=16)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         self.add_css_class("card")
         self.fan = None
+        top = Gtk.Box(spacing=16)
+        self.append(top)
         self.ring = Gtk.DrawingArea()
         self.ring.set_content_width(96)
         self.ring.set_content_height(96)
         self.ring.set_draw_func(self.draw)
-        self.append(self.ring)
+        top.append(self.ring)
         col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, valign=Gtk.Align.CENTER)
         t = Gtk.Label(label="Fan", xalign=0)
         t.add_css_class("cardtitle")
@@ -624,11 +669,101 @@ class FanCard(Gtk.Box):
         self.rpm.add_css_class("big")
         self.range = Gtk.Label(label="", xalign=0)
         self.range.add_css_class("dim")
-        ok = Gtk.Label(label="SMC in control", xalign=0)
-        ok.add_css_class("ok")
-        for w in (t, self.rpm, self.range, ok):
+        self.ok = Gtk.Label(label="SMC in control", xalign=0)
+        self.ok.add_css_class("ok")
+        for w in (t, self.rpm, self.range, self.ok):
             col.append(w)
-        self.append(col)
+        top.append(col)
+
+        # Presets: radio-style toggle buttons, the active one from smcfan(8).
+        self.preset = None		# active preset, "manual" or None
+        self.busy = False		# smcfan running
+        self.syncing = False		# buttons set by the program
+        self.presets = Gtk.Box(spacing=0, halign=Gtk.Align.START)
+        self.presets.add_css_class("linked")
+        self.presets.add_css_class("presets")
+        self.buttons = {}
+        for name, label in PRESETS:
+            b = Gtk.ToggleButton(label=label)
+            b.set_tooltip_text("pfexec smcfan -p -s %s" % name)
+            b.connect("toggled", self.on_toggled, name)
+            self.buttons[name] = b
+            self.presets.append(b)
+        self.msg = Gtk.Label(label="", xalign=0, wrap=True, max_width_chars=40)
+        self.msg.add_css_class("warnmsg")
+        self.msg.set_selectable(True)
+        self.append(self.presets)
+        self.append(self.msg)
+        self.set_preset(read_fan_preset())
+
+    def set_preset(self, preset):
+        """Show the active preset; hide the buttons without fan control."""
+        if self.busy:
+            return
+        self.preset = preset
+        self.presets.set_visible(preset is not None)
+        if preset is None:
+            self.msg.set_visible(bool(self.msg.get_label()))
+            self.ok.set_label("SMC in control")
+            return
+        self.syncing = True
+        for name, b in self.buttons.items():
+            b.set_active(name == preset)
+            b.set_sensitive(True)
+        self.syncing = False
+        if preset == "auto":
+            self.ok.set_label("SMC in control")
+        elif preset == "manual":
+            self.ok.set_label("SMC in control · minimum set by hand")
+        else:
+            self.ok.set_label("SMC in control · minimum raised (%s)" %
+                              dict(PRESETS).get(preset, preset))
+        self.msg.set_visible(bool(self.msg.get_label()))
+
+    def on_toggled(self, button, name):
+        if self.syncing or self.busy:
+            return
+        if name == self.preset:
+            self.set_preset(self.preset)	# keep the active one pressed
+            return
+        self.busy = True
+        for b in self.buttons.values():
+            b.set_sensitive(False)
+        argv = [PFEXEC, SMCFAN, "-p", "-s", name]
+        try:
+            proc = Gio.Subprocess.new(
+                argv, Gio.SubprocessFlags.STDOUT_PIPE |
+                Gio.SubprocessFlags.STDERR_PIPE)
+        except GLib.Error as e:
+            self.done("%s: %s" % (PFEXEC, e.message))
+            return
+        proc.communicate_utf8_async(None, None, self.on_done, name)
+
+    def on_done(self, proc, res, name):
+        try:
+            _ok, out, err = proc.communicate_utf8_finish(res)
+        except GLib.Error as e:
+            self.done("smcfan: %s" % e.message)
+            return
+        status = proc.get_exit_status() if proc.get_if_exited() else -1
+        if status == 0:
+            self.done("")
+        elif status == SMCFAN_PERM:
+            self.done('Fan presets need the rights profile "%s". An '
+                      'administrator can grant it with:\n'
+                      'usermod -P +"%s" %s' %
+                      (FAN_PROFILE, FAN_PROFILE, getpass.getuser()))
+        elif status == SMCFAN_NOTSUP:
+            self.done("This Mac's SMC driver cannot set the fans.")
+        else:
+            lines = ((err or "") + (out or "")).strip().splitlines()
+            self.done(lines[-1] if lines else
+                      "smcfan failed (exit status %d)" % status)
+
+    def done(self, msg):
+        self.busy = False
+        self.msg.set_label(msg)
+        self.set_preset(read_fan_preset())
 
     def update(self, fans):
         self.fan = fans[0] if fans else None
@@ -769,6 +904,7 @@ class Window(Gtk.ApplicationWindow):
             if v is not None:
                 spots += [(x, y, r, col) for x, y, r in place.get(cid, [])]
         self.fancard.update(fans)
+        self.fancard.set_preset(read_fan_preset())
         if self.machine:
             self.machine.update(spots, fans[0]["rpm"] if fans else 0)
         self.exp.set_label("All sensor keys (%d)" % n)

@@ -15,7 +15,9 @@
 
 # mac-sensors: "Mac Sensors", a GTK 4 app that shows the temperatures and
 # fans of an Intel Mac (SMC through smcstat(8) of driver/sensor/applesmc) and
-# of any machine (illumos ksensors) on a drawing of the machine.
+# of any machine (illumos ksensors) on a drawing of the machine, and the fan
+# presets Auto / Cool / Cooler / Max through smcfan(8) (pfexec, rights profile
+# "Apple SMC Fan Control", both from driver/sensor/applesmc 0.0.3 on).
 #
 # This project's own code: the source is this directory (no upstream
 # archive).  Installed as an application with a desktop file and a hicolor
@@ -25,7 +27,7 @@
 #   gmake check / gmake publish / gmake clean   (GNU make, on OpenIndiana)
 
 COMPONENT_NAME=		mac-sensors
-COMPONENT_VERSION=	1.2
+COMPONENT_VERSION=	1.3
 COMPONENT_LICENSE=	CDDL-1.0
 COMPONENT_LICENSE_FILE=	$(COMPONENT_NAME).license
 APP_ID=			org.openindiana.MacSensors

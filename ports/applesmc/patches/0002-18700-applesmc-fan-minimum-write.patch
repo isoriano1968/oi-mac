@@ -1,0 +1,1419 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 12:00:00 +0100
+Subject: [PATCH] 18700 applesmc: fan minimum writes, smcfan(8) presets
+
+applesmc(4D) gets one write path: APPLESMC_IOC_WRITE, for privileged
+callers (sys_config) and only for F<n>Mn and F<n>Tg of type fpe2, clamped
+to [the F<n>Mn found at attach, F<n>Mx]. The original minimum of every
+fan written is restored at detach; APPLESMC_IOC_FANMIN returns it.
+The write protocol is the one of Linux applesmc.c write_smc().
+
+smcfan(8) lists the fans and sets the presets auto, cool, cooler, max
+or an explicit minimum; svc:/system/applesmc-fan applies config/preset
+at boot, and the rights profile "Apple SMC Fan Control" lets a user
+run it with pfexec.
+---
+ usr/src/cmd/Makefile                             |    1 
+ usr/src/cmd/smcfan/Makefile                      |   53 +++
+ usr/src/cmd/smcfan/applesmc-fan.xml              |   95 ++++++
+ usr/src/cmd/smcfan/exec_attr                     |    1 
+ usr/src/cmd/smcfan/prof_attr                     |    1 
+ usr/src/cmd/smcfan/smcfan.c                      |  345 ++++++++++++++++++++++
+ usr/src/cmd/smcfan/svc-applesmc-fan              |   62 ++++
+ usr/src/man/man4d/applesmc.4d                    |   54 +++
+ usr/src/man/man8/Makefile                        |    1 
+ usr/src/man/man8/smcfan.8                        |  160 ++++++++++
+ usr/src/pkg/manifests/driver-sensor-applesmc.p5m |   22 +
+ usr/src/uts/common/sys/applesmc.h                |   18 +
+ usr/src/uts/i86pc/io/applesmc.c                  |  282 +++++++++++++++++-
+ 13 files changed, 1072 insertions(+), 23 deletions(-)
+ create mode 100644 usr/src/cmd/smcfan/Makefile
+ create mode 100644 usr/src/cmd/smcfan/applesmc-fan.xml
+ create mode 100644 usr/src/cmd/smcfan/exec_attr
+ create mode 100644 usr/src/cmd/smcfan/prof_attr
+ create mode 100644 usr/src/cmd/smcfan/smcfan.c
+ create mode 100755 usr/src/cmd/smcfan/svc-applesmc-fan
+ create mode 100644 usr/src/man/man8/smcfan.8
+
+diff --git a/usr/src/cmd/Makefile b/usr/src/cmd/Makefile
+index 958fc46..ed44b36 100644
+--- a/usr/src/cmd/Makefile
++++ b/usr/src/cmd/Makefile
+@@ -502,6 +502,7 @@ i386_SUBDIRS=		\
+ 	rdmsr		\
+ 	rsrvrctl	\
+ 	rtc		\
++	smcfan		\
+ 	smcstat		\
+ 	ucodeadm	\
+ 	xhci		\
+diff --git b/usr/src/cmd/smcfan/Makefile b/usr/src/cmd/smcfan/Makefile
+new file mode 100644
+index 0000000..f2d2a55
+--- /dev/null
++++ b/usr/src/cmd/smcfan/Makefile
+@@ -0,0 +1,53 @@
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright 2026 isoriano1968
++#
++
++PROG=		smcfan
++MANIFEST=	applesmc-fan.xml
++SVCMETHOD=	svc-applesmc-fan
++
++include ../Makefile.cmd
++include ../Makefile.cmd.64
++
++ROOTMANIFESTDIR=	$(ROOTSVCSYSTEM)
++
++CSTD=		$(CSTD_GNU17)
++CFLAGS64 +=	$(CCVERBOSE)
++
++RBACFILES=	exec_attr.d/applesmc \
++		prof_attr.d/applesmc
++ROOTETCSECURITY=	$(ROOT)/etc/security
++ROOTRBACFILES=	$(RBACFILES:%=$(ROOTETCSECURITY)/%)
++$(ROOTRBACFILES) := FILEMODE = 0444
++
++.KEEP_STATE:
++
++all: $(PROG)
++
++install: all $(ROOTUSRSBINPROG) $(ROOTMANIFEST) $(ROOTSVCMETHOD) \
++	$(ROOTRBACFILES)
++
++$(ROOTETCSECURITY)/exec_attr.d/%: exec_attr
++	$(INS.rename)
++
++$(ROOTETCSECURITY)/prof_attr.d/%: prof_attr
++	$(INS.rename)
++
++check:	$(PROG).c $(CHKMANIFEST)
++	$(CSTYLE) -pP $(PROG).c
++
++clean:
++	$(RM) $(OBJS)
++
++include ../Makefile.targ
+diff --git b/usr/src/cmd/smcfan/applesmc-fan.xml b/usr/src/cmd/smcfan/applesmc-fan.xml
+new file mode 100644
+index 0000000..901236b
+--- /dev/null
++++ b/usr/src/cmd/smcfan/applesmc-fan.xml
+@@ -0,0 +1,95 @@
++<?xml version="1.0"?>
++<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
++<!--
++ This file and its contents are supplied under the terms of the
++ Common Development and Distribution License ("CDDL"), version 1.0.
++ You may only use this file in accordance with the terms of version
++ 1.0 of the CDDL.
++
++ A full copy of the text of the CDDL should have accompanied this
++ source.  A copy of the CDDL is also available via the Internet at
++ http://www.illumos.org/license/CDDL.
++
++ Copyright 2026 isoriano1968
++-->
++
++<service_bundle type="manifest" name="driver/sensor/applesmc:applesmc-fan">
++
++<service name="system/applesmc-fan" type="service" version="1">
++
++	<create_default_instance enabled="true" />
++
++	<single_instance />
++
++	<dependency name="filesystem" grouping="require_all"
++	    restart_on="none" type="service">
++		<service_fmri value="svc:/system/filesystem/local" />
++	</dependency>
++
++	<dependency name="devices" grouping="require_all"
++	    restart_on="none" type="service">
++		<service_fmri value="svc:/system/device/local" />
++	</dependency>
++
++	<exec_method type="method" name="start"
++	    exec="/lib/svc/method/svc-applesmc-fan start %{config/preset}"
++	    timeout_seconds="60" />
++
++	<exec_method type="method" name="refresh"
++	    exec="/lib/svc/method/svc-applesmc-fan refresh %{config/preset}"
++	    timeout_seconds="60" />
++
++	<exec_method type="method" name="stop"
++	    exec="/lib/svc/method/svc-applesmc-fan stop"
++	    timeout_seconds="60" />
++
++	<property_group name="startd" type="framework">
++		<propval name="duration" type="astring" value="transient" />
++	</property_group>
++
++	<property_group name="config" type="application">
++		<propval name="preset" type="astring" value="auto" />
++	</property_group>
++
++	<stability value="Unstable" />
++
++	<template>
++		<common_name>
++			<loctext xml:lang="C">
++				Apple SMC fan preset
++			</loctext>
++		</common_name>
++		<description>
++			<loctext xml:lang="C">
++				Applies the fan preset config/preset (auto,
++				cool, cooler or max) of an Intel Mac with
++				smcfan(8) at boot.
++			</loctext>
++		</description>
++		<documentation>
++			<manpage title="smcfan" section="8"
++			    manpath="/usr/share/man" />
++		</documentation>
++		<pg_pattern name="config" type="application"
++		    target="this" required="false">
++			<prop_pattern name="preset" type="astring"
++			    required="false">
++				<description>
++					<loctext xml:lang="C">
++						auto (the SMC's own minimum),
++						cool, cooler or max
++					</loctext>
++				</description>
++				<cardinality min="1" max="1" />
++				<constraints>
++					<value name="auto" />
++					<value name="cool" />
++					<value name="cooler" />
++					<value name="max" />
++				</constraints>
++			</prop_pattern>
++		</pg_pattern>
++	</template>
++</service>
++
++</service_bundle>
+diff --git b/usr/src/cmd/smcfan/exec_attr b/usr/src/cmd/smcfan/exec_attr
+new file mode 100644
+index 0000000..953dbcb
+--- /dev/null
++++ b/usr/src/cmd/smcfan/exec_attr
+@@ -0,0 +1 @@
++Apple SMC Fan Control:solaris:cmd:::/usr/sbin/smcfan:uid=0
+diff --git b/usr/src/cmd/smcfan/prof_attr b/usr/src/cmd/smcfan/prof_attr
+new file mode 100644
+index 0000000..ddfd7b3
+--- /dev/null
++++ b/usr/src/cmd/smcfan/prof_attr
+@@ -0,0 +1 @@
++Apple SMC Fan Control:::Set the fan presets of the Apple SMC:
+diff --git b/usr/src/cmd/smcfan/smcfan.c b/usr/src/cmd/smcfan/smcfan.c
+new file mode 100644
+index 0000000..a1a243c
+--- /dev/null
++++ b/usr/src/cmd/smcfan/smcfan.c
+@@ -0,0 +1,345 @@
++/*
++ * This file and its contents are supplied under the terms of the
++ * Common Development and Distribution License ("CDDL"), version 1.0.
++ * You may only use this file in accordance with the terms of version
++ * 1.0 of the CDDL.
++ *
++ * A full copy of the text of the CDDL should have accompanied this
++ * source.  A copy of the CDDL is also available via the Internet at
++ * http://www.illumos.org/license/CDDL.
++ */
++
++/*
++ * Copyright 2026 isoriano1968
++ */
++
++/*
++ * smcfan: fan presets for the Apple SMC, through applesmc(4D).
++ *
++ *	smcfan			list the fans and the active preset
++ *	smcfan -s preset	auto, cool, cooler or max, for every fan
++ *	smcfan -m rpm		an explicit minimum, for every fan
++ *	smcfan -p -s preset	also keep it in svc:/system/applesmc-fan
++ *
++ * A preset only raises the floor (F<n>Mn) the SMC keeps the fan above; the
++ * SMC keeps controlling the fan above it, with its own protection.
++ */
++
++#include <sys/types.h>
++#include <sys/wait.h>
++#include <sys/applesmc.h>
++#include <fcntl.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <strings.h>
++#include <unistd.h>
++#include <spawn.h>
++#include <err.h>
++#include <errno.h>
++
++#define	EXIT_USAGE	2
++#define	EXIT_NOTSUP	3	/* no SMC, or a driver without fan control */
++#define	EXIT_PERM	4	/* not privileged */
++
++#define	SMCDEV		"/dev/applesmc"
++#define	SVC		"svc:/system/applesmc-fan"	/* has config/preset */
++#define	FMRI		SVC ":default"
++#define	MAXFANS		10
++
++extern char **environ;
++
++static const char *presets[] = { "auto", "cool", "cooler", "max", NULL };
++
++typedef struct fan {
++	int		f_n;
++	uint16_t	f_act, f_tg, f_mn;	/* fpe2 raw: rpm * 4 */
++	uint16_t	f_orig, f_max;		/* from APPLESMC_IOC_FANMIN */
++	boolean_t	f_hastg;
++} fan_t;
++
++static int smcfd = -1;
++static fan_t fans[MAXFANS];
++static int nfans;
++
++static uint16_t
++be16(const uint8_t *b)
++{
++	return ((uint16_t)((b[0] << 8) | b[1]));
++}
++
++static void
++smc_open(int flags)
++{
++	if ((smcfd = open(SMCDEV, flags)) >= 0)
++		return;
++	if (errno == ENOENT || errno == ENXIO)
++		errx(EXIT_NOTSUP, "%s: %s (no Apple SMC, or applesmc(4D) is "
++		    "not loaded)", SMCDEV, strerror(errno));
++	if (errno == EACCES || errno == EPERM)
++		errx(EXIT_PERM, "%s: %s (changing the fans needs the "
++		    "\"Apple SMC Fan Control\" rights profile: pfexec smcfan)",
++		    SMCDEV, strerror(errno));
++	err(EXIT_FAILURE, "%s", SMCDEV);
++}
++
++static int
++smc_ioc(int cmd, const char *key, applesmc_key_t *ak)
++{
++	bzero(ak, sizeof (*ak));
++	(void) memcpy(ak->ak_key, key, APPLESMC_KEYLEN);
++	return (ioctl(smcfd, cmd, ak));
++}
++
++/* Fan keys are F<n>.., n a single digit. */
++static void
++fan_keyname(char key[5], int n, const char *what)
++{
++	key[0] = 'F';
++	key[1] = '0' + n;
++	key[2] = what[0];
++	key[3] = what[1];
++	key[4] = '\0';
++}
++
++static int
++fan_key(int n, const char *what, uint16_t *v)
++{
++	char key[5];
++	applesmc_key_t ak;
++
++	fan_keyname(key, n, what);
++	if (smc_ioc(APPLESMC_IOC_READ, key, &ak) != 0)
++		return (-1);
++	if (strncmp(ak.ak_type, "fpe2", 4) != 0 || ak.ak_len != 2)
++		return (-1);
++	*v = be16(ak.ak_data);
++	return (0);
++}
++
++static void
++load_fans(void)
++{
++	applesmc_key_t ak;
++	int i, n;
++
++	if (smc_ioc(APPLESMC_IOC_READ, "FNum", &ak) != 0 || ak.ak_len < 1)
++		errx(EXIT_NOTSUP, "the SMC reports no fans");
++	n = ak.ak_data[0];
++	for (i = 0; i < n && i < MAXFANS; i++) {
++		char key[5];
++		fan_t *f = &fans[nfans];
++
++		bzero(f, sizeof (*f));
++		f->f_n = i;
++		fan_keyname(key, i, "Mn");
++		if (smc_ioc(APPLESMC_IOC_FANMIN, key, &ak) != 0) {
++			if (errno == ENOTTY || errno == EINVAL)
++				errx(EXIT_NOTSUP, "this applesmc(4D) has no "
++				    "fan control");
++			continue;	/* not a fan the driver can set */
++		}
++		f->f_orig = be16(ak.ak_data);
++		f->f_max = be16(&ak.ak_data[2]);
++		if (fan_key(i, "Ac", &f->f_act) != 0 ||
++		    fan_key(i, "Mn", &f->f_mn) != 0)
++			continue;
++		f->f_hastg = fan_key(i, "Tg", &f->f_tg) == 0;
++		nfans++;
++	}
++	if (nfans == 0)
++		errx(EXIT_NOTSUP, "no fan the driver can set");
++}
++
++/* The floor a preset gives a fan, fpe2 raw. */
++static uint16_t
++preset_min(const fan_t *f, int p)
++{
++	uint32_t span = f->f_max - f->f_orig;
++
++	switch (p) {
++	case 0:
++		return (f->f_orig);
++	case 1:
++		return (f->f_orig + span / 3);
++	case 2:
++		return (f->f_orig + span * 2 / 3);
++	default:
++		return (f->f_max);
++	}
++}
++
++/* The preset every fan is at, or -1. */
++static int
++active_preset(void)
++{
++	int p, i;
++
++	for (p = 0; presets[p] != NULL; p++) {
++		for (i = 0; i < nfans; i++) {
++			int d = (int)fans[i].f_mn -
++			    (int)preset_min(&fans[i], p);
++
++			if (d < -4 || d > 4)	/* within 1 rpm */
++				break;
++		}
++		if (i == nfans)
++			return (p);
++	}
++	return (-1);
++}
++
++static void
++list(void)
++{
++	int i, p;
++
++	(void) printf("%-4s  %6s  %6s  %6s  %6s  %7s\n", "FAN", "RPM",
++	    "TARGET", "MIN", "MAX", "DEFAULT");
++	for (i = 0; i < nfans; i++) {
++		fan_t *f = &fans[i];
++
++		(void) printf("F%-3d  %6u  ", f->f_n, f->f_act / 4);
++		if (f->f_hastg)
++			(void) printf("%6u", f->f_tg / 4);
++		else
++			(void) printf("%6s", "-");
++		(void) printf("  %6u  %6u  %7u\n", f->f_mn / 4,
++		    f->f_max / 4, f->f_orig / 4);
++	}
++	if ((p = active_preset()) >= 0)
++		(void) printf("preset: %s\n", presets[p]);
++	else
++		(void) printf("preset: manual\n");
++}
++
++static int
++set_min(fan_t *f, uint16_t raw)
++{
++	applesmc_key_t ak;
++	char key[5];
++
++	fan_keyname(key, f->f_n, "Mn");
++	bzero(&ak, sizeof (ak));
++	(void) memcpy(ak.ak_key, key, APPLESMC_KEYLEN);
++	(void) memcpy(ak.ak_type, "fpe2", APPLESMC_KEYLEN);
++	ak.ak_len = 2;
++	ak.ak_data[0] = raw >> 8;
++	ak.ak_data[1] = raw & 0xff;
++	if (ioctl(smcfd, APPLESMC_IOC_WRITE, &ak) != 0) {
++		if (errno == EPERM || errno == EACCES)
++			errx(EXIT_PERM, "%s: %s (needs the \"Apple SMC Fan "
++			    "Control\" rights profile: pfexec smcfan)", key,
++			    strerror(errno));
++		warn("%s", key);
++		return (-1);
++	}
++	f->f_mn = be16(ak.ak_data);
++	if (f->f_mn != raw)
++		warnx("%s: %u rpm is outside %u-%u, set to %u rpm", key,
++		    raw / 4, f->f_orig / 4, f->f_max / 4, f->f_mn / 4);
++	return (0);
++}
++
++static int
++run(char *const argv[])
++{
++	pid_t pid;
++	int st, e;
++
++	if ((e = posix_spawn(&pid, argv[0], NULL, NULL, argv, environ)) != 0) {
++		warnc(e, "%s", argv[0]);
++		return (-1);
++	}
++	if (waitpid(pid, &st, 0) < 0 || !WIFEXITED(st) ||
++	    WEXITSTATUS(st) != 0) {
++		warnx("%s %s failed", argv[0], argv[1]);
++		return (-1);
++	}
++	return (0);
++}
++
++/* Keep the preset in the service, which applies it at boot. */
++static int
++persist(const char *preset)
++{
++	char val[32];
++	char *setprop[] = { "/usr/sbin/svccfg", "-s", SVC, "setprop",
++	    "config/preset", "=", "astring:", val, NULL };
++	char *refresh[] = { "/usr/sbin/svcadm", "refresh", FMRI, NULL };
++	char *enable[] = { "/usr/sbin/svcadm", "enable", FMRI, NULL };
++
++	(void) snprintf(val, sizeof (val), "%s", preset);
++	if (run(setprop) != 0 || run(refresh) != 0 || run(enable) != 0)
++		return (-1);
++	return (0);
++}
++
++static void
++usage(void)
++{
++	(void) fprintf(stderr, "usage: smcfan\n"
++	    "       smcfan [-p] -s auto|cool|cooler|max\n"
++	    "       smcfan -m rpm\n");
++	exit(EXIT_USAGE);
++}
++
++int
++main(int argc, char **argv)
++{
++	const char *preset = NULL;
++	long rpm = -1;
++	int c, i, p = -1, pflag = 0, ret = 0;
++	char *end;
++
++	while ((c = getopt(argc, argv, "ps:m:")) != -1) {
++		switch (c) {
++		case 'p':
++			pflag = 1;
++			break;
++		case 's':
++			preset = optarg;
++			break;
++		case 'm':
++			errno = 0;
++			rpm = strtol(optarg, &end, 10);
++			if (errno != 0 || *end != '\0' || rpm < 0 ||
++			    rpm >= 0x4000)
++				errx(EXIT_USAGE, "%s: not a speed in rpm",
++				    optarg);
++			break;
++		default:
++			usage();
++		}
++	}
++	if (optind != argc || (preset != NULL && rpm >= 0) ||
++	    (pflag && preset == NULL))
++		usage();
++	if (preset != NULL) {
++		for (p = 0; presets[p] != NULL; p++) {
++			if (strcmp(presets[p], preset) == 0)
++				break;
++		}
++		if (presets[p] == NULL)
++			errx(EXIT_USAGE, "%s: not a preset (auto, cool, "
++			    "cooler, max)", preset);
++	}
++
++	smc_open(preset != NULL || rpm >= 0 ? O_RDWR : O_RDONLY);
++	load_fans();
++
++	if (preset == NULL && rpm < 0) {
++		list();
++		return (0);
++	}
++	for (i = 0; i < nfans; i++) {
++		uint16_t raw = preset != NULL ? preset_min(&fans[i], p) :
++		    (uint16_t)(rpm * 4);
++
++		if (set_min(&fans[i], raw) != 0)
++			ret = EXIT_FAILURE;
++	}
++	if (ret == 0 && pflag && persist(presets[p]) != 0)
++		ret = EXIT_FAILURE;
++	return (ret);
++}
+diff --git b/usr/src/cmd/smcfan/svc-applesmc-fan b/usr/src/cmd/smcfan/svc-applesmc-fan
+new file mode 100755
+index 0000000..812c8db
+--- /dev/null
++++ b/usr/src/cmd/smcfan/svc-applesmc-fan
+@@ -0,0 +1,62 @@
++#!/sbin/sh
++#
++# This file and its contents are supplied under the terms of the
++# Common Development and Distribution License ("CDDL"), version 1.0.
++# You may only use this file in accordance with the terms of version
++# 1.0 of the CDDL.
++#
++# A full copy of the text of the CDDL should have accompanied this
++# source.  A copy of the CDDL is also available via the Internet at
++# http://www.illumos.org/license/CDDL.
++#
++
++#
++# Copyright 2026 isoriano1968
++#
++
++#
++# svc:/system/applesmc-fan: apply the fan preset config/preset with
++# smcfan(8) at boot and on refresh; give the fans back to the SMC's own
++# minimum (preset auto) on stop.
++#
++
++. /lib/svc/share/smf_include.sh
++
++case "$1" in
++start|refresh)
++	preset="${2:-auto}"
++	;;
++stop)
++	preset=auto
++	;;
++*)
++	echo "usage: $0 start|refresh|stop [preset]"
++	exit $SMF_EXIT_ERR_CONFIG
++	;;
++esac
++
++# Only a start method may disable the service temporarily.
++if [ ! -c /dev/applesmc ]; then
++	[ "$1" = start ] || exit $SMF_EXIT_OK
++	smf_method_exit $SMF_EXIT_TEMP_DISABLE \
++	    "no /dev/applesmc: not an Intel Mac, or applesmc(4D) not loaded"
++fi
++
++/usr/sbin/smcfan -s "$preset"
++case $? in
++0)
++	exit $SMF_EXIT_OK
++	;;
++2)
++	echo "config/preset: \"$preset\" is not auto, cool, cooler or max"
++	exit $SMF_EXIT_ERR_CONFIG
++	;;
++3)
++	[ "$1" = start ] || exit $SMF_EXIT_OK
++	smf_method_exit $SMF_EXIT_TEMP_DISABLE \
++	    "applesmc(4D) cannot set the fans of this Mac"
++	;;
++*)
++	exit $SMF_EXIT_ERR_FATAL
++	;;
++esac
+diff --git a/usr/src/man/man4d/applesmc.4d b/usr/src/man/man4d/applesmc.4d
+index e448d65..1702b85 100644
+--- a/usr/src/man/man4d/applesmc.4d
++++ b/usr/src/man/man4d/applesmc.4d
+@@ -11,12 +11,12 @@
+ .\"
+ .\" Copyright 2026 isoriano1968
+ .\"
+-.Dd November 13, 2026
++.Dd November 14, 2026
+ .Dt APPLESMC 4D
+ .Os
+ .Sh NAME
+ .Nm applesmc
+-.Nd Apple System Management Controller sensor driver
++.Nd Apple System Management Controller sensor and fan driver
+ .Sh SYNOPSIS
+ .Pa /dev/applesmc
+ .Pp
+@@ -24,7 +24,7 @@
+ .Sh DESCRIPTION
+ The
+ .Nm
+-driver gives read-only access to the System Management Controller
++driver gives access to the System Management Controller
+ .Pq SMC
+ of Intel-based Apple Macintosh computers.
+ The SMC runs the fans and the thermal protection of the machine on its own
+@@ -46,7 +46,22 @@ The driver finds the SMC through the ACPI device
+ and its I/O port window
+ .Pq normally 0x300 to 0x31f .
+ On machines without that device it does not attach.
+-It never writes keys: fan control stays with the SMC.
++.Pp
++Fan control stays with the SMC.
++The only keys the driver writes are the fan minimums and targets
++.Po
++.Sy F Ns Ar n Ns Sy Mn ,
++.Sy F Ns Ar n Ns Sy \&Tg ,
++type
++.Sy fpe2
++.Pc ,
++limited to the range from the minimum the fan had when the driver attached
++to its maximum
++.Pq Sy F Ns Ar n Ns Sy Mx :
++a higher minimum makes the SMC keep the fan faster, and the SMC still
++controls it above that, with its own protection.
++When the driver detaches it restores the original minimum of every fan it
++changed.
+ .Pp
+ Every temperature key of type
+ .Sy sp78
+@@ -86,6 +101,35 @@ Return the type, length, flags and up to
+ .Dv APPLESMC_MAXDATA
+ bytes of data of the key
+ .Fa ak_key .
++.It Dv APPLESMC_IOC_FANMIN
++For
++.Fa ak_key
++.Sy F Ns Ar n Ns Sy Mn ,
++return in
++.Fa ak_data
++the minimum fan
++.Ar n
++had at attach and its maximum, each two bytes of type
++.Sy fpe2 .
++.It Dv APPLESMC_IOC_WRITE
++Write
++.Fa ak_len
++bytes of
++.Fa ak_data
++to the fan key
++.Fa ak_key .
++Only
++.Sy F Ns Ar n Ns Sy Mn
++and
++.Sy F Ns Ar n Ns Sy \&Tg
++of a fan whose keys are of type
++.Sy fpe2
++can be written, with a length of 2; the value is limited as described
++above, and the value written is returned in
++.Fa ak_data .
++The device must be open for writing, which, like this command, needs the
++.Sy sys_config
++privilege.
+ .El
+ .Pp
+ The interface is private and may change.
+@@ -107,5 +151,7 @@ x86
+ .Sy Uncommitted
+ .Sh SEE ALSO
+ .Xr ioctl 2 ,
++.Xr privileges 7 ,
++.Xr smcfan 8 ,
+ .Xr smcstat 8 ,
+ .Xr ksensor 9E
+diff --git a/usr/src/man/man8/Makefile b/usr/src/man/man8/Makefile
+index cf5682a..a3ce7a2 100644
+--- a/usr/src/man/man8/Makefile
++++ b/usr/src/man/man8/Makefile
+@@ -549,6 +549,7 @@ i386_MANFILES=			\
+ 		nvmeadm.8	\
+ 		pptadm.8	\
+ 		rdmsr.8		\
++		smcfan.8	\
+ 		smcstat.8
+ 
+ MANFILES=	$(_MANFILES) $($(MACH)_MANFILES)
+diff --git b/usr/src/man/man8/smcfan.8 b/usr/src/man/man8/smcfan.8
+new file mode 100644
+index 0000000..b0ecb08
+--- /dev/null
++++ b/usr/src/man/man8/smcfan.8
+@@ -0,0 +1,160 @@
++.\"
++.\" This file and its contents are supplied under the terms of the
++.\" Common Development and Distribution License ("CDDL"), version 1.0.
++.\" You may only use this file in accordance with the terms of version
++.\" 1.0 of the CDDL.
++.\"
++.\" A full copy of the text of the CDDL should have accompanied this
++.\" source.  A copy of the CDDL is also available via the Internet at
++.\" http://www.illumos.org/license/CDDL.
++.\"
++.\"
++.\" Copyright 2026 isoriano1968
++.\"
++.Dd November 14, 2026
++.Dt SMCFAN 8
++.Os
++.Sh NAME
++.Nm smcfan
++.Nd fan presets for an Intel Mac
++.Sh SYNOPSIS
++.Nm
++.Nm
++.Op Fl p
++.Fl s Ar preset
++.Nm
++.Fl m Ar rpm
++.Sh DESCRIPTION
++The
++.Nm
++utility sets how fast the fans of an Intel-based Apple Macintosh turn at
++least, through
++.Xr applesmc 4D .
++It only raises the minimum speed
++.Pq key Sy F Ns Ar n Ns Sy Mn
++of every fan; the System Management Controller keeps controlling the fans
++above that minimum, with its own thermal protection, and never lets them
++turn slower.
++.Pp
++Without options
++.Nm
++lists every fan the driver can set with its current speed, the target the
++SMC chose, the minimum, the maximum and the default minimum
++.Pq the minimum when the driver attached ,
++all in RPM, followed by a line
++.Ql preset: name
++naming the preset all fans are at, or
++.Sy manual .
++Listing needs no privileges.
++.Pp
++The presets are, for every fan:
++.Bl -tag -width "cooler"
++.It Sy auto
++The default minimum: the fans are the SMC's alone.
++.It Sy cool
++The default minimum plus one third of the way to the maximum.
++.It Sy cooler
++The default minimum plus two thirds of the way to the maximum.
++.It Sy max
++The maximum.
++.El
++.Pp
++A preset lasts until the next preset, until the driver is unloaded
++.Pq which restores the default minimum
++or until the machine restarts.
++The service
++.Sy svc:/system/applesmc-fan:default
++applies the preset in the property
++.Sy config/preset
++.Pq default Sy auto
++at boot, and sets
++.Sy auto
++when it is disabled.
++.Sh OPTIONS
++.Bl -tag -width Fl
++.It Fl m Ar rpm
++Set the minimum of every fan to
++.Ar rpm .
++The driver limits it to the range from the default minimum to the maximum;
++.Nm
++says so when it does.
++.It Fl p
++With
++.Fl s ,
++also keep the preset: set
++.Sy config/preset
++of the service
++.Sy svc:/system/applesmc-fan ,
++then refresh and enable its instance
++.Sy default .
++.It Fl s Ar preset
++Set
++.Ar preset :
++.Sy auto ,
++.Sy cool ,
++.Sy cooler
++or
++.Sy max .
++.El
++.Pp
++Setting the fans needs the
++.Sy sys_config
++privilege; the rights profile
++.Sy Apple SMC Fan Control
++lets a user do it with
++.Xr pfexec 1 .
++.Sh FILES
++.Bl -tag -width Pa
++.It Pa /dev/applesmc
++SMC device.
++.It Pa /etc/security/exec_attr.d/applesmc
++.It Pa /etc/security/prof_attr.d/applesmc
++The rights profile
++.Sy Apple SMC Fan Control .
++.El
++.Sh EXIT STATUS
++.Bl -tag -width Sy
++.It Sy 0
++Successful completion.
++.It Sy 1
++An error occurred.
++.It Sy 2
++Invalid command line options were specified.
++.It Sy 3
++There is no SMC, the driver is not loaded, or it cannot set the fans.
++.It Sy 4
++The caller is not privileged to set the fans.
++.El
++.Sh EXAMPLES
++.Bl -tag -width 0n
++.It Sy Example 1 No Fans and preset
++.Bd -literal
++$ smcfan
++FAN      RPM  TARGET     MIN     MAX  DEFAULT
++F0       926     926     790    1900      790
++preset: auto
++.Ed
++.It Sy Example 2 No Cooler from now on, also after a restart
++.Bd -literal
++$ pfexec smcfan -p -s cooler
++.Ed
++.It Sy Example 3 No Give a user the rights profile
++.Bd -literal
++# usermod -P +"Apple SMC Fan Control" user
++.Ed
++.El
++.Sh INTERFACE STABILITY
++The command line is
++.Sy Uncommitted .
++The output is
++.Sy Not-An-Interface ,
++except for the
++.Sy preset :
++line, which is
++.Sy Uncommitted .
++.Sh SEE ALSO
++.Xr pfexec 1 ,
++.Xr applesmc 4D ,
++.Xr smf 7 ,
++.Xr smcstat 8 ,
++.Xr usermod 8
+diff --git a/usr/src/pkg/manifests/driver-sensor-applesmc.p5m b/usr/src/pkg/manifests/driver-sensor-applesmc.p5m
+index f40acab..c0c5122 100644
+--- a/usr/src/pkg/manifests/driver-sensor-applesmc.p5m
++++ b/usr/src/pkg/manifests/driver-sensor-applesmc.p5m
+@@ -15,23 +15,41 @@
+ 
+ <include global_zone_only_component>
+ set name=pkg.fmri value=pkg:/driver/sensor/applesmc@$(PKGVERS)
+-set name=pkg.summary value="Apple SMC sensor driver"
++set name=pkg.summary value="Apple SMC sensor and fan driver"
+ set name=pkg.description \
+-    value="Read-only driver for the System Management Controller of Intel Macs: temperatures as ksensors, fans and other keys through /dev/applesmc, and smcstat(8)"
++    value="Driver for the System Management Controller of Intel Macs: temperatures as ksensors, fans and other keys through /dev/applesmc, smcstat(8), and fan presets with smcfan(8)"
+ set name=info.classification value=org.opensolaris.category.2008:System/Hardware
+ set name=variant.arch value=i386
++dir  path=etc group=sys
++dir  path=etc/security group=sys
++dir  path=etc/security/exec_attr.d group=sys
++file path=etc/security/exec_attr.d/applesmc group=sys \
++    restart_fmri=svc:/system/rbac:default
++dir  path=etc/security/prof_attr.d group=sys
++file path=etc/security/prof_attr.d/applesmc group=sys \
++    restart_fmri=svc:/system/rbac:default
+ dir  path=kernel group=sys
+ dir  path=kernel/drv group=sys
+ dir  path=kernel/drv/$(ARCH64) group=sys
+ file path=kernel/drv/$(ARCH64)/applesmc group=sys
+ file path=kernel/drv/applesmc.conf group=sys
++dir  path=lib
++dir  path=lib/svc
++dir  path=lib/svc/manifest group=sys
++dir  path=lib/svc/manifest/system group=sys
++file path=lib/svc/manifest/system/applesmc-fan.xml group=sys mode=0444
++dir  path=lib/svc/method
++file path=lib/svc/method/svc-applesmc-fan mode=0555
+ dir  path=usr group=sys
+ dir  path=usr/bin
+ file path=usr/bin/smcstat mode=0555
++dir  path=usr/sbin
++file path=usr/sbin/smcfan mode=0555
+ dir  path=usr/share/man
+ dir  path=usr/share/man/man4d
+ file path=usr/share/man/man4d/applesmc.4d
+ dir  path=usr/share/man/man8
++file path=usr/share/man/man8/smcfan.8
+ file path=usr/share/man/man8/smcstat.8
+ driver name=applesmc perms="* 0444 root sys"
+ depend type=require fmri=system/ksensor
+diff --git a/usr/src/uts/common/sys/applesmc.h b/usr/src/uts/common/sys/applesmc.h
+index be7b336..3ef7191 100644
+--- a/usr/src/uts/common/sys/applesmc.h
++++ b/usr/src/uts/common/sys/applesmc.h
+@@ -17,13 +17,21 @@
+ #define	_SYS_APPLESMC_H
+ 
+ /*
+- * Read-only interface to the Apple System Management Controller (SMC) of
+- * Intel Macs, through /dev/applesmc. The SMC holds temperatures, fan speeds,
++ * Interface to the Apple System Management Controller (SMC) of Intel Macs,
++ * through /dev/applesmc. The SMC holds temperatures, fan speeds,
+  * voltages, currents and power values as four-character keys ("TC0P",
+  * "F0Ac"); each key has a length, a four-character type ("sp78", "fpe2",
+  * "flt ", "ui8 ", ...) and flags. Values are returned raw, as the SMC sends
+  * them; decoding by type is left to the consumer.
+  *
++ * The only keys that can be written are the fan minimums and targets
++ * (F<n>Mn, F<n>Tg, type fpe2), with APPLESMC_IOC_WRITE on a descriptor open
++ * for writing, by a caller with the sys_config privilege. The driver clamps
++ * the value to [the F<n>Mn it found at attach, F<n>Mx], returns the value
++ * written in ak_data, and restores the original F<n>Mn at detach.
++ * APPLESMC_IOC_FANMIN returns, for ak_key "F<n>Mn", that original minimum
++ * in ak_data[0-1] and F<n>Mx in ak_data[2-3] (fpe2, ak_len 4).
++ *
+  * This interface is private and may change.
+  */
+ 
+@@ -38,6 +46,8 @@ extern "C" {
+ #define	APPLESMC_IOC_KEYBYIDX	(APPLESMC_IOC | 0x02)	/* applesmc_key_t */
+ #define	APPLESMC_IOC_KEYINFO	(APPLESMC_IOC | 0x03)	/* applesmc_key_t */
+ #define	APPLESMC_IOC_READ	(APPLESMC_IOC | 0x04)	/* applesmc_key_t */
++#define	APPLESMC_IOC_WRITE	(APPLESMC_IOC | 0x05)	/* applesmc_key_t */
++#define	APPLESMC_IOC_FANMIN	(APPLESMC_IOC | 0x06)	/* applesmc_key_t */
+ 
+ #define	APPLESMC_KEYLEN		4
+ #define	APPLESMC_MAXDATA	32
+@@ -46,10 +56,10 @@ typedef struct applesmc_key {
+ 	uint32_t	ak_index;	/* in: KEYBYIDX */
+ 	char		ak_key[APPLESMC_KEYLEN];	/* in; out: KEYBYIDX */
+ 	char		ak_type[APPLESMC_KEYLEN];	/* out: KEYINFO, READ */
+-	uint8_t		ak_len;		/* out: KEYINFO, READ */
++	uint8_t		ak_len;		/* out: KEYINFO, READ; in: WRITE */
+ 	uint8_t		ak_flags;	/* out: KEYINFO, READ */
+ 	uint8_t		ak_pad[2];
+-	uint8_t		ak_data[APPLESMC_MAXDATA];	/* out: READ */
++	uint8_t		ak_data[APPLESMC_MAXDATA];	/* READ, WRITE */
+ } applesmc_key_t;
+ 
+ #ifdef __cplusplus
+diff --git a/usr/src/uts/i86pc/io/applesmc.c b/usr/src/uts/i86pc/io/applesmc.c
+index 3ac934f..6cf351f 100644
+--- a/usr/src/uts/i86pc/io/applesmc.c
++++ b/usr/src/uts/i86pc/io/applesmc.c
+@@ -14,21 +14,28 @@
+  */
+ 
+ /*
+- * Apple System Management Controller (SMC), read only.
++ * Apple System Management Controller (SMC).
+  *
+  * Intel Macs describe the SMC in ACPI as device APP0001, with an I/O port
+  * window (normally 0x300-0x31f): the data port at the base and the
+  * command/status port at base + 4. The protocol is the one the Linux applesmc
+  * driver uses: send a command byte, the four key bytes and a length, then
+- * read the data bytes while the status port says data is waiting.
++ * read the data bytes while the status port says data is waiting. A write
++ * sends the command, the key, the length and then the data bytes, each with
++ * the same handshake as the key bytes.
+  *
+- * The SMC runs the fans and thermal protection on its own; this driver never
+- * writes keys. It offers:
++ * The SMC runs the fans and thermal protection on its own. The only keys this
++ * driver writes are the fan floors and targets (F<n>Mn, F<n>Tg, type fpe2),
++ * for privileged callers and clamped to [the F<n>Mn found at attach, F<n>Mx]:
++ * the SMC keeps controlling above that floor with its own protection. The
++ * original F<n>Mn of every fan that was written is restored at detach. It
++ * offers:
+  *
+  *  - one ksensor per temperature key ('T...', type sp78 or flt), so that the
+  *    temperatures show up in /dev/sensors/temperature/smc/ and in FMA;
+  *  - /dev/applesmc, with ioctls to count, enumerate, describe and read keys
+- *    (fans, power, voltages), for tools such as smcstat(8).
++ *    (fans, power, voltages), for tools such as smcstat(8), and to raise
++ *    the fan minimums, for smcfan(8).
+  *
+  * The driver is a pseudo device that looks for APP0001 itself, as acpi_drv
+  * does for batteries; on machines without an SMC it does not attach.
+@@ -46,6 +53,7 @@
+ #include <sys/sunddi.h>
+ #include <sys/sensors.h>
+ #include <sys/sysmacros.h>
++#include <sys/policy.h>
+ #include <sys/acpi/acpi.h>
+ #include <sys/acpica.h>
+ #include <sys/applesmc.h>
+@@ -55,6 +63,7 @@
+ #define	SMC_CMD(s)		((s)->smc_base + 4)
+ 
+ #define	SMC_CMD_READ		0x10
++#define	SMC_CMD_WRITE		0x11
+ #define	SMC_CMD_KEYBYIDX	0x12
+ #define	SMC_CMD_KEYINFO		0x13
+ 
+@@ -74,12 +83,91 @@ typedef struct smc_sensor {
+ 	id_t		ss_id;
+ } smc_sensor_t;
+ 
++/* applesmc fan policy: begin (also built by the port's userland unit test) */
++
++/*
++ * Fan keys are F<n>.., n a single digit. Values of type fpe2 are unsigned
++ * 14.2 fixed point (rpm * 4), big endian, 2 bytes; the driver keeps them raw.
++ */
++#define	SMC_MAX_FANS		10
++
++typedef struct smc_fan {
++	boolean_t	sf_valid;	/* F<n>Mn and F<n>Mx are fpe2 */
++	boolean_t	sf_written;	/* restore sf_min at detach */
++	uint16_t	sf_min;		/* F<n>Mn at attach */
++	uint16_t	sf_max;		/* F<n>Mx at attach */
++} smc_fan_t;
++
++/*
++ * The fan number of a key the driver lets privileged callers write, F<n>Mn
++ * or F<n>Tg; -1 for every other key.
++ */
++static int
++smc_fan_wkey(const char *key)
++{
++	if (key[0] != 'F' || key[1] < '0' || key[1] > '9')
++		return (-1);
++	if ((key[2] == 'M' && key[3] == 'n') ||
++	    (key[2] == 'T' && key[3] == 'g'))
++		return (key[1] - '0');
++	return (-1);
++}
++
++static uint16_t
++smc_fpe2_get(const uint8_t *b)
++{
++	return ((uint16_t)((b[0] << 8) | b[1]));
++}
++
++static void
++smc_fpe2_put(uint8_t *b, uint16_t v)
++{
++	b[0] = v >> 8;
++	b[1] = v & 0xff;
++}
++
++/*
++ * Check a write of fan key `key' (type `type', `len' bytes) against the
++ * fans known at attach and clamp its value in place to [sf_min, sf_max].
++ * Returns 0 or the errno for the ioctl.
++ */
++static int
++smc_fan_check(const smc_fan_t *fans, uint_t nfans, const char *key,
++    const char *type, uint8_t len, uint8_t *data)
++{
++	const smc_fan_t *sf;
++	uint16_t v;
++	int n;
++
++	if ((n = smc_fan_wkey(key)) < 0)
++		return (EPERM);
++	if ((uint_t)n >= nfans || !fans[n].sf_valid)
++		return (ENOENT);
++	if (type[0] != 'f' || type[1] != 'p' || type[2] != 'e' ||
++	    type[3] != '2' || len != 2)
++		return (EINVAL);
++	sf = &fans[n];
++	if (sf->sf_min > sf->sf_max)
++		return (EINVAL);
++	v = smc_fpe2_get(data);
++	if (v < sf->sf_min)
++		v = sf->sf_min;
++	if (v > sf->sf_max)
++		v = sf->sf_max;
++	smc_fpe2_put(data, v);
++	return (0);
++}
++
++/* applesmc fan policy: end */
++
+ typedef struct applesmc {
+ 	dev_info_t	*smc_dip;
+ 	kmutex_t	smc_lock;
+ 	uint16_t	smc_base;
+ 	uint32_t	smc_nkeys;
+ 	uint_t		smc_nsensors;
++	uint_t		smc_nfans;
++	smc_fan_t	smc_fans[SMC_MAX_FANS];
+ 	smc_sensor_t	smc_sensors[SMC_MAX_SENSORS];
+ } applesmc_t;
+ 
+@@ -189,6 +277,36 @@ smc_read_key(applesmc_t *smc, const char *key, uint8_t *buf, uint8_t len)
+ 	return (smc_xfer(smc, SMC_CMD_READ, (const uint8_t *)key, buf, len));
+ }
+ 
++/*
++ * Write a key: the command, the four key bytes, the length, then the data
++ * bytes, each byte with the handshake of smc_send_byte(); then wait until
++ * the SMC is no longer busy (Linux applesmc.c write_smc()).
++ */
++static int
++smc_write_key(applesmc_t *smc, const char *key, const uint8_t *buf,
++    uint8_t len)
++{
++	int i;
++
++	ASSERT(MUTEX_HELD(&smc->smc_lock));
++
++	if (smc_sane(smc) != 0)
++		return (EIO);
++	if (smc_send_cmd(smc, SMC_CMD_WRITE) != 0)
++		return (EIO);
++	for (i = 0; i < APPLESMC_KEYLEN; i++) {
++		if (smc_send_byte(smc, (uint8_t)key[i]) != 0)
++			return (EIO);
++	}
++	if (smc_send_byte(smc, len) != 0)
++		return (EIO);
++	for (i = 0; i < len; i++) {
++		if (smc_send_byte(smc, buf[i]) != 0)
++			return (EIO);
++	}
++	return (smc_wait(smc, 0, SMC_ST_BUSY));
++}
++
+ static int
+ smc_key_info(applesmc_t *smc, const char *key, uint8_t *len, char *type,
+     uint8_t *flags)
+@@ -360,6 +478,84 @@ smc_create_sensors(applesmc_t *smc)
+ 	}
+ }
+ 
++/*
++ * Read one fpe2 fan key; 0 and *v on success.
++ */
++static int
++smc_fan_read(applesmc_t *smc, int fan, const char *what, uint16_t *v)
++{
++	char key[APPLESMC_KEYLEN], type[APPLESMC_KEYLEN];
++	uint8_t len, flags, buf[2];
++	int ret;
++
++	key[0] = 'F';
++	key[1] = '0' + fan;
++	key[2] = what[0];
++	key[3] = what[1];
++	if ((ret = smc_key_info(smc, key, &len, type, &flags)) != 0)
++		return (ret);
++	if (bcmp(type, "fpe2", 4) != 0 || len != 2)
++		return (ENOTSUP);
++	if ((ret = smc_read_key(smc, key, buf, 2)) != 0)
++		return (ret);
++	*v = smc_fpe2_get(buf);
++	return (0);
++}
++
++/*
++ * Remember each fan's minimum and maximum, the bounds of every write.
++ */
++static void
++smc_scan_fans(applesmc_t *smc)
++{
++	uint8_t n;
++	uint_t i;
++
++	mutex_enter(&smc->smc_lock);
++	if (smc_read_key(smc, "FNum", &n, 1) != 0)
++		n = 0;
++	smc->smc_nfans = MIN(n, SMC_MAX_FANS);
++	for (i = 0; i < smc->smc_nfans; i++) {
++		smc_fan_t *sf = &smc->smc_fans[i];
++
++		if (smc_fan_read(smc, i, "Mn", &sf->sf_min) == 0 &&
++		    smc_fan_read(smc, i, "Mx", &sf->sf_max) == 0 &&
++		    sf->sf_min <= sf->sf_max)
++			sf->sf_valid = B_TRUE;
++	}
++	mutex_exit(&smc->smc_lock);
++}
++
++/*
++ * Put back the minimum of every fan a caller changed.
++ */
++static void
++smc_restore_fans(applesmc_t *smc)
++{
++	char key[APPLESMC_KEYLEN];
++	uint8_t buf[2];
++	uint_t i;
++
++	mutex_enter(&smc->smc_lock);
++	for (i = 0; i < smc->smc_nfans; i++) {
++		smc_fan_t *sf = &smc->smc_fans[i];
++
++		if (!sf->sf_valid || !sf->sf_written)
++			continue;
++		key[0] = 'F';
++		key[1] = '0' + i;
++		key[2] = 'M';
++		key[3] = 'n';
++		smc_fpe2_put(buf, sf->sf_min);
++		if (smc_write_key(smc, key, buf, 2) != 0)
++			dev_err(smc->smc_dip, CE_WARN, "failed to restore "
++			    "F%uMn", i);
++		else
++			sf->sf_written = B_FALSE;
++	}
++	mutex_exit(&smc->smc_lock);
++}
++
+ /*
+  * ACPI: find APP0001 and the start of its first I/O port range.
+  */
+@@ -408,14 +604,12 @@ smc_find(uint16_t *basep)
+ static int
+ applesmc_open(dev_t *devp, int flag, int otyp, cred_t *cr)
+ {
+-	_NOTE(ARGUNUSED(cr));
+-
+ 	if (applesmc == NULL || getminor(*devp) != 0)
+ 		return (ENXIO);
+ 	if (otyp != OTYP_CHR)
+ 		return (EINVAL);
+-	/* Read only: nothing here ever writes an SMC key. */
+-	if (flag & FWRITE)
++	/* Writing is for APPLESMC_IOC_WRITE (fan minimums) only. */
++	if ((flag & FWRITE) && secpolicy_sys_config(cr, B_FALSE) != 0)
+ 		return (EPERM);
+ 	return (0);
+ }
+@@ -435,7 +629,7 @@ applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
+ 	applesmc_key_t ak;
+ 	int ret = 0;
+ 
+-	_NOTE(ARGUNUSED(dev, cr, rvalp));
++	_NOTE(ARGUNUSED(dev, rvalp));
+ 
+ 	if (smc == NULL)
+ 		return (ENXIO);
+@@ -448,9 +642,17 @@ applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
+ 	}
+ 
+ 	if (cmd != APPLESMC_IOC_KEYBYIDX && cmd != APPLESMC_IOC_KEYINFO &&
+-	    cmd != APPLESMC_IOC_READ)
++	    cmd != APPLESMC_IOC_READ && cmd != APPLESMC_IOC_WRITE &&
++	    cmd != APPLESMC_IOC_FANMIN)
+ 		return (ENOTTY);
+ 
++	if (cmd == APPLESMC_IOC_WRITE) {
++		if (!(mode & FWRITE))
++			return (EBADF);
++		if ((ret = secpolicy_sys_config(cr, B_FALSE)) != 0)
++			return (ret);
++	}
++
+ 	if (ddi_copyin((void *)arg, &ak, sizeof (ak), mode & FKIOCTL) != 0)
+ 		return (EFAULT);
+ 
+@@ -480,6 +682,57 @@ applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
+ 		bzero(ak.ak_data, sizeof (ak.ak_data));
+ 		ret = smc_read_key(smc, ak.ak_key, ak.ak_data, ak.ak_len);
+ 		break;
++	case APPLESMC_IOC_WRITE: {
++		char type[APPLESMC_KEYLEN];
++		uint8_t len, flags;
++		int fan;
++
++		/* Only fan floors and targets, of a fan found at attach. */
++		if ((fan = smc_fan_wkey(ak.ak_key)) < 0) {
++			ret = EPERM;
++			break;
++		}
++		if (ak.ak_len != 2) {
++			ret = EINVAL;
++			break;
++		}
++		/* The type is the SMC's, not the caller's. */
++		ret = smc_key_info(smc, ak.ak_key, &len, type, &flags);
++		if (ret != 0)
++			break;
++		ret = smc_fan_check(smc->smc_fans, smc->smc_nfans, ak.ak_key,
++		    type, len, ak.ak_data);
++		if (ret != 0)
++			break;
++		ret = smc_write_key(smc, ak.ak_key, ak.ak_data, 2);
++		if (ret == 0 && ak.ak_key[2] == 'M')
++			smc->smc_fans[fan].sf_written = B_TRUE;
++		bcopy(type, ak.ak_type, APPLESMC_KEYLEN);
++		ak.ak_flags = flags;
++		break;
++	}
++	case APPLESMC_IOC_FANMIN: {
++		int fan = smc_fan_wkey(ak.ak_key);
++
++		/* F<n>Mn: the minimum at attach, which detach restores. */
++		if (fan < 0 || ak.ak_key[2] != 'M') {
++			ret = EINVAL;
++			break;
++		}
++		if ((uint_t)fan >= smc->smc_nfans ||
++		    !smc->smc_fans[fan].sf_valid) {
++			ret = ENOENT;
++			break;
++		}
++		/* data[0-1] the minimum, data[2-3] the maximum, fpe2 */
++		bcopy("fpe2", ak.ak_type, APPLESMC_KEYLEN);
++		ak.ak_len = 4;
++		ak.ak_flags = 0;
++		bzero(ak.ak_data, sizeof (ak.ak_data));
++		smc_fpe2_put(ak.ak_data, smc->smc_fans[fan].sf_min);
++		smc_fpe2_put(&ak.ak_data[2], smc->smc_fans[fan].sf_max);
++		break;
++	}
+ 	}
+ 	mutex_exit(&smc->smc_lock);
+ 
+@@ -562,10 +815,12 @@ applesmc_attach(dev_info_t *dip, ddi_attach_cmd_t cmd)
+ 	}
+ 
+ 	smc_create_sensors(smc);
++	smc_scan_fans(smc);
+ 	applesmc = smc;
+ 	ddi_report_dev(dip);
+ 	dev_err(dip, CE_CONT, "?SMC at 0x%x: %u keys, %u temperature "
+-	    "sensors\n", base, smc->smc_nkeys, smc->smc_nsensors);
++	    "sensors, %u fans\n", base, smc->smc_nkeys, smc->smc_nsensors,
++	    smc->smc_nfans);
+ 	return (DDI_SUCCESS);
+ }
+ 
+@@ -585,6 +840,7 @@ applesmc_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
+ 
+ 	if (smc == NULL || smc->smc_dip != dip)
+ 		return (DDI_FAILURE);
++	smc_restore_fans(smc);
+ 	applesmc = NULL;
+ 	applesmc_cleanup(smc);
+ 	return (DDI_SUCCESS);
+@@ -626,7 +882,7 @@ static struct dev_ops applesmc_dev_ops = {
+ 
+ static struct modldrv applesmc_modldrv = {
+ 	.drv_modops = &mod_driverops,
+-	.drv_linkinfo = "Apple SMC sensors",
++	.drv_linkinfo = "Apple SMC sensors and fans",
+ 	.drv_dev_ops = &applesmc_dev_ops
+ };
+ 
+-- 
+2.56.0

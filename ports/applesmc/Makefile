@@ -13,19 +13,24 @@
 # Copyright 2026 isoriano1968
 #
 
-# applesmc: read-only driver for the Apple SMC of Intel Macs (temperatures
-# as ksensors, every key through /dev/applesmc) and smcstat(8).
+# applesmc: driver for the Apple SMC of Intel Macs (temperatures as
+# ksensors, every key through /dev/applesmc; the only writes are the fan
+# minimums), smcstat(8), and the fan presets: smcfan(8), the service
+# svc:/system/applesmc-fan and the rights profile "Apple SMC Fan Control".
 #
 # Pristine source: illumos-gate 586678ac1b (the Mac Pro's OS build).  The
 # driver is new code: patches/0001 is the illumos-gate commit that adds it
-# (branch applesmc of the VM's ~/src/illumos-usbroot; upstream as an
-# illumos issue), and it applies to the whole tree.  Only the directories
-# the patch touches and the kernel headers the driver includes that
-# system/header does not ship (sys/sensors.h, sys/acpica.h, sys/acpi/) are
-# extracted.  Built out of tree as ports/audiohd-apple: the flags of
+# (branch applesmc of the VM's ~/src/illumos-usbroot; upstream as illumos
+# issue 18700); patches/0002 adds the fan minimum writes, smcfan(8), its SMF
+# service and rights profile (cmd/smcfan).  Both apply to the whole tree.
+# Only the directories the patches touch and the kernel headers the driver
+# includes that system/header does not ship (sys/sensors.h, sys/acpica.h,
+# sys/acpi/) are extracted.  Built out of tree as ports/audiohd-apple: the flags of
 # uts/Makefile.uts + uts/intel/Makefile.intel, linked as the patch's
 # uts/i86pc/applesmc/Makefile (ld -r -dy -N misc/acpica); smcstat with the
-# flags of cmd/Makefile.cmd.64.
+# flags of cmd/Makefile.cmd.64, and so is smcfan.  files/applesmc_fan_test.c
+# is a userland unit test of the driver's fan write policy, built from the
+# patched applesmc.c (gmake check runs it).
 #
 # The package is new (not part of OpenIndiana): driver/sensor/applesmc, the
 # same contents as the patch's usr/src/pkg/manifests/driver-sensor-applesmc.p5m,
@@ -93,7 +98,10 @@ UCFLAGS=	-m64 -O2 -std=gnu17 -Wall -Wextra -Werror -Wno-unused-parameter \
 		-fstack-protector-strong -D_REENTRANT
 UCPPFLAGS=	-idirafter $(UTS)/common
 
-all: $(BUILD_DIR)/$(MODULE) $(BUILD_DIR)/smcstat $(BUILD_DIR)/$(LINKMOD)
+SMCFAN_DIR=	$(SRC_DIR)/usr/src/cmd/smcfan
+
+all: $(BUILD_DIR)/$(MODULE) $(BUILD_DIR)/smcstat $(BUILD_DIR)/smcfan \
+    $(BUILD_DIR)/$(LINKMOD)
 
 $(ARCHIVE_DIR)/$(COMPONENT_ARCHIVE):
 	mkdir -p $(ARCHIVE_DIR)
@@ -129,6 +137,21 @@ $(BUILD_DIR)/smcstat: $(BUILD_DIR)/.patched
 	$(CC) $(UCFLAGS) $(UCPPFLAGS) -o $@ $(SRC_DIR)/usr/src/cmd/smcstat/smcstat.c
 	/usr/bin/digest -a sha256 $@
 
+$(BUILD_DIR)/smcfan: $(BUILD_DIR)/.patched
+	$(CC) $(UCFLAGS) $(UCPPFLAGS) -o $@ $(SMCFAN_DIR)/smcfan.c
+	/usr/bin/digest -a sha256 $@
+
+# The fan write policy of the driver, cut out of the patched applesmc.c,
+# and its unit test.
+$(BUILD_DIR)/applesmc_fan_policy.h: $(BUILD_DIR)/.patched
+	/usr/bin/sed -n '/applesmc fan policy: begin/,/applesmc fan policy: end/p' \
+	    $(UTS)/i86pc/io/applesmc.c > $@
+	test -s $@
+
+$(BUILD_DIR)/applesmc_fan_test: files/applesmc_fan_test.c \
+    $(BUILD_DIR)/applesmc_fan_policy.h
+	$(CC) $(UCFLAGS) -I$(BUILD_DIR) -o $@ files/applesmc_fan_test.c
+
 # devfsadm link module for /dev/applesmc (files/applesmc_link.c; the same
 # rule as the patch's misc_link_i386.c).  32-bit, as devfsadm and its
 # modules (cmd/devfsadm/Makefile.com: -G, -h, -ldevinfo -lc).
@@ -141,7 +164,12 @@ $(BUILD_DIR)/$(LINKMOD): files/applesmc_link.c
 # kernel (unix, genunix) or by misc/acpica (its -N dependency).
 KERNEL_OBJS=	/platform/i86pc/kernel/amd64/unix /kernel/amd64/genunix \
 		/kernel/misc/amd64/acpica
-check: all
+# smcfan must fail cleanly (exit 3) where there is no /dev/applesmc.
+check: all $(BUILD_DIR)/applesmc_fan_test
+	$(BUILD_DIR)/applesmc_fan_test
+	/usr/sbin/svccfg validate $(SMCFAN_DIR)/applesmc-fan.xml
+	/usr/bin/sh -n $(SMCFAN_DIR)/svc-applesmc-fan
+	test -c /dev/applesmc || { $(BUILD_DIR)/smcfan; test $$? -eq 3; }
 	/usr/bin/nm -u -h $(BUILD_DIR)/$(MODULE) | awk '{print $$NF}' | \
 	    LC_ALL=C sort -u > $(BUILD_DIR)/undef.txt
 	for k in $(KERNEL_OBJS); do /usr/bin/nm -h -g $$k; done | \
@@ -153,12 +181,13 @@ check: all
 	    of $(MODULE) are in unix, genunix or misc/acpica"
 	/usr/bin/elfdump -d $(BUILD_DIR)/$(MODULE) | grep NEEDED
 	/usr/bin/mandoc -Tlint -Wwarning $(SRC_DIR)/usr/src/man/man4d/applesmc.4d \
-	    $(SRC_DIR)/usr/src/man/man8/smcstat.8
+	    $(SRC_DIR)/usr/src/man/man8/smcstat.8 \
+	    $(SRC_DIR)/usr/src/man/man8/smcfan.8
 
 # The package version: 0.5.11 as the osnet drivers, branch part = the
 # year, the OS build the module was built and tested against (the VM's),
 # and our revision.  Kernel interfaces used: DDI, ksensor(9E), acpica.
-PKG_VERSION=	0.5.11-2026.0.0.2
+PKG_VERSION=	0.5.11-2026.0.0.3
 MIN_OSNET=	0.5.11-2026.0.0.23344
 GATE_SHORT=	$(shell echo $(GATE_COMMIT) | cut -c1-10)
 REPO?=		$(HOME)/oi-repo
@@ -167,11 +196,14 @@ PROTO=		$(BUILD_DIR)/proto
 publish: check
 	rm -rf $(PROTO)
 	mkdir -p $(PROTO)
-	cp $(BUILD_DIR)/$(MODULE) $(BUILD_DIR)/smcstat $(BUILD_DIR)/$(LINKMOD) \
-	    $(PROTO)/
+	cp $(BUILD_DIR)/$(MODULE) $(BUILD_DIR)/smcstat $(BUILD_DIR)/smcfan \
+	    $(BUILD_DIR)/$(LINKMOD) $(PROTO)/
+	cp $(SMCFAN_DIR)/applesmc-fan.xml $(SMCFAN_DIR)/svc-applesmc-fan \
+	    $(SMCFAN_DIR)/exec_attr $(SMCFAN_DIR)/prof_attr $(PROTO)/
 	cp $(UTS)/i86pc/io/applesmc.conf $(PROTO)/
 	cp $(SRC_DIR)/usr/src/man/man4d/applesmc.4d $(PROTO)/
 	cp $(SRC_DIR)/usr/src/man/man8/smcstat.8 $(PROTO)/
+	cp $(SRC_DIR)/usr/src/man/man8/smcfan.8 $(PROTO)/
 	cp $(COMPONENT_LICENSE_FILE) $(PROTO)/
 	/usr/bin/pkgmogrify -D PKG_VERSION=$(PKG_VERSION) \
 	    -D MIN_OSNET=$(MIN_OSNET) -D GATE_COMMIT=$(GATE_COMMIT) \

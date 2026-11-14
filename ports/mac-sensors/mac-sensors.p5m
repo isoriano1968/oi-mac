@@ -16,7 +16,7 @@
 set name=pkg.fmri value=pkg:/desktop/system-monitor/mac-sensors@$(PKG_VERSION)
 set name=pkg.summary value="Mac Sensors: temperatures and fans"
 set name=pkg.description \
-    value="GTK 4 application that shows the temperatures and fans of an Intel Mac (Apple SMC, applesmc(4D)) and the illumos ksensors of any machine on a drawing of the machine"
+    value="GTK 4 application that shows the temperatures and fans of an Intel Mac (Apple SMC, applesmc(4D)) and the illumos ksensors of any machine on a drawing of the machine, and sets the fan presets Auto, Cool, Cooler and Max with smcfan(8)"
 set name=pkg.human-version value=$(COMPONENT_VERSION)
 set name=info.classification \
     value="org.opensolaris.category.2008:Applications/System Utilities"
@@ -45,6 +45,7 @@ depend type=require fmri=pkg:/runtime/python-39
 depend type=require fmri=pkg:/library/python/pygobject-39
 depend type=require fmri=pkg:/library/python/pycairo-39
 depend type=require fmri=pkg:/library/desktop/gtk4
-# the data sources: the Apple SMC (Macs only) and the CPU/chipset ksensors
-depend type=optional fmri=pkg:/driver/sensor/applesmc
+# the data sources: the Apple SMC (Macs only) and the CPU/chipset ksensors;
+# the fan presets need smcfan(8), new in applesmc 0.5.11-2026.0.0.3
+depend type=optional fmri=pkg:/driver/sensor/applesmc@0.5.11-2026.0.0.3
 depend type=optional fmri=pkg:/driver/cpu/sensor
