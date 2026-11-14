@@ -566,3 +566,14 @@ vs ConsoleKit 0.4.6), orca-autostart.desktop parse warning in the greeter,
 monitor names via ELD for the HDMI outputs (kernel side built, 11.1; the PA
 part is open), DHCP
 NAK on bge1, drmach CPU-count warning, "Failed to store PCI saved state".
+
+### 11.2 Result 2026-11-14 morning: amdgpu-con5 is the default
+
+amdgpu-con5 = clone of con4 + illumos-drm p5p a60017c9 (restore fix +
+0019 sink info) + audiohd .7 (11accfa3) + PulseAudio r7 + system/vt-hotkeys.
+Booted 05:59, user confirmed "works as designed": no "restore failed", no
+"open failed (rv 19)", /dev/sndstat shows "DisplayPort: DELL S3221QS",
+Dell named in GNOME and plays, empty HDMI output hidden, VTs switch,
+console-login vt2-vt6 online from the site profile. con5 made default (NR),
+amdgpu-con3 destroyed. Still open: vtxlock (not in con5, unlock asks for
+root), "Failed to store PCI saved state", nothing committed.
