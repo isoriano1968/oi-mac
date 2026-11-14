@@ -720,3 +720,43 @@ Procedure:
   `set amdgpu:amdgpu_illumos_si_running_on_ac = 1` in /etc/system; check
   the "sent RunningOnAC" line, then `./amdtest <node> s 10` idle and under
   gpuburn as in dpm6 (sclk, level), and `g` once more.
+
+## 16. gpio1 result (2026-11-14 14:17, patch 0027, switch off)
+
+Files: `gpio1/`. BE amdgpu-gpio1 = clone of con8 (con7, all packages on
+the one publisher oi-local) + the gpio p5p, amdgpu 19807f9e.
+- Boot lines: amdgpu1 GPIOPAD STRENGTH 0xa9, MASK 0, A 0, EN 0,
+  Y 0x50519841; amdgpu0 the same except Y 0x40519843; HARDWAREDC 1,
+  ac_power 1 on both.
+- amdtest g, both nodes, 10 idle and 20 loaded reads (GRBM_STATUS
+  0xe5c00028): every read GPIO5 Y0, GPIO6 Y1; A, EN and MASK 0 (the GPU
+  drives neither pin; both are inputs from the board). Level index 0
+  throughout.
+
+Where the polarity comes from (si_init_smc_table, identical in radeon's
+si_dpm.c): VBIOS platform caps 0x017d9022 = POWERPLAY | HARDWAREDC |
+MVDDCONTROL | VDDCI_CONTROL | REGULATOR_HOT | NEW_CAC_VOLTAGE |
+REVERT_GPIO5_POLARITY | OUTPUT_THERMAL2GPIO17 | VRHOT_GPIO_CONFIGURABLE |
+TEMP_INVERSION | bit 24.
+- GPIO 5 (AC/DC): REVERT_GPIO5_POLARITY -> extraFlags
+  AC2DC_GPIO5_POLARITY_HIGH. By the flag's name (and the VBIOS's own
+  VRHOT_POLARITY_HIGH, "high = asserted"), DC is signalled by a high pin;
+  the pin is 0, so the SMC sees AC.
+- GPIO 6 (VR hot): VRHOT_GPIO_CONFIGURABLE -> REGULATOR_HOT_PROG_GPIO,
+  vr_hot_gpio = usBackbiasTime = 6. VRHOT_POLARITY_HIGH (0x08000000) is
+  not set, and neither driver passes a VR-hot polarity to the SMC at all:
+  the SMC uses its default, which by the same naming is active low (a
+  VR_HOT# open-drain signal). The pin is 1, so not hot.
+So under the flags' naming both pins read inactive, as on a desktop on
+AC with cool regulators. Neither driver's code says what the SMC firmware
+makes of the levels; only the naming does. Linux radeon sets the same
+flags from the same VBIOS, and the pins are board inputs the GPU does not
+drive, so unless the board drives them differently under the two OSes,
+these inputs are the same on Linux and cannot explain the difference.
+
+One ambiguity is left, and it can be tested without a new build: if the
+polarity reading were the other way round, the SMC would see DC (and
+hot). Boot 2 of section 15 (`amdgpu_illumos_si_running_on_ac = 1`) tells
+the SMC "AC" directly, whatever the pin says: if the levels then step up,
+the AC/DC input was the cause after all; if they stay at 0 with the SMC
+answering OK, the AC/DC input is ruled out for both polarities.

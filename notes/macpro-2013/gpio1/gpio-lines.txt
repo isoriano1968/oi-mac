@@ -1,0 +1,2 @@
+Nov 14 14:17:20 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm GPIOPAD STRENGTH 0x000000a9 MASK 0x00000000 A 0x00000000 EN 0x00000000 Y 0x50519841; HARDWAREDC 1, ac_power 1
+Nov 14 14:17:27 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm GPIOPAD STRENGTH 0x000000a9 MASK 0x00000000 A 0x00000000 EN 0x00000000 Y 0x40519843; HARDWAREDC 1, ac_power 1
