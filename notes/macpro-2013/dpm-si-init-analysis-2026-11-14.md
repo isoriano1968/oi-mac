@@ -786,3 +786,108 @@ the levels stay at 0 with REGULATOR_HOT off, park SI dpm: it is stable
 at L0 (317.5/300 MHz sclk; mclk 1270 MHz on the display GPU), 80-84 fps
 in gpuburn, and the evidence (this document, sections 1-17) is enough
 for an upstream question to the amd-gfx list with the dumps attached.
+
+## 18. novrhot result; SI dpm parked (2026-11-14 15:06)
+
+novrhot (clone of con8 + p5p 152b4ddc, amdgpu 2d0b59b3,
+`amdgpu_illumos_si_no_vr_hot = 1`, fans at max during the test): both
+GPUs "si_dpm REGULATOR_HOT left out (test)", state table read back "0 of
+753 words differ; systemFlags 0x5 extraFlags 0x2" (was 0x55). Under
+gpuburn: renderD128 317/1270 MHz, 84.5 fps; renderD129 300/150 MHz,
+79.9 fps. No step-up. **The VR-hot input is ruled out.** Files:
+`novrhot/`.
+
+**Parked, as the user decided.** What stands:
+- SI dpm runs and is stable at the lowest level: sclk 317.5 MHz
+  (display GPU) / 300 MHz (compute GPU); mclk 1270 MHz on the display GPU
+  (mclk switching is off with a display), 150 MHz on the compute GPU;
+  80-85 fps in gpuburn; 60-66 C. Nothing forces, nothing crashes.
+- Ruled out, with evidence: si_dpm/si_smc code paths and the SMC firmware
+  (identical to radeon/linux-firmware), the uploaded tables (read back,
+  0 differ; full SRAM dumped and decoded, section 14), CP/RLC microcode,
+  init order, MC/golden registers, LinuxKPI MMIO, interrupts, ACPI/ATIF,
+  the boot messages, ASPM/clock muxes, PCIe config, slot power, Apple SMC
+  keys, fan control, PowerTune, mclk switching, the AC/DC input (pin and
+  RunningOnAC), the VR-hot input.
+- Seen: the SMC follows the load (activity accumulator x2.6, estimated
+  power and temperature rise, section 12) and never leaves level 0;
+  SetForcedLevels is answered 0xFF (failed).
+- Not testable here without Linux: the SMC's runtime state compared with
+  a working Linux boot, and Linux amdgpu's SI path on this Mac.
+The test switches (0020 quirks, 0026 dump, 0027 RunningOnAC, 0028
+no-VR-hot) stay on their branches (amdgpu/sramdiff, amdgpu/gpio), not in
+the main series.
+
+### Draft question for amd-gfx (not sent; the user decides)
+
+    Subject: SI (Tahiti, FirePro D500) legacy dpm: SMC stays at level 0
+     under load, SetForcedLevels fails
+
+    Hello,
+
+    I am porting amdgpu (Linux 7.2's drivers/gpu/drm/amd, legacy SI dpm)
+    to illumos, on a Mac Pro 2013 (2x FirePro D500, Tahiti 0x679E, VBIOS
+    platform caps 0x017d9022, tahiti_smc.bin from linux-firmware).
+    Display, GFX, SDMA, UVD and VCE work. dpm starts without errors and
+    the SMC applies our level 0 (the SPLL really runs at 317.5 MHz), but
+    it never steps up under a full GFX load, and PPSMC_MSG_SetForcedLevels
+    with level 1 is answered 0xFF. The same machine under Linux with
+    radeon steps up normally.
+
+    What we checked: the uploaded state table, soft registers, CAC/DTE
+    tables and the SMC firmware read back from SMC SRAM, identical to
+    what si_dpm.c writes; the SMC's own counters follow the load (an
+    accumulator at 0x1fec8 grows x2.6, PAPMStatus estimated power and
+    temperature rise) while its level index stays 0. AC/DC (GPIO 5 reads
+    AC; RunningOnAC accepted) and VR hot (REGULATOR_HOT flags removed)
+    make no difference. PCIe is gen 3 x16, ASPM off from the FADT, slot
+    power limit 0 (as under Linux).
+
+    Is there an SMC input or a state-table/soft-register field on SI
+    that blocks upward transitions (or forced levels) that we may be
+    missing, or a way to read the SMC's reason for refusing
+    SetForcedLevels? Full notes and SRAM dumps are available.
+
+    Thank you,
+
+## 19. VCE busy warning and the console flash (con9, from the novrhot boot)
+
+**VCE busy (amdgpu0, once in 5 boots, ~4 s after "VCE initialized
+successfully"):** "VCE busy: VCE_STATUS=0x2, SRBM_STATUS2=0x80". From
+source (vce_v1_0.c, amdgpu_vce.c): 1 s after the last VCE job (the ring
+and IB tests at init) the idle work gates VCE when no fence is
+outstanding, through vce_v1_0_stop(). That waits for vce_v1_0_is_idle(),
+which checks VCE_STATUS JOB_BUSY|UENC_BUSY *and* SRBM_STATUS2.VCE_BUSY
+(0x80); the function's own comment says that bit mirrors VCE_STATUS's
+VCPU_REPORT_FW_LOADED (0x2). 0x2 is that report bit alone: no job runs.
+vce_v1_0_start() clears VCE_STATUS after the load for the same reason;
+the firmware can set the report bit again later (the 1-in-5 timing). The
+stop then continues (stall, reset) and clears VCE_STATUS, so the warning
+is harmless, but it reaches the console (WARNING level). Same code in
+Linux 7.2. **Fix, patch 0029:** in vce_v1_0_stop(), clear VCE_STATUS's
+report bits (0xfe) before the idle wait; JOB_BUSY/UENC_BUSY stay.
+
+**Console flash before gdm:** from source, three steps change the
+display while the loader's framebuffer is on screen:
+1. amdgpu attach, dce_v6_0_hw_init(): VGA render off,
+   amdgpu_atombios_encoder_init_dig() (re-initialises the DIG PHYs of the
+   running DP link) and amdgpu_atombios_crtc_set_disp_eng_pll() (display
+   engine PLL to default_dispclk, 600 MHz; the VBIOS ran 500). A link
+   retrain or a PLL move on the running display shows as a short black
+   flash. Same in Linux (no seamless boot on DCE6).
+2. Xorg's (gdm's) first modeset: the expected switch to X.
+3. Our console restore (amdgpu_illumos_con_kms.c): if a DRM master closes
+   while the console is in text mode (e.g. an X server that starts and
+   exits before the greeter's), the console framebuffer is set back with
+   a modeset, then X sets its mode again: two extra switches.
+Which one the user sees is not decidable from source. **Measurement,
+patch 0030 + a log line in con_restore_work:** one line per DCE6 hw_init
+step with ms since boot, and one per console restore ("console: restored
+at N ms (master closed | text mode, ret)"). With the user's note of when
+the flash comes (during the boot text, or when the screen changes to
+gdm), the lines and the Xorg log put it on a step.
+
+con9 = 3200635 (con8's sources) + 977972e (0029, 0030, restore log), on
+branch amdgpu/con9: VM `~/src/drm/illumos-drm-0.0.2-amdgpu-con9.p5p`,
+sha256 c87a37f150727c61091732553dab18cbf404b8d1721155ccdc995a3be07c1a01;
+amdgpu 6951b98a...; the other modules = con6. No dpm test switch in it.

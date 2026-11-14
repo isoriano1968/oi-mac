@@ -1,0 +1,6 @@
+Nov 14 15:06:24 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm REGULATOR_HOT left out (test)
+Nov 14 15:06:24 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: SMC state table at 0x1ecf8 read back: 0 of 753 words differ; soft regs 0x1de50, sram end 0x20000; systemFlags 0x5 extraFlags 0x2 thermalProtectType 0
+Nov 14 15:06:24 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: si_dpm GPIOPAD STRENGTH 0x000000a9 MASK 0x00000000 A 0x00000000 EN 0x00000000 Y 0x50519841; HARDWAREDC 1, ac_power 1
+Nov 14 15:06:31 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm REGULATOR_HOT left out (test)
+Nov 14 15:06:31 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: SMC state table at 0x1ecf8 read back: 0 of 753 words differ; soft regs 0x1de50, sram end 0x20000; systemFlags 0x5 extraFlags 0x2 thermalProtectType 0
+Nov 14 15:06:31 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: si_dpm GPIOPAD STRENGTH 0x000000a9 MASK 0x00000000 A 0x00000000 EN 0x00000000 Y 0x40519843; HARDWAREDC 1, ac_power 1
