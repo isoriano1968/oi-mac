@@ -1,0 +1,393 @@
+From 2af85c24c45991d9b257c55dd0b63903d1b6554b Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Sat, 14 Nov 2026 00:06:14 +0100
+Subject: [PATCH] NNNNN audiohd: monitor name and presence of HDMI/DisplayPort
+ outputs
+
+For every HDMI/DisplayPort pin, read the pin sense (presence, ELD valid)
+and, with a valid ELD, the connection type and the monitor name: on
+ATI/AMD codecs (no ELD buffer) from the speaker allocation and the sink
+description of the AMD sink info verbs (0x780/0xf81, revision 3 and
+later, as Linux atihdmi.c), on other codecs from GET_HDMI_ELDD. A new
+read-only control, hdmi-connected, is 1 while a pin senses a monitor; the
+device description (SNDCTL_CARDINFO longname, /dev/sndstat) becomes the
+connected monitors, each as "HDMI: <name>" or "DisplayPort: <name>", on
+a device with HDMI/DisplayPort outputs only, or has them added to the
+controller's, and goes back to the description of attach when none is
+connected. Refreshed at attach, resume, a pin's unsolicited response and
+each read of hdmi-connected.
+
+An unsolicited response from an HDMI/DisplayPort pin no longer switches
+the speakers off, as for a headphone jack: on a controller with an
+analog and an HDMI codec, plugging in a monitor muted the speakers.
+---
+ .../uts/common/io/audio/drv/audiohd/audiohd.c | 218 ++++++++++++++++++
+ .../uts/common/io/audio/drv/audiohd/audiohd.h |  32 +++
+ 2 files changed, 250 insertions(+)
+
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+index 95da9fb5..65b6ebf5 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+@@ -24,6 +24,7 @@
+  */
+ 
+ #include <sys/audio/audio_driver.h>
++#include <sys/sysmacros.h>
+ #include <sys/note.h>
+ #include <sys/beep.h>
+ #include <sys/pci.h>
+@@ -87,6 +88,7 @@ static void audiohd_do_set_beep_volume(audiohd_state_t *,
+ static void audiohd_set_beep_volume(audiohd_state_t *);
+ static int audiohd_set_beep(void *, uint64_t);
+ static void audiohd_pin_sense(audiohd_state_t *, uint32_t, uint32_t);
++static void audiohd_hdmi_refresh(audiohd_state_t *);
+ 
+ static	int	audiohd_beep;
+ static	int	audiohd_beep_divider;
+@@ -300,6 +302,7 @@ audiohd_set_chipset_info(audiohd_state_t *statep)
+ 		break;
+ 	}
+ 	/* set device information */
++	statep->hda_desc = name;
+ 	audio_dev_set_description(statep->adev, name);
+ 	audio_dev_set_version(statep->adev, vers);
+ }
+@@ -1925,6 +1928,51 @@ audiohd_create_recsrc(audiohd_state_t *statep)
+ 	    audiohd_get_control, audiohd_set_recsrc, ac);
+ }
+ 
++/*
++ * hdmi-connected: whether a monitor with audio is on one of the device's
++ * HDMI/DisplayPort outputs (pin sense presence). Reading it also brings the
++ * device description (SNDCTL_CARDINFO longname, /dev/sndstat) up to date
++ * with the connected monitors' names (audiohd_hdmi_refresh()).
++ */
++static int
++audiohd_get_hdmi(void *arg, uint64_t *val)
++{
++	audiohd_ctrl_t	*ac = arg;
++	audiohd_state_t	*statep = ac->statep;
++
++	mutex_enter(&statep->hda_mutex);
++	if (!statep->suspended)
++		audiohd_hdmi_refresh(statep);
++	*val = ac->val;
++	mutex_exit(&statep->hda_mutex);
++
++	return (0);
++}
++
++static void
++audiohd_create_hdmi(audiohd_state_t *statep)
++{
++	audiohd_ctrl_t		*ac;
++	audio_ctrl_desc_t	desc;
++
++	bzero(&desc, sizeof (desc));
++
++	ac = &statep->ctrls[CTL_HDMI];
++	ac->statep = statep;
++	ac->num = CTL_HDMI;
++
++	desc.acd_name = AUDIOHD_CTRL_ID_HDMI;
++	desc.acd_type = AUDIO_CTRL_TYPE_BOOLEAN;
++	desc.acd_minvalue = 0;
++	desc.acd_maxvalue = 1;
++	desc.acd_flags = AUDIO_CTRL_FLAG_READABLE | AUDIO_CTRL_FLAG_PLAY |
++	    AUDIO_CTRL_FLAG_POLL;
++
++	ac->val = 0;
++	ac->ctrl = audio_dev_add_control(statep->adev, &desc,
++	    audiohd_get_hdmi, NULL, ac);
++}
++
+ static void
+ audiohd_create_controls(audiohd_state_t *statep)
+ {
+@@ -1935,6 +1983,7 @@ audiohd_create_controls(audiohd_state_t *statep)
+ 	audiohd_pin_t		*pin;
+ 	audiohd_pin_color_t	color;
+ 	int			i, j;
++	boolean_t		hdmi = B_FALSE, other = B_FALSE;
+ 
+ 	/*
+ 	 * We always use soft volume control to adjust PCM volume.
+@@ -1952,6 +2001,13 @@ audiohd_create_controls(audiohd_state_t *statep)
+ 			wid = path->pin_wid[j];
+ 			widget = codec->widget[wid];
+ 			pin = (audiohd_pin_t *)widget->priv;
++			if (path->path_type == PLAY) {
++				if (pin->cap &
++				    (AUDIOHD_PIN_HDMI_CAP | AUDIOHD_PIN_DP_CAP))
++					hdmi = B_TRUE;
++				else
++					other = B_TRUE;
++			}
+ 			color = (pin->config >> AUDIOHD_PIN_CLR_OFF) &
+ 			    AUDIOHD_PIN_CLR_MASK;
+ 			if (color == AUDIOHD_PIN_GREEN) {
+@@ -2027,6 +2083,12 @@ audiohd_create_controls(audiohd_state_t *statep)
+ 		audiohd_create_recsrc(statep);
+ 	audiohd_configure_output(statep);
+ 	audiohd_configure_input(statep);
++
++	if (hdmi) {
++		statep->hdmi_only = !other;
++		audiohd_create_hdmi(statep);
++		audiohd_hdmi_refresh(statep);
++	}
+ }
+ 
+ /*
+@@ -5471,6 +5533,8 @@ audiohd_resume(audiohd_state_t *statep)
+ 
+ 	audiohd_configure_output(statep);
+ 	audiohd_configure_input(statep);
++	if (statep->ctrls[CTL_HDMI].ctrl != NULL)
++		audiohd_hdmi_refresh(statep);
+ 	mutex_exit(&statep->hda_mutex);
+ 
+ 	audio_dev_resume(statep->adev);
+@@ -5753,6 +5817,18 @@ audiohd_pin_sense(audiohd_state_t *statep, uint32_t resp, uint32_t respex)
+ 	if (widget == NULL)
+ 		return;
+ 
++	/*
++	 * An HDMI/DisplayPort monitor plugged in or out (or its ELD changed):
++	 * not a headphone jack, the speakers stay as they are.
++	 */
++	if (widget->type == WTYPE_PIN &&
++	    (pin = (audiohd_pin_t *)widget->priv) != NULL &&
++	    (pin->cap & (AUDIOHD_PIN_HDMI_CAP | AUDIOHD_PIN_DP_CAP))) {
++		if (statep->ctrls[CTL_HDMI].ctrl != NULL)
++			audiohd_hdmi_refresh(statep);
++		return;
++	}
++
+ 	rs = audioha_codec_verb_get(statep, index, id,
+ 	    AUDIOHDC_VERB_GET_PIN_SENSE, 0);
+ 	if (rs & AUDIOHD_PIN_PRES_MASK) {
+@@ -5782,6 +5858,148 @@ audiohd_pin_sense(audiohd_state_t *statep, uint32_t resp, uint32_t respex)
+ 
+ }
+ 
++/*
++ * The monitor name of an HDMI/DisplayPort pin whose ELD is valid. ATI/AMD
++ * codecs have no ELD buffer: revision 3 and later give the sink description
++ * (the EDID monitor name, written by the GPU driver) through the sink info
++ * verbs (Linux atihdmi.c get_eld_ati()); other codecs give the ELD through
++ * GET_HDMI_ELDD. Only printable ASCII is kept. Called with hda_mutex held.
++ */
++static void
++audiohd_hdmi_get_name(audiohd_state_t *statep, hda_codec_t *codec,
++    audiohd_pin_t *pin)
++{
++	char		*name = pin->hdmi_name;
++	uint32_t	r;
++	int		len, i, n = 0, size;
++
++	if ((codec->vid >> 16) == AUDIOHD_VID_ATI) {
++		r = audioha_codec_verb_get(statep, codec->index, pin->wid,
++		    AUDIOHDC_VERB_ATI_GET_SPEAKER_ALLOC, 0);
++		pin->hdmi_dp = (r & AUDIOHD_ATI_SPKALLOC_DP) != 0;
++		if ((codec->revid & 0xff00) < 0x0300)
++			return;
++		(void) audioha_codec_verb_get(statep, codec->index, pin->wid,
++		    AUDIOHDC_VERB_ATI_SET_SINK_INFO_INDEX,
++		    AUDIOHD_ATI_SINK_DESC_LEN);
++		len = audioha_codec_verb_get(statep, codec->index, pin->wid,
++		    AUDIOHDC_VERB_ATI_GET_SINK_INFO_DATA, 0) & 0xff;
++		len = MIN(len, AUDIOHD_HDMI_NAME_LEN - 2);
++		for (i = 0; i < len; i++) {
++			(void) audioha_codec_verb_get(statep, codec->index,
++			    pin->wid, AUDIOHDC_VERB_ATI_SET_SINK_INFO_INDEX,
++			    AUDIOHD_ATI_SINK_DESC_FIRST + i);
++			r = audioha_codec_verb_get(statep, codec->index,
++			    pin->wid, AUDIOHDC_VERB_ATI_GET_SINK_INFO_DATA, 0);
++			if ((r & 0xff) >= 0x20 && (r & 0xff) < 0x7f &&
++			    (r & 0xff) != '%')
++				name[n++] = (char)(r & 0xff);
++		}
++	} else {
++		size = audioha_codec_verb_get(statep, codec->index, pin->wid,
++		    AUDIOHDC_VERB_GET_HDMI_DIP_SIZE, AUDIOHD_DIPSIZE_ELD_BUF) &
++		    0xff;
++		if (size <= AUDIOHD_ELD_NAME_OFF)
++			return;
++		r = audioha_codec_verb_get(statep, codec->index, pin->wid,
++		    AUDIOHDC_VERB_GET_HDMI_ELDD, AUDIOHD_ELD_CONN_OFF);
++		pin->hdmi_dp = (r & AUDIOHD_ELDD_VALID) != 0 &&
++		    (r & AUDIOHD_ELD_CONN_MASK) == AUDIOHD_ELD_CONN_DP;
++		r = audioha_codec_verb_get(statep, codec->index, pin->wid,
++		    AUDIOHDC_VERB_GET_HDMI_ELDD, AUDIOHD_ELD_MNL_OFF);
++		if ((r & AUDIOHD_ELDD_VALID) == 0)
++			return;
++		len = MIN(r & AUDIOHD_ELD_MNL_MASK, AUDIOHD_HDMI_NAME_LEN - 2);
++		len = MIN(len, size - AUDIOHD_ELD_NAME_OFF);
++		for (i = 0; i < len; i++) {
++			r = audioha_codec_verb_get(statep, codec->index,
++			    pin->wid, AUDIOHDC_VERB_GET_HDMI_ELDD,
++			    AUDIOHD_ELD_NAME_OFF + i);
++			if ((r & AUDIOHD_ELDD_VALID) == 0)
++				break;
++			if ((r & 0xff) >= 0x20 && (r & 0xff) < 0x7f &&
++			    (r & 0xff) != '%')
++				name[n++] = (char)(r & 0xff);
++		}
++	}
++	while (n > 0 && name[n - 1] == ' ')
++		n--;
++	name[n] = '\0';
++}
++
++/*
++ * audiohd_hdmi_refresh()
++ *
++ * Description
++ *
++ *	Pin sense of every HDMI/DisplayPort pin, and the monitor name of those
++ *	with a valid ELD. hdmi-connected becomes 1 when a pin senses a monitor;
++ *	the device description becomes the connected monitors' names, each
++ *	as "HDMI: <name>" or "DisplayPort: <name>", joined with ", " (on a
++ *	device with HDMI/DisplayPort outputs only), or the controller's with
++ *	them added, and goes back to the description of attach when none is
++ *	left.
++ *	Called with hda_mutex held, at attach, resume, a pin's unsolicited
++ *	response and each read of hdmi-connected.
++ */
++static void
++audiohd_hdmi_refresh(audiohd_state_t *statep)
++{
++	hda_codec_t	*codec;
++	audiohd_pin_t	*pin;
++	char		names[128], desc[128];
++	boolean_t	present = B_FALSE;
++	int		i;
++
++	names[0] = '\0';
++	for (i = 0; i < AUDIOHD_CODEC_MAX; i++) {
++		if ((codec = statep->codec[i]) == NULL)
++			continue;
++		for (pin = codec->first_pin; pin != NULL; pin = pin->next) {
++			if ((pin->cap &
++			    (AUDIOHD_PIN_HDMI_CAP | AUDIOHD_PIN_DP_CAP)) == 0)
++				continue;
++			if (pin->cap & AUDIOHD_PIN_TRIGREQ_CAP)
++				(void) audioha_codec_verb_get(statep,
++				    codec->index, pin->wid,
++				    AUDIOHDC_VERB_EXEC_PIN_SENSE, 0);
++			pin->hdmi_sense = audioha_codec_verb_get(statep,
++			    codec->index, pin->wid,
++			    AUDIOHDC_VERB_GET_PIN_SENSE, 0);
++			pin->hdmi_name[0] = '\0';
++			pin->hdmi_dp = B_FALSE;
++			if ((pin->hdmi_sense & AUDIOHD_PIN_PRES_MASK) == 0)
++				continue;
++			present = B_TRUE;
++			if (pin->hdmi_sense & AUDIOHD_PIN_ELDV_MASK)
++				audiohd_hdmi_get_name(statep, codec, pin);
++			if (pin->hdmi_name[0] == '\0')
++				continue;
++			if (names[0] != '\0')
++				(void) strlcat(names, ", ", sizeof (names));
++			(void) strlcat(names, pin->hdmi_dp ? "DisplayPort: " :
++			    "HDMI: ", sizeof (names));
++			(void) strlcat(names, pin->hdmi_name, sizeof (names));
++		}
++	}
++	statep->ctrls[CTL_HDMI].val = present ? 1 : 0;
++
++	if (names[0] == '\0')
++		(void) strlcpy(desc, statep->hda_desc != NULL ?
++		    statep->hda_desc : AUDIOHD_DEV_CONFIG, sizeof (desc));
++	else if (statep->hdmi_only)
++		(void) strlcpy(desc, names, sizeof (desc));
++	else
++		(void) snprintf(desc, sizeof (desc), "%s, %s",
++		    statep->hda_desc != NULL ? statep->hda_desc :
++		    AUDIOHD_DEV_CONFIG, names);
++	if (strcmp(desc, statep->hdmi_desc) != 0) {
++		(void) strlcpy(statep->hdmi_desc, desc,
++		    sizeof (statep->hdmi_desc));
++		audio_dev_set_description(statep->adev, desc);
++	}
++}
++
+ /*
+  * audiohd_disable_intr()
+  *
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+index 53270e6f..067d8960 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.h
+@@ -141,6 +141,8 @@ extern "C" {
+ #define	AUDIOHD_PIN_IN_ENABLE	0x20
+ #define	AUDIOHD_PIN_OUT_ENABLE	0x40
+ #define	AUDIOHD_PIN_PRES_MASK	0x80000000
++#define	AUDIOHD_PIN_ELDV_MASK	0x40000000	/* pin sense: ELD valid */
++#define	AUDIOHD_PIN_TRIGREQ_CAP	0x00000002	/* pin cap: trigger required */
+ #define	AUDIOHD_PIN_CONTP_OFF	0x1e
+ #define	AUDIOHD_PIN_CON_JACK	0
+ #define	AUDIOHD_PIN_CON_FIXED	0x2
+@@ -369,6 +371,27 @@ extern "C" {
+ #define	AUDIOHDC_VERB_ATI_SET_RAMP_RATE		0x770
+ #define	AUDIOHDC_VERB_ATI_SET_CHANNEL_ALLOC	0x771
+ #define	AUDIOHDC_VERB_ATI_SET_DOWNMIX_INFO	0x772
++#define	AUDIOHDC_VERB_ATI_SET_SINK_INFO_INDEX	0x780
++#define	AUDIOHDC_VERB_ATI_GET_SINK_INFO_DATA	0xf81
++#define	AUDIOHDC_VERB_ATI_GET_SPEAKER_ALLOC	0xf70
++#define	AUDIOHD_ATI_SPKALLOC_DP			0x0200	/* DisplayPort sink */
++/* ATI sink info indexes: description length, first description byte */
++#define	AUDIOHD_ATI_SINK_DESC_LEN		2
++#define	AUDIOHD_ATI_SINK_DESC_FIRST		5
++/* HDMI ELD (HDA specification 7.3.3.36, .37) */
++#define	AUDIOHDC_VERB_GET_HDMI_DIP_SIZE		0xf2e
++#define	AUDIOHDC_VERB_GET_HDMI_ELDD		0xf2f
++#define	AUDIOHD_DIPSIZE_ELD_BUF			0x08
++#define	AUDIOHD_ELDD_VALID			0x80000000
++#define	AUDIOHD_ELD_MNL_OFF			4	/* byte: MNL in bits 4:0 */
++#define	AUDIOHD_ELD_MNL_MASK			0x1f
++#define	AUDIOHD_ELD_NAME_OFF			20	/* monitor name string */
++#define	AUDIOHD_ELD_CONN_OFF			5	/* byte: conn type 3:2 */
++#define	AUDIOHD_ELD_CONN_DP			0x04
++#define	AUDIOHD_ELD_CONN_MASK			0x0c
++#define	AUDIOHD_HDMI_NAME_LEN			20	/* 18 bytes + NUL, rounded */
++/* read-only control: an HDMI/DisplayPort monitor with audio is connected */
++#define	AUDIOHD_CTRL_ID_HDMI			"hdmi-connected"
+ 
+ #define	AUDIOHDC_VERB_GET_GPIO_MASK		0xf16
+ #define	AUDIOHDC_VERB_SET_GPIO_MASK		0x716
+@@ -730,6 +753,7 @@ enum {
+ 	CTL_RECSRC,
+ 	CTL_BEEP,
+ 	CTL_LOOP,
++	CTL_HDMI,
+ 
+ 	/* this one must be last */
+ 	CTL_MAX
+@@ -765,6 +789,11 @@ struct audiohd_pin {
+ 	int		no_phys_conn;
+ 	enum audiohda_device_type	device;
+ 
++	/* HDMI/DisplayPort pins: last pin sense and the monitor's name */
++	uint32_t	hdmi_sense;
++	boolean_t	hdmi_dp;	/* the sink is on DisplayPort */
++	char		hdmi_name[AUDIOHD_HDMI_NAME_LEN];
++
+ 	/*
+ 	 * mg_dir, mg_gain, mg_wid are used to store the monitor gain control
+ 	 * widget wid.
+@@ -816,6 +845,9 @@ struct hda_codec {
+ #define	AUDIOHD_MAX_ASSOC	15
+ struct audiohd_state {
+ 	dev_info_t	*hda_dip;
++	const char	*hda_desc;	/* controller description at attach */
++	boolean_t	hdmi_only;	/* every output is HDMI/DisplayPort */
++	char		hdmi_desc[128];	/* description set for the monitors */
+ 	kstat_t		*hda_ksp;
+ 	kmutex_t	hda_mutex;
+ 	uint32_t	hda_flags;
+-- 
+2.56.0
+

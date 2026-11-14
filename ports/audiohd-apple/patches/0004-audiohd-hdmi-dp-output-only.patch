@@ -1,0 +1,67 @@
+From 6b3a3ed884f1cfc9af1cdea0ded68bb4f9b6bfa7 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Fri, 13 Nov 2026 23:29:20 +0100
+Subject: [PATCH] NNNNN audiohd: HDMI/DisplayPort output silent when opened for
+ read and write
+
+The HDMI/DisplayPort audio controllers of ATI/AMD GPUs report no streams
+in GCAP. audiohd then put its record engine on the output stream
+descriptor: an O_RDWR open (PulseAudio module-oss on a DUPLEX device)
+reset and reprogrammed the playback stream, and the output stayed silent.
+Take one output and no input stream for such a controller, as Linux does,
+register no record engine without an input stream, and no record-source
+control without an input pin.
+---
+ .../uts/common/io/audio/drv/audiohd/audiohd.c | 22 ++++++++++++++++++-
+ 1 file changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+index 5f8915fc..95da9fb5 100644
+--- a/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
++++ b/usr/src/uts/common/io/audio/drv/audiohd/audiohd.c
+@@ -2022,7 +2022,9 @@ audiohd_create_controls(audiohd_state_t *statep)
+ 		    0, audiohd_set_loopback);
+ 	}
+ 
+-	audiohd_create_recsrc(statep);
++	/* No record source without a record engine or an input pin. */
++	if (statep->port[PORT_ADC]->engine != NULL && statep->inmask != 0)
++		audiohd_create_recsrc(statep);
+ 	audiohd_configure_output(statep);
+ 	audiohd_configure_input(statep);
+ }
+@@ -2517,6 +2519,14 @@ audiohd_init_controller(audiohd_state_t *statep)
+ 	    AUDIOHD_INSTR_NUM_OFF;
+ 	statep->hda_output_streams = (gcap & AUDIOHDR_GCAP_OUTSTREAMS) >>
+ 	    AUDIOHD_OUTSTR_NUM_OFF;
++	/*
++	 * The HDMI/DisplayPort audio controllers of ATI/AMD GPUs report no
++	 * streams at all in GCAP. They have one output stream and no input
++	 * stream (Linux: ATIHDMI_NUM_PLAYBACK, ATIHDMI_NUM_CAPTURE).
++	 */
++	if (statep->hda_input_streams == 0 &&
++	    statep->hda_output_streams == 0)
++		statep->hda_output_streams = 1;
+ 	statep->hda_streams_nums = statep->hda_input_streams +
+ 	    statep->hda_output_streams;
+ 
+@@ -5219,6 +5229,16 @@ audiohd_allocate_port(audiohd_state_t *statep)
+ 		    AUDIOHD_BDLE_NUMS, DDI_DMA_SYNC_FORDEV);
+ 		port->curpos = 0;
+ 
++		/*
++		 * Without an input stream (HDMI/DisplayPort controllers) the
++		 * record engine would share the output stream descriptor at
++		 * AUDIOHD_REG_SD_BASE: starting it would reset and reprogram
++		 * the playback stream, and every O_RDWR open would silence
++		 * the output. Such a device is output only.
++		 */
++		if (i == PORT_ADC && statep->hda_input_streams == 0)
++			continue;
++
+ 		port->engine = audio_engine_alloc(&audiohd_engine_ops, caps);
+ 		if (port->engine == NULL) {
+ 			return (DDI_FAILURE);
+-- 
+2.56.0
+

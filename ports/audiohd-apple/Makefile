@@ -16,7 +16,9 @@
 # audiohd-apple: illumos' audiohd driver with the speaker/headphone amplifier
 # GPIOs of Apple's Cirrus CS4206/CS4207/CS4208 turned on (patches/0001: iMac,
 # MacBook, Mac mini, Mac Pro Late 2013), and HDMI/DisplayPort output on the
-# GPU codecs' digital pins (patches/0002: e.g. DP audio on the Mac Pro).
+# GPU codecs' digital pins (patches/0002, 0003: e.g. DP audio on the Mac
+# Pro), output only on GPU HDMI/DP controllers (patches/0004), the
+# connected monitor's name and presence (patches/0005).
 # See notes/imac2019-network.md ("Sound").
 #
 # Pristine source: the illumos-gate snapshot the iMac's kernel was built
@@ -136,8 +138,11 @@ check: $(BUILD_DIR)/$(MODULE)
 # clean publish, then pkg install the new version (notes, section 6).
 OSNET_VERSION=	0.5.11-2026.0.0.23395
 # .1 GPIO fix; .2 + HDMI/DP pins (0002); .3 + HDMI setup with a bring-up pin log;
-# .4 HDMI setup on ATI/AMD codecs (0003) without the log
-PKG_VERSION=	$(OSNET_VERSION).4
+# .4 HDMI setup on ATI/AMD codecs (0003) without the log; .5 HDMI/DP output
+# only on GPU controllers without streams in GCAP (0004: O_RDWR was silent);
+# .6 monitor name and presence of HDMI/DP outputs (0005, hdmi-connected);
+# .7 0005 with "HDMI: "/"DisplayPort: " before each name
+PKG_VERSION=	$(OSNET_VERSION).7
 GATE_SHORT=	$(shell echo $(GATE_COMMIT) | cut -c1-10)
 REPO?=		$(HOME)/oi-repo
 PUBLISHER?=	oi-gnome
