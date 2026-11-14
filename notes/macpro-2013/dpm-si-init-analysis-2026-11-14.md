@@ -689,3 +689,34 @@ what it sees for regulator hot. If bit 5 reads DC: the cause is the AC/DC
 input, and the fix is to tell the SMC "AC" (RunningOnAC at dpm enable,
 as amdgpu does on an ACPI AC event) or to find why the pin reads DC on
 illumos. If both read "AC, not hot": this lead is ruled out.
+
+## 15. The GPIO readout and the RunningOnAC switch (patch 0027, the user's yes)
+
+Branch `amdgpu/gpio` = 3200635 (the con6/con7 sources) + 0f1bb4b (patch
+0027 only; no SRAM logging, not 0025). Built in the original tree path:
+VM `~/src/drm/illumos-drm-0.0.2-amdgpu-gpio.p5p`, sha256
+3313a4312795d75014796ff5a9b27bba110f34fae6195c3f830e139de152c5c8. Only
+amdgpu differs from con6 (19807f9e...); linuxkpi, drm_core, drm_helpers,
+drm_kms byte-identical. amdtest with mode g: sha256 266fc4b5...
+(notes/illumos-drm-amdgpu/amdtest.c).
+
+Patch 0027:
+- GPIOPAD_STRENGTH/MASK/A/EN/Y (0x5e5-0x5e9) in si_allowed_read_registers.
+- One log line after si_start_dpm: "illumos: si_dpm GPIOPAD STRENGTH ..
+  MASK .. A .. EN .. Y ..; HARDWAREDC d, ac_power d".
+- `amdgpu_illumos_si_running_on_ac` (default 0). Set to 1, at that point
+  with ac_power and the HARDWAREDC cap, PPSMC_MSG_RunningOnAC (0x17,
+  ppsmc.h) is sent once and the answer logged ("illumos: si_dpm sent
+  RunningOnAC, SMC answer 0x.."). Linux amdgpu sends the same message
+  from si_notify_hw_of_powersource() (si_dpm.c, .notify_ac_dc) via
+  amdgpu_pm_acpi_event_handler() on an ACPI AC event only; radeon's
+  si_notify_hw_of_powersource() is #if 0.
+
+Procedure:
+- Boot 1 (switch off, as installed): per node (renderD128, then
+  renderD129) `./amdtest <node> g 10` idle; `./gpuburn 40 64 <node> &`,
+  5 s, `./amdtest <node> g 20`; then the "si_dpm GPIOPAD" boot lines.
+- Boot 2, only if GPIO 5 reads "battery" (Y bit 5 = 1): the same BE with
+  `set amdgpu:amdgpu_illumos_si_running_on_ac = 1` in /etc/system; check
+  the "sent RunningOnAC" line, then `./amdtest <node> s 10` idle and under
+  gpuburn as in dpm6 (sclk, level), and `g` once more.

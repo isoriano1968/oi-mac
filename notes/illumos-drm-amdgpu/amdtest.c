@@ -13,7 +13,9 @@
  *   r = + SI dpm registers (needs patch 0021): raw values, then per second
  *   GPU busy samples and the SMC's current/target level for [seconds],
  *   d = + the defined CG registers (needs patch 0022, its second version) on stdout,
- *   as si-pm-regdump.py prints it on Linux, sampled for [seconds].
+ *   as si-pm-regdump.py prints it on Linux, sampled for [seconds],
+ *   g = + the GPIO pads (needs patch 0027) with GRBM_STATUS and the current
+ *   level, once a second for [seconds]; bits 5 (AC/DC) and 6 (VR hot).
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -253,6 +255,42 @@ main(int argc, char **argv)
 			memcpy(prev, cur, sizeof (prev));
 			if (k + 1 < samples)
 				usleep(100000);
+		}
+	}
+	if (mode == 'g') {
+		/*
+		 * The GPIO pads patch 0027 makes readable, once a second for
+		 * [seconds], with GRBM_STATUS and the SMC's current level: the
+		 * SMC watches GPIO 5 (AC/DC, polarity high) and GPIO 6
+		 * (regulator hot). Per pad: Y = pin level, A = output value,
+		 * EN = output enable, MASK = GPIO mode.
+		 */
+		static const uint32_t gp[] = { 0x5e5, 0x5e6, 0x5e7, 0x5e8, 0x5e9 };
+		static const char *gn[] = { "STRENGTH", "MASK", "A", "EN", "Y" };
+		uint32_t v[5], grbm, prof;
+		int secs = argc > 3 ? atoi(argv[3]) : 1, k, i;
+
+		for (k = 0; k < secs; k++) {
+			printf("# %d:", k);
+			for (i = 0; i < 5; i++) {
+				v[i] = 0xdeadbeef;
+				(void) amdgpu_read_mm_registers(dev, gp[i], 1,
+				    0xffffffff, 0, &v[i]);
+				printf(" %s=0x%08x", gn[i], v[i]);
+			}
+			grbm = prof = 0xdeadbeef;
+			(void) amdgpu_read_mm_registers(dev, 0x2004, 1,
+			    0xffffffff, 0, &grbm);
+			(void) amdgpu_read_mm_registers(dev, 0x1E6, 1,
+			    0xffffffff, 0, &prof);
+			printf(" GRBM_STATUS=0x%08x PROFILE_INDEX=0x%08x\n",
+			    grbm, prof);
+			printf("#   GPIO5 Y%u A%u EN%u MASK%u   GPIO6 Y%u A%u EN%u "
+			    "MASK%u\n", (v[4] >> 5) & 1, (v[2] >> 5) & 1,
+			    (v[3] >> 5) & 1, (v[1] >> 5) & 1, (v[4] >> 6) & 1,
+			    (v[2] >> 6) & 1, (v[3] >> 6) & 1, (v[1] >> 6) & 1);
+			if (k + 1 < secs)
+				sleep(1);
 		}
 	}
 	step("amdgpu_device_deinitialize");
