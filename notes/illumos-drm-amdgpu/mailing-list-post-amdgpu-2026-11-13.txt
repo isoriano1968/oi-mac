@@ -1,0 +1,67 @@
+Subject: amdgpu (Southern Islands) with GNOME on illumos: Mac Pro 2013 FirePro D500
+
+Hi all,
+
+I have Linux v7.2's amdgpu running on illumos, on top of illumos-drm (Rust DRM core + LinuxKPI). The machine is a Mac Pro 2013
+with two FirePro D500 (Tahiti, Southern Islands). Both GPUs attach, KMS
+drives a 3840x2160@60 DisplayPort monitor, and GNOME 45 runs with Xorg
+21.1.25 (modesetting + glamor) on Mesa 26.2.6 radeonsi: glxinfo shows
+direct rendering, "AMD Radeon Graphics (radeonsi, tahiti, ACO, DRM
+3.64)", OpenGL 4.6. Offscreen EGL rendering works on the second GPU too.
+
+What it took, per layer:
+
+Kernel (illumos-drm, branch amdgpu/si-bringup):
+- LinuxKPI: dma-buf attachments and PRIME, task refcounts, XArray readers
+  that may run under xa_lock (amdgpu's userq code does that),
+  dma_resv_copy_fences/replace_fences.
+- DRM core: facade 2.1; a GEM object's reservation now lives until the
+  driver's drm_gem_object_release(), as in Linux (TTM's delayed delete
+  used it after the core had freed it: a use-after-free on every close);
+  TTM ghost objects get their own reservation.
+- amdgpu: 15 small patches on the pinned Linux tree (the core owns the
+  device file, GEM, offsets and mappings; VBIOS from ACPI VFCT; mode
+  setting through drm_kms; a dpm level knob in /etc/system), plus the
+  Tahiti firmware from linux-firmware (not in the repo).
+
+libdrm 2.4.134 (gfx-drm):
+- amdgpu_bo_import() takes a dma-buf's size from lseek(SEEK_END), which
+  is 0 on illumos-drm's dma-buf fds: every DRI3 buffer imported into X had size 0
+  and GNOME showed only the pointer. Fallback to
+  AMDGPU_GEM_OP_GET_GEM_CREATE_INFO.
+- libsync.h needs <sys/ioccom.h>.
+
+Mesa 26.2.6:
+- util/u_screen.c reads the dma-buf (PRIME) cap from the kernel only on
+  Linux/BSD; on illumos it stayed 0, GBM fell back to dumb buffers and
+  Xorg could not create its ARGB front buffer. One-line fix
+  (DETECT_OS_SOLARIS). Upstream candidate, as is the libdrm one.
+
+Xorg:
+- 1.19.7 does not work with Mesa 26 (glamor needs EGL_MESA_drm_image,
+  OI's GLX patch breaks Mesa's megadriver). 21.1.25 with glamor, Oracle's
+  Solaris 11.4 patch set plus OI's own patches, input drivers rebuilt for
+  the new ABI, and a new sun_init.c patch: without VTs and without a
+  visual_io /dev/fb, X runs without a console device instead of holding
+  the DRM node.
+
+Open:
+- No kernel console on amdgpu yet: no VTs, so no logindevperm handover;
+  input goes through conskbd/consms for now.
+- After X's mode set the legacy KMS helper switches the CRTC off again
+  when X disables the unused CRTCs: no vblank or page-flip events (window
+  drags stall) and DisplayPort audio is off. Next on my list.
+- DP audio rate is off by 0.831 (DCE6 audio DTO).
+- si_dpm: the SMC refuses to leave level 0 (300/150 MHz).
+- lseek(SEEK_END) on dma-buf fds in the core, UVD/VCE, quiesce(9E).
+- Mesa os_same_file_description() for illumos; amdgpu.ids not installed.
+
+Code:
+- https://github.com/isoriano1968/illumos-drm (branch amdgpu/si-bringup)
+- https://github.com/isoriano1968/gfx-drm (branch libdrm-amdgpu)
+- https://github.com/isoriano1968/oi-userland (branches mesa-26,
+  xorg-server-21)
+
+Thanks to the illumos-drm developers; none of this would exist without it.
+
+Iggi

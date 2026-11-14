@@ -1,0 +1,24 @@
+amdtest: open
+amdtest: drmGetVersion
+amdtest: driver amdgpu 3.64.0 (AMD GPU)
+amdtest: amdgpu_device_initialize
+amdtest: drm interface 3.64
+amdtest: query_gpu_info
+amdtest: asic 0x679e family 110 rev 1, 24 CUs, sclk max 725000 kHz, mclk max 1270000 kHz
+amdtest: query_info VRAM_GTT
+amdtest: VRAM 3058 MB (cpu visible 250 MB), GTT 65512 MB
+amdtest: marketing name
+amdtest: AMD Radeon HD 7800 Series
+amdtest: t=0  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=1  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=2  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=3  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=4  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=5  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=6  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=7  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=8  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: t=9  sclk MHz 300  mclk MHz 150  temp mC 51000  power W err -22  load % err -22
+amdtest: amdgpu_device_deinitialize
+amdtest: close
+amdtest: done
