@@ -1,0 +1,5 @@
+-rw-r--r--   1 root     root       54397 2026-11-14 15:35:13.125769265 +0100 /var/log/Xorg.0.log
+
+/var/log/gdm/:
+/var/log/gdm/: Permission denied
+total 50

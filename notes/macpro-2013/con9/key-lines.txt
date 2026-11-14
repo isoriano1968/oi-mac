@@ -1,0 +1,13 @@
+Nov 14 15:34:38 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: Found VCE firmware Version: 50.0 Binary ID: 1
+Nov 14 15:34:38 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: dce6 hw_init at 15423 ms: vga render off
+Nov 14 15:34:38 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: dce6 hw_init at 15423 ms: init dig
+Nov 14 15:34:38 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: dce6 hw_init at 15423 ms: disp eng pll 600000 kHz
+Nov 14 15:34:38 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu1: [drm] illumos: dce6 hw_init at 15424 ms: done
+Nov 14 15:34:38 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu1: VCE initialized successfully.
+Nov 14 15:34:39 <host> amdgpu: [ID 664146 kern.info] NOTICE: amdgpu1: console: the loader framebuffer (1600x900, 6400 bytes per line) is the illumos console
+Nov 14 15:34:45 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: Found VCE firmware Version: 50.0 Binary ID: 1
+Nov 14 15:34:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: dce6 hw_init at 22249 ms: vga render off
+Nov 14 15:34:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: dce6 hw_init at 22249 ms: init dig
+Nov 14 15:34:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: dce6 hw_init at 22249 ms: disp eng pll 600000 kHz
+Nov 14 15:34:45 <host> drm_core: [ID 517869 kern.info] NOTICE: amdgpu0: [drm] illumos: dce6 hw_init at 22250 ms: done
+Nov 14 15:34:45 <host> linuxkpi: [ID 517869 kern.info] NOTICE: amdgpu0: VCE initialized successfully.

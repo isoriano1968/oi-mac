@@ -1,0 +1,1 @@
+15:35:22    up 1 min(s),  1 user,  load average: 0.62, 0.16, 0.05

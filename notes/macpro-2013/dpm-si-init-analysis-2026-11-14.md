@@ -891,3 +891,14 @@ con9 = 3200635 (con8's sources) + 977972e (0029, 0030, restore log), on
 branch amdgpu/con9: VM `~/src/drm/illumos-drm-0.0.2-amdgpu-con9.p5p`,
 sha256 c87a37f150727c61091732553dab18cbf404b8d1721155ccdc995a3be07c1a01;
 amdgpu 6951b98a...; the other modules = con6. No dpm test switch in it.
+
+## 20. con9 result: the new default (2026-11-14 15:34)
+
+con9 (p5p c87a37f1, amdgpu 6951b98a) booted: DCE6 hw_init on amdgpu1 at
+15423-15424 ms (VGA render off, init dig, display PLL 600000 kHz), on
+amdgpu0 at 22249-22250 ms; no "console: restored" line (our console
+restore did not run, so candidate 3 of section 19 is out); no VCE busy.
+Files: `con9/`. The user: "forget it. con9 is working": the flash
+investigation is dropped, and con9 is the default BE (halt_on_panic 1;
+con8 kept as the fallback). Patch 0029 (VCE stop) is accepted; 0030 and
+the restore line are log-only (kern.info) and stay as they are.
