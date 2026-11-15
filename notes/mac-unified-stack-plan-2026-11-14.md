@@ -131,8 +131,19 @@ user's OK), then point 6.
   session tests this one on the Mac Pro (BE unified-a1, not activated)
   instead of the mac/unified p5p 1f238e4f.
 - Pushed 2026-11-15 (user: "Yes, push it") to
-  github.com/isoriano1968/illumos-drm (5562b4e). Not done: send the mail (after the Mac
-  tests).
+  github.com/isoriano1968/illumos-drm (5562b4e), then the fix 431847d
+  (user: "Yes, push the fix").
+- 2026-11-15 VA-API deadlock on con9 (unkillable ffmpeg): TTM ghost
+  objects copied _resv.lock.ctx, dma_resv_init kept it, the ghost's unlock
+  went down the transaction path and was refused silently; ghosts stayed
+  Raw-locked behind threads back in user space (mdb: 22 delayed-delete
+  workers waiting; the core's "unlock_ctx ... refused" warning 11 times
+  since 2026-11-13). Fixed in LinuxKPI, 431847d; p5p
+  `illumos-drm-0.0.2.2-series-20261115b.p5p` sha256 d3b8f9b7...e727.
+- Mac Pro regression in BE unified-a1 (d3b8f9b7, booted once, con9 stays
+  default): passed (console, VTs, DP audio, X/glamor, 83 fps per GPU,
+  VA-API + gpuburn + Firefox WebGL without resv waiters or warnings).
+- Not done: the iMac14,1 run; send the mail (user's OK on the text).
 
 ## 3. Step B: userland for Intel on the new stack  [R]
 
