@@ -143,7 +143,16 @@ user's OK), then point 6.
 - Mac Pro regression in BE unified-a1 (d3b8f9b7, booted once, con9 stays
   default): passed (console, VTs, DP audio, X/glamor, 83 fps per GPU,
   VA-API + gpuburn + Firefox WebGL without resv waiters or warnings).
-- Not done: the iMac14,1 run; send the mail (user's OK on the text).
+- iMac14,1 regression 2026-11-15 12:23 (user: "do the iMac test now"): BE
+  unified-imac = clone of accel-con + drm-core, drm-helpers, drm-kms,
+  drmadm, i915n, linuxkpi 0.0.2.2 from d3b8f9b7 (illumos-drm origin in that
+  BE only switched to ~/xfer/illumos-drm-0.0.2.2-series-20261115b.p5p),
+  `beadm activate -t` + `reboot -p`; accel-con stays default. Passed: VBT
+  from OpRegion, X-tiled console through fence 0 on pipe B, /dev/fb ->
+  gfx0, console_user -> 7, i915n_smoke OK (1000 batches 0.022 s), gdm,
+  Xorg modeset + glamor, DRI2 i965, AIGLX, DP-3 1920x1080. The old
+  "dma_resv_init of a reservation that has one already" warning is gone.
+- Not done: send the mail (user's OK on the text).
 
 ## 3. Step B: userland for Intel on the new stack  [R]
 
