@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ This file and its contents are supplied under the terms of the
+ Common Development and Distribution License ("CDDL"), version 1.0.
+ Copyright 2026 isoriano1968
+-->
+<service_bundle type="manifest" name="system/applesmc-fancurve">
+	<service name="system/applesmc-fancurve" type="service" version="1">
+		<create_default_instance enabled="true" />
+		<single_instance />
+		<dependency name="filesystem" grouping="require_all" restart_on="none" type="service">
+			<service_fmri value="svc:/system/filesystem/minimal" />
+		</dependency>
+		<dependency name="applesmc-fan" grouping="optional_all" restart_on="none" type="service">
+			<service_fmri value="svc:/system/applesmc-fan" />
+		</dependency>
+		<exec_method type="method" name="start" exec="/lib/svc/method/svc-applesmc-fancurve start" timeout_seconds="30" />
+		<exec_method type="method" name="stop" exec=":kill" timeout_seconds="30" />
+		<property_group name="config" type="application">
+			<propval name="interval" type="count" value="5" />
+		</property_group>
+		<stability value="Unstable" />
+		<template>
+			<common_name>
+				<loctext xml:lang="C">Apple SMC fan curve</loctext>
+			</common_name>
+			<description>
+				<loctext xml:lang="C">Raises the fan floor of an Intel Mac with the hottest memory, CPU, GPU and chipset temperatures (applesmc-fancurve), on top of smcfan(8). Stopping it gives the fans back to the SMC.</loctext>
+			</description>
+		</template>
+	</service>
+</service_bundle>

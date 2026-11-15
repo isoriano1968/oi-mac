@@ -1,0 +1,21 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+set name=pkg.fmri value=pkg:/$(COMPONENT_FMRI)@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="$(COMPONENT_SUMMARY)"
+set name=pkg.description \
+    value="A temperature curve for the fan of an Intel Mac: every 5 seconds the hottest memory, CPU, GPU and chipset sensors of the Apple SMC set the fan floor between the SMC's own minimum and the maximum (memory 65-82 C, CPU and GPU 70-88 C, chipset 72-90 C), through smcfan(8). Up at once, down slowly; unreadable sensors give the maximum; stopping svc:/system/applesmc-fancurve gives the fan back to the SMC."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+license $(COMPONENT_LICENSE_FILE) license='$(COMPONENT_LICENSE)'
+file files/applesmc-fancurve path=usr/lib/applesmc/applesmc-fancurve mode=0555
+file files/svc-applesmc-fancurve path=lib/svc/method/svc-applesmc-fancurve mode=0555
+file files/applesmc-fancurve.xml path=lib/svc/manifest/system/applesmc-fancurve.xml \
+    restart_fmri=svc:/system/manifest-import:default
+depend type=require fmri=driver/sensor/applesmc

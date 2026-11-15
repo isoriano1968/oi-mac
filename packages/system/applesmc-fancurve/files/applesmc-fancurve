@@ -1,0 +1,58 @@
+#!/bin/bash
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+# applesmc-fancurve -- a temperature curve for the fans of an Intel Mac,
+# on top of smcfan(8): every INTERVAL seconds the hottest memory, CPU, GPU and
+# chipset sensors (smcstat's temperature table) give a fan floor between the SMC's own minimum
+# and the maximum; smcfan -m sets it.  The SMC only ever raises the fan
+# above that floor.  Up at once, down by at most STEP rpm per interval.
+# Unreadable sensors: maximum.  On exit: back to the SMC (smcfan -s auto).
+#
+# Curves (start = minimum fan, full = maximum fan), in degrees C:
+#   memory (hottest TM*)       65 .. 82
+#   CPU    (TCXc, PECI)        70 .. 88
+#   GPU    (hottest TG?D die)  70 .. 88
+#   chipset (TPCD)             72 .. 90
+#
+PATH=/usr/sbin:/usr/bin
+INTERVAL=${INTERVAL:-5}
+STEP=${STEP:-50}
+LOG=${LOG:-}
+
+restore() { smcfan -s auto >/dev/null 2>&1; exit 0; }
+trap restore EXIT INT TERM HUP
+
+# the SMC's own minimum and the maximum, from smcfan's listing
+read -r FMIN FMAX < <(smcfan | awk '$1 ~ /^F[0-9]+$/ { print $6, $5; exit }')
+[ -n "$FMIN" ] && [ -n "$FMAX" ] || { FMIN=790; FMAX=1900; }
+
+cur=$FMAX
+while :; do
+	want=$(smcstat 2>/dev/null | awk -v lo="$FMIN" -v hi="$FMAX" '
+	function lvl(t, a, b) { if (t <= a) return 0; if (t >= b) return 1; return (t - a) / (b - a) }
+	$2 !~ /^[0-9.]+$/ { next }
+	$1 ~ /^TM/ && $2 + 0 > mem + 0 { mem = $2 }
+	$1 == "TCXc" { cpu = $2 }
+	$1 ~ /^TG[0-9]D$/ && $2 + 0 > gpu + 0 { gpu = $2 }
+	$1 == "TPCD" { pch = $2 }
+	END {
+		if (mem == "" && cpu == "") { print hi; exit }
+		f = lvl(mem, 65, 82)
+		if ((x = lvl(cpu, 70, 88)) > f) f = x
+		if ((x = lvl(gpu, 70, 88)) > f) f = x
+		if ((x = lvl(pch, 72, 90)) > f) f = x
+		printf "%d %.1f %.1f %.1f %.1f\n", lo + f * (hi - lo), mem, cpu, gpu, pch
+	}')
+	set -- $want
+	w=${1:-$FMAX}
+	if [ "$w" -ge "$cur" ]; then cur=$w; else cur=$(( cur - STEP > w ? cur - STEP : w )); fi
+	smcfan -m "$cur" >/dev/null 2>&1 || true
+	[ -n "$LOG" ] && echo "$(date +%T) floor=$cur mem=$2 cpu=$3 gpu=$4 pch=$5" >> "$LOG"
+	sleep "$INTERVAL"
+done
