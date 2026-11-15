@@ -326,3 +326,8 @@ SMC (applesmc, smcstat, Mac Sensors):
    input only for now.
 4. ksensor permissions; SMC write access (fans, charge limit) or read only.
 5. Vulkan (anv/hasvk/radv) in this round or later.
+
+- 2026-11-15 evening: the user confirmed the swizzle fix on BE unified-imac-f (no console shift):
+  committed as 1b662f3. Pushed the same evening on the user's word:
+  illumos-drm fork series/iggi-amdgpu-20261115 431847d..1b662f3 (8fcd677,
+  03cde28, 1b662f3), gfx-drm fork libdrm-amdgpu 833a431..9451985.
