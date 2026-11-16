@@ -239,6 +239,11 @@ Built, not yet tested on the Mac.
   (gfx-drm, needed by mate_install next to libdrm 2.4.134). 869 packages.
   Our 7 modules identical to the stick. Default BE macpro-full; blessed
   from macOS (bless --mount /Volumes/EFI --setBoot --file .../BOOTX64.EFI).
+  Full form (illumos installboot writes /EFI/Boot/bootx64.efi; FAT ignores
+  case): `diskutil mount diskNs1` (the ESP), then
+  `sudo bless --mount /Volumes/EFI --setBoot --file /Volumes/EFI/EFI/Boot/bootx64.efi`.
+  Needed because the Option menu does not list an internal ESP; same on
+  the MacBook Pro 14,3 (notes/macbookpro-2017-drivers.md).
 - Open: gdm leaves /dev/sound to the greeter user after login (chown by
   hand meanwhile); GNOME power-off button does nothing (init 5 works);
   intermittent black screen after login (gdm restart helps); stick shutdown

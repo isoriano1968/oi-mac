@@ -355,6 +355,383 @@ keeps them after a currdev change.
 on port 2 failed`, in a loop. The cause was a USB-A to USB-C adapter; with
 a direct USB-C cable the keyboard works.
 
+## 5e. Running on its own: SMC, CPUs, console font (2026-11-16)
+
+The user's list, in this order: (1) SMC/fans, (2) all 8 CPU threads,
+(3) keyboard/trackpad, (4) Touch Bar, (5) font size on the Retina panel.
+
+**Access**: the MacBook is not reachable yet. The LAN sweep on 2026-11-16
+found the Mac Pro, the iMac, the VMs and one unknown Apple
+host (OpenSSH 10.3) that refuses our key. Needed: network under OI
+(USB Ethernet; the internal BCM43602 has no OI driver) and ssh access.
+
+### 1. SMC and fans (prepared, not built: the OI VM is running a clang-23 build)
+
+- The 2016+ SMCs may keep the fan keys (F<n>Ac/Mn/Mx/Tg) as `flt `
+  (IEEE single in rpm, little endian, 4 bytes) instead of `fpe2`. Our
+  driver and `smcfan` accepted only fpe2. With flt keys, smcfan would find
+  "no fan the driver can set", and applesmc-fancurve would do nothing
+  without saying so (`smcfan -m … || true`). `smcstat` and Mac Sensors
+  already decode flt.
+  - No heat risk from that: the SMC keeps its own fan control and thermal
+    protection either way, and the curve only raises the floor.
+- `ports/applesmc/patches/0003-18700-applesmc-flt-fan-keys.patch` (rev
+  0.5.11-2026.0.0.4):
+  - the driver keeps fan values as rpm × 4 and converts flt with integer
+    arithmetic (no FPU in the kernel);
+  - writes must use the key's own type and length;
+  - restore at detach works in either type;
+  - `APPLESMC_IOC_FANMIN` still answers in fpe2;
+  - smcfan reads and writes both types;
+  - applesmc(4D) and the header updated.
+- Unit test `files/applesmc_fan_test.c`: flt cases added, including an
+  exhaustive check that the integer conversion matches the FPU for all
+  65,536 values. 50 tests, 0 failures (run with gcc on the Linux workstation against the
+  policy block cut out of the patched applesmc.c).
+- Not yet done: module build and `gmake check` on the VM. It waits until
+  the clang-23 build is done.
+- `applesmc-fancurve` 1.1:
+  - one speed for all fans, between the lowest minimum and the highest
+    maximum; the driver clamps each fan to its own range. Before, the
+    first fan's range was used for all;
+  - CPU = the hottest of TCXc/TCXC/TC0P/TC0E/TC0F/TC0D/TC<n>C;
+  - GPU also TG?P.
+  - Without these the MacBook (no TM*, maybe no TCXc) might match no CPU
+    sensor, and then the script runs the fans at maximum.
+  - Checked with sample MacBook values in awk (2 fans 2000-6550 rpm, CPU
+    79.5 °C → floor 4401 rpm).
+- MIN_OSNET of applesmc is 23344, so it installs on the MacBook as
+  installed (2026.10).
+- On the machine, once reachable:
+  1. `smcstat -a` → key list and types; check `FNum`, `F0Mn`/`F0Mx`
+     (fpe2 or flt), the CPU, GPU and PCH keys;
+  2. install applesmc (+ fancurve, mac-sensors) from oi-local, on the
+     user's OK;
+  3. `smcfan` shows both fans;
+  4. `smcfan -s cool`: the fan floors rise; then `-s auto`;
+  5. start the fancurve service with `LOG=` set, then load: build or a
+     `stress`-like loop at 2 CPUs. The floor must follow TC*; record the
+     temperatures and rpm.
+
+### 2. CPU start hang (test plan; one boot per test, nothing persistent)
+
+From mp_startup.c (c893fd03ad): if an AP never reached the kernel, the
+boot CPU would print `cpuN: started, but not running in the kernel yet`
+after 5 s and `timed out` after 20 s, then go on. A silent hang with the
+fans rising therefore points to a spin later in the handshake, with
+interrupts off on both CPUs:
+- `tsc_sync_master()` / `tsc_sync_slave()` (timestamp.c, spin loops on
+  `tsc_sync_go`, both CPUs with interrupts off);
+- or the AP's microcode load (`ucode_apply`).
+
+The OI microcode for this CPU (000906E9-02/08/20) is revision **0xf8**
+(2023-09-28; system/microcode/intel 20260925). Whether it is loaded at all
+depends on the revision Apple's firmware leaves in the CPU.
+
+Read first (2-CPU boot, root, read only):
+- `ucodeadm -v`
+- `psrinfo -vp`
+- `echo 'apic_mode/D' | mdb -k`
+- `prtconf -v | grep -i x2apic` (may print nothing)
+
+Then one boot each. At the loader: `unset boot-ncpus` (the conf.d file
+sets it to 2), then `boot -kdv`. At the `[0]>` prompt, type the line for
+the test, then `:c`:
+| test | kmdb line | cuts out |
+|---|---|---|
+| T0 baseline | (none) | — wait 30 s at the hang: does `started, but not running` or `timed out` appear? then F1-A; if kmdb answers: `::cpuinfo -v`, `$c`, and for the hung CPU `::cpuregs -c N` (photo) |
+| T1 | `tsc_master_slave_sync_needed/W 0` | TSC sync handshake |
+| T2 | `idle_cpu_prefer_mwait/W 0` | MWAIT idle (HLT instead) |
+| T3 | `apix_enable/W 0` | apix (pcplusmp instead) |
+| T4 | `::bp ucode_apply` (then `:c` at each stop; note which CPU hangs right after) | shows whether the microcode load hangs |
+
+All these variables are in unix, so kmdb can set them right after `-kd`.
+(`x2apic_enable` is in the apix module and would need /etc/system.) The
+test that boots with 8 CPUs names the cause, and the fix goes into the
+code, not into a permanent tunable.
+
+### 5. Font size on the Retina panel (2880 × 1800, 220 dpi)
+
+- **Console** (loader and kernel): the font is chosen in
+  usr/src/common/font/font.c `set_font()`: the largest font that still
+  fits 80 × 25. The largest shipped font is 16x32 (/boot/fonts), and that
+  is what this panel already gets: 180 columns, physically tiny. So a
+  bigger font is needed.
+  - Plan: package a 32x64 console font. Spleen (BSD-2, made for HiDPI
+    consoles; OpenBSD uses it) as upstream BDF, converted at build with
+    `/usr/bin/vtfontcvt` (on OI) into `/boot/fonts/…fnt`.
+  - Load it from a `/boot/conf.d/` snippet:
+    `exec="loadfont /boot/fonts/spleen-32x64.fnt"` (support.4th knows
+    `exec`). `screen-font="32x64"` then picks it; to be tested. The
+    loader passes its font to the kernel console (`console-font`).
+  - Install it only on Retina Macs (per-model, in the updater).
+  - Alternative: `framebuffer set <GOP mode>` with a lower mode, if
+    Apple's GOP offers one (`framebuffer list`). It would also halve X on
+    a framebuffer driver, but it is blurrier.
+- **Desktop**: GNOME on X11 picks scale 2 by itself only when the X
+  server reports the real DPI from EDID. On a framebuffer or vesa driver
+  it sees 96 dpi and keeps scale 1. Plan:
+  - a gsettings override (`org.gnome.desktop.interface scaling-factor=2`;
+    it applies to GDM too), in a package for Retina models;
+  - `text-scaling-factor` stays 1.0;
+  - with a KMS driver (i915n) check first whether scale 0 (auto) already
+    gets it right.
+- To read on the machine: `framebuffer list` at the loader; `xdpyinfo |
+  grep -i dimensions` and the X driver in use (`/var/log/Xorg.0.log`).
+
+### 4. Touch Bar (research only)
+
+- The T1 (iBridge, USB 05ac:8600) only shows Esc/F-keys once a driver
+  sets its mode (Linux apple-ib-tb, GPL, reference only: a HID feature
+  report for the mode and one for the display).
+- Next: `prtconf -v`/`cfgadm -lv` on the machine to see the iBridge's USB
+  configurations and HID interfaces.
+- Then decide: a small HID client (kernel or userland over ugen) that
+  switches it to F-key mode.
+- Idea (user, 2026-11-16): the OpenIndiana logo on the Touch Bar, as a
+  gimmick. Our appletb only uses the iBridge's HID configuration, where
+  the bar shows Apple's predefined key sets, so it cannot draw. Drawing
+  needs the other USB configuration, where the host sends pixels (Linux
+  appletbdrm, mainline since 2025, plus Asahi's tiny-dfr daemon). That
+  driver states T2 Macs only; whether the T1 in the 14,3 has the same
+  display configuration is open. To check on the machine: the iBridge's
+  USB configurations (`prtconf -v` of 05ac:8600, number of configs and
+  their interfaces). If a display interface exists: a small userland
+  tool over ugen that switches the configuration and sends one logo
+  bitmap (the Touch Bar is 2170 × 60), with the F-keys drawn beside it
+  later. If not: no logo on the T1.
+
+## 5f. Offline preparation 2026-11-16 (MacBook not on the network yet)
+
+Nothing here is built on OI or tested on the machine yet. The OI VM was
+running a Chromium build, so all checks were gcc syntax checks against
+OI's headers, plus unit tests run with gcc on the Linux workstation.
+
+**Trackpad (ports/atopcase 0.5.11-2026.0.0.2)**:
+- Until a driver switches it to raw mode, the topcase trackpad is an
+  ordinary HID mouse (FreeBSD bcm5974: feature report 2 switches it).
+- New `src/atopcase_tpad.c` (CDDL):
+  - parses the trackpad's own report descriptor for the input report
+    with relative X/Y, plus the wheel and buttons 1-3;
+  - turns REPORT(TPAD) packets into VUID Firm_events (as usbms: LOC_X/Y
+    deltas, Y up, MS_LEFT/MIDDLE/RIGHT, wheel) on a new minor node `mouse`.
+- The stream handles VUIDSFORMAT/GFORMAT, VUIDS/GADDR, MSIOBUTTONS,
+  MSIOGET/SETPARMS, VUIDGWHEELCOUNT/INFO/STATE and VUIDSWHEELSTATE, both
+  as I_STR and transparent (mcopyin/mcopyout), so Xorg can open the node
+  itself.
+- It is not linked under consms: dacf.conf has no rule for it, and a
+  package must not edit that file.
+- `files/atopcase_link.c`: devfsadm module for `/dev/atopcase/keyboard`
+  and `/dev/atopcase/mouse`.
+- `files/60-atopcase-trackpad.conf`: an xorg.conf.d InputDevice (mouse
+  driver, Protocol VUID, AutoServerLayout).
+- `files/atopcase_tpad_test.c`: unit test of the parser (boot mouse,
+  report id + 12-bit + wheel, absolute pointer rejected, truncated
+  descriptors). 28/28 pass. It is part of `gmake check`.
+- Multitouch later: raw mode, Wellspring9 model 6 finger records (FreeBSD
+  bcm5974 TYPE4: button offset 31, fingers at 46, 30 + 2 bytes each,
+  x -7456..7976, y -163..9283).
+- Test C, after A/B in 5a: the dmesg line `trackpad: report id …` and
+  `ls -l /dev/atopcase`. Then X with the snippet: the pointer moves,
+  click works, two-finger scroll gives the wheel if the HID mode reports
+  one.
+
+**Touch Bar (ports/appletb, new, CDDL)**:
+- Facts from the Linux T1 driver, used as a reference only:
+  - the iBridge (05ac:8600) has 3 configurations;
+  - configuration 1 has two camera interfaces and two HID interfaces
+    (Touch Bar, light sensor);
+  - the keys are ordinary HID keyboard reports, which hid and usbkbm
+    already handle;
+  - the mode switch is a *vendor device* request: 0x40/0x09, wValue
+    (type << 8) | report id of usage 0x00ff0004, wIndex the TB
+    interface, 1 byte: 0 Esc, 1 F-keys, 2 special, 3 off;
+  - the display needs a class SET_REPORT for usage 0xff120021:
+    `{ rid, 1, state }`, 11 bytes, state 1 on, 2 dim, 4 off.
+- illumos: hid accepts SET_REPORT only as an M_CTL from a module above
+  it. usb_mid gives no ugen for multi-configuration devices with bound
+  children. So no userland tool can do the switch.
+- The driver binds to the light-sensor interface (alias
+  `usbif5ac,8600.config1.$(ALS_IF)`, assumed 3; **confirm with prtconf
+  -v**) and finds the TB interface by reading the HID report descriptors.
+  - USBA does not restrict wIndex or the recipient, so this works from a
+    sibling interface.
+  - It sends display on + F-key mode at attach, DDI_RESUME and reconnect.
+  - Tunables: appletb_mode, appletb_disp.
+- `files/appletb_hid_test.c`: 10/10. Syntax-clean with -Wall -Wextra
+  -Werror.
+- Fn → special keys later: atopcase knows the Fn state and would call
+  appletb.
+
+**Console font**:
+- illumos `vtfontcvt` stops at 16 pixels wide ("Unsupported wbytes 4").
+  The loader and tem render any width (`howmany(width, 8)` bytes per
+  row).
+- packages/fonts/spleen-console (system/font/console/spleen 2.2.0,
+  BSD-2) builds its own vtfontcvt from the pristine gate archive
+  586678ac1b with `files/0001-vtfontcvt-glyphs-up-to-32-pixels-wide.patch`.
+  The patch is meant for illumos upstream too.
+  - Checked on the Linux workstation: output byte-identical to the stock tool for
+    Spleen 12x24 and 16x32.
+  - The 32x64: all 977 mapped glyphs match the BDF bit for bit.
+- packages/system/apple-hidpi (system/apple/hidpi 1.0):
+  - `/boot/conf.d/apple-hidpi-font` with `exec="loadfont
+    /boot/fonts/spleen-32x64.fnt"`. loadfont marks the font manual, and
+    the loader passes it to the kernel as `console-font`.
+  - `40_apple-hidpi.gschema.override` (scaling-factor=2, also GDM).
+  - Installed per model by the updater.
+- To test on the VM's loader first: font size, menu, then the kernel
+  console.
+- **Tested 2026-11-16 in QEMU on the Linux workstation (OI 2026.10 ISO, 2880x1800):
+  the kernel panics with the 32x64 font** (boot_fb.c glyph buffer is
+  sized for 16x32 and overflows). The loader also ignored the `exec` line
+  alone (conf.d is read twice; loadfont of a known size drops the manual
+  flag), now worked around with `screen-font="32x64"`. Spleen 16x32 boots
+  fine. Do not install apple-hidpi before a kernel with
+  `notes/illumos-console-font-large/0001` is in place; details and both
+  patches are in that folder.
+
+**CPU start hang**: `notes/illumos-ap-start/` has the analysis and patch
+0001.
+- A CPU that stops after reaching the kernel leaves cpu0 spinning in
+  `mp_startup_wait()` / `tsc_sync_master()` with no timeout and no
+  message, which matches what we saw.
+- The patch makes the hang name the CPU and the startup step after 5 s.
+  The fix by step is tabled there.
+- One boot with a patched unix (in a BE, on the user's OK) tells which
+  step it is.
+
+## 5g. X and GNOME on the 14,3: two GPUs behind the gmux (plan)
+
+From the notes (mac-unified-stack-plan-2026-11-14.md, radeon-on-illumos.md,
+illumos-drm-amdgpu/):
+- our amdgpu covers **SI (Tahiti) only**; Polaris is plan step D,
+  headless → SMU7 → **Display Core** (Linux has no dce_v11_0 any more);
+- i915n's display gate admits **Ivy Bridge/Haswell only**; Kaby Lake
+  (gen9.5) is plan step E;
+- Mesa 26 has no iris/crocus yet (step B);
+- there is no Polaris or kbl_dmc firmware package (step C), and no gmux
+  code.
+
+**Which GPU has the panel at boot**: to read on the machine, it decides
+the order.
+- On the 2016-2017 15" models Apple's firmware hands the eDP panel and
+  the GOP framebuffer to the **Radeon**.
+- It hides or powers off the Intel GPU unless the boot loader identifies
+  as macOS through the Apple `set_os` EFI protocol (as Linux's
+  apple_set_os / gpu-switch do).
+- Reads:
+  - `prtconf -D | grep -i display` and `/usr/bin/scanpci`: is 8086:591b
+    on the bus at all?
+  - which device the GOP framebuffer belongs to (`prtconf -v` of the
+    console device; loader `framebuffer get`);
+  - acpidump of APP000B (gmux) and its I/O range.
+
+**Now (works without DRM)**:
+- X on the firmware framebuffer (illumosfb/vesa) + system/apple/hidpi for
+  scale 2;
+- the trackpad via atopcase;
+- GNOME as on the other Macs.
+- No 3D (llvmpipe) and no brightness control.
+
+**Step G1, gmux backlight (small, first real need)**:
+- A `gmux` driver for ACPI APP000B: the backlight through the gmux
+  (indexed gmux v4 as on the Mac Pro; ports and protocol from the Linux
+  apple-gmux driver as reference). Exported as a /dev node plus a tiny
+  CLI, then GNOME brightness keys.
+- Read and log the mux state; no switching yet.
+- The Mac Pro's gmux showed "version 4.0.11 [indexed]".
+- **Written 2026-11-16: `ports/applegmux`** (driver/graphics/applegmux
+  0.5.11-2026.0.0.1, CDDL, our own code; Linux apple-gmux only for the
+  register map and protocols):
+  - a pseudo device (as applesmc) that finds APP000B with AcpiGetDevices,
+    takes the first I/O or memory range from _CRS, and tells the three
+    kinds apart as Linux does: I/O window >= 0x78 with version bytes =
+    classic; version 0xff but probe bytes 0xcc/0xcd read back 0x55aa =
+    indexed (the 14,3); otherwise memory, command byte != 0xff = T2
+    (mapped with AcpiOsMapMemory, 16 bytes);
+  - indexed handshake with a 20 ms timeout per step (EIO instead of a
+    hang); the brightness is 24 bits, max from register 0x70 (0xffff on
+    T2);
+  - `/dev/applegmux` (devfsadm linkmod), mode 0644 root sys: INFO (type,
+    version, max, brightness, raw display/DDC/external mux registers) and
+    GET_BRIGHTNESS for everyone, SET_BRIGHTNESS for an fd opened for
+    writing (root, or the console user with an /etc/logindevperm line,
+    which the package does not add);
+  - suspend saves the brightness, resume writes it back; no interrupts,
+    no switching, no discrete-GPU power (the gmux has no documented
+    read-back for that, so it is not reported);
+  - `gmuxctl` (show; `-b` percent; `-s N | N% | +N% | -N%`), header
+    installed as /usr/include/sys/applegmux.h for a GNOME backlight helper
+    later.
+- Checked on the Linux workstation: driver gcc 14 `-fsyntax-only -Wall -Wextra -Werror`
+  against the 586678ac tree with kernel flags; gmuxctl syntax-clean;
+  `files/applegmux_test.c` runs the driver's protocol section against
+  simulated classic, indexed (lagging and instant) and T2 gmuxes, an
+  absent one and stuck ones: all pass; a mutation (no acknowledge after
+  an indexed transfer) is caught. Not built on OI, not on the machine.
+- On the 14,3: the attach line `gmux 4.x.y (indexed) at 0x…: backlight
+  … panel on the … GPU`, then `gmuxctl`, `gmuxctl -s 50%` (user's OK).
+  The same driver should attach on the Mac Pro 6,1 (indexed 4.0.11); its
+  max brightness there tells whether it has a backlight at all.
+
+**Path R, Radeon owns the panel (the expected default)**:
+- needs amdgpu Polaris = plan step D, Display Core included;
+- firmware system/firmware/amdgpu-polaris (polaris11_*);
+- Mesa radeonsi (already built in Mesa 26).
+- The same work serves the Polaris iMacs. The plan's order (Polaris iMac
+  first, then iMac19,1, then this MacBook) still fits: the iMac has no
+  mux and no battery.
+- Coordinate with the Radeon session (`Analyze: why no Radeon…`).
+
+**Path I, Intel owns the panel**:
+- the loader calls Apple `set_os`, a small illumos loader patch
+  (EFI-only, Mac-only);
+- the gmux switches the panel to the iGPU before boot;
+- needs i915n Kaby Lake display (step E: gen9 display engine, eDP, DMC
+  firmware kbl_dmc), Mesa iris (step B).
+- Lower power and battery life than the Radeon. Also big, but it is
+  i915 work, which our tree already does for gen7.
+
+**Recommendation**:
+1. Now: framebuffer + hidpi + gmux backlight (G1).
+2. Then whichever DRM path lands first for another Mac: Polaris for the
+   iMac 555/560 (path R), or i915n gen9 (path I).
+3. Path R first, since amdgpu is where our DRM work is, unless the read
+   shows the firmware boots this MacBook on the iGPU.
+
+Switching GPUs at run time (vga_switcheroo-like) is not planned.
+
+**Coordination with the graphics session** (owner of amdgpu/drm, reply
+2026-11-16):
+- Step D (Polaris) has not started. Its order stays: 555/560 iMac →
+  iMac19,1 → this MacBook. The code is the same Polaris 11 / DCE 11.2.
+- Sizing (graphics session, 2026-11-16, from Linux 7.2 Kbuild): our
+  amdgpu already compiles the Polaris core (vi, gmc_v8, gfx_v8, sdma_v3,
+  uvd_v6, vce_v3) and SMU7 powerplay. A headless attach needs PCI IDs,
+  firmware and testing. The display needs DC: +228 MIT translation units,
+  plus one FPU stub (DSC, DCN only). Details are in
+  notes/mac-unified-stack-plan-2026-11-14.md section 5.
+  The mux makes the MacBook harder to debug, so the iMac goes first if
+  one is on hand. Which Polaris Mac comes first is the user's decision
+  (plan section 9).
+- It agrees: path R first for the 15".
+- **Do not start** the polaris firmware package
+  (system/firmware/amdgpu-polaris): it belongs to the graphics session,
+  together with the amdgpu loader paths.
+- The gmux backlight driver is ours: a separate module outside
+  illumos-drm, with Linux apple-gmux.c as a reference. The ACPI
+  resources of the gmux device decide between the indexed and MMIO
+  interface.
+- Reads it needs from the MacBook (under illumos; no Linux boot):
+  1. PCI IDs **and subsystem IDs** of both GPUs (`prtconf -pv`,
+     `scanpci`);
+  2. the ACPI table list, and whether VFCT or ATRM carries the Radeon
+     VBIOS (acpidump / the loader's tables). The Mac Pro's came from
+     VFCT;
+  3. whether the HD 630 (8086:591b) is on PCI at all without Apple
+     set_os. That decides path I.
+
 ## 6. Order
 
 1. Now: install with a **USB keyboard** (and USB Ethernet), to the target

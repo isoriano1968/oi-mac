@@ -332,3 +332,39 @@ pixel artifacts (FBC suspect), AIGLX name.
   (23395), they require system/library (and math, ksh93) @23395, i.e. an
   OS update of the iMac's BE to 23395. The fan presets in Mac Sensors need
   the "Apple SMC Fan Control" profile for the user (not assigned).
+
+## 2026-11-15 afternoon: HDMI audio (audiohd#1) and the garbled boot console
+
+Analysis (boot messages, mdb -k, source):
+- audiohd#1 (8086:0d0c, codec Intel Haswell HDMI 0x80862807): the 68
+  "timeout when get response from codec" at each boot were all node 4,
+  which does not exist: stock audiohd sets last_wid = first + count and
+  loops <= last_wid (one node past the end; Intel's HDMI codec does not
+  answer it). The codec also showed 1 converter + 1 pin until the vendor
+  bit (node 0x08, get 0xf81 / set 0x781, bit 0x01, Linux
+  intel_haswell_enable_all_pins); converters/pins may stay in D3.
+- Display power/CDCLK: i915n 8fcd677 exports i915n_audio_power_get/put
+  and i915n_audio_cdclk_khz; audiohd patch 0006 uses them (CDCLK 540000
+  kHz, BCLK M/N 2/45).
+- Garbled screen before the console prompt: Apple's GOP framebuffer is
+  X-tiled and shown linearly through fence 0; intel_ggtt_init_fences()
+  cleared all fences early in attach and the console takeover re-fenced
+  only at the end, so boot-console writes and scrolls in between landed
+  untiled. i915n 03cde28 keeps a fence the firmware left valid until the
+  takeover adopts it (or releases and clears it without a console).
+
+Fixes: audiohd 23395.8 = patches 0001-0008 (0007 node range, 0008 Intel
+display codecs: vendor bit, D0, names); i915n 0.0.2.2 (20261115T131554Z)
+with 8fcd677 + 03cde28; ~/xfer/imac-hdmi-audio-20261115b.p5p (sha256
+d5323c54...0713). BE unified-imac-d, booted once 14:22 (accel-con stays
+default).
+
+Checked on that boot: 0 codec timeouts (68 before); codec named "Intel
+Haswell HDMI"; mdb: nodes 2-4 converters, 5-7 pins, 8 vendor, last_wid 8,
+3 output paths; "fence 0: kept from the firmware (0x00fff03b00000001)"
+then "console: the firmware's fence 0 adopted" and "shown linearly
+through fence 0"; i915n_smoke OK, gdm, glamor, /dev/fb -> gfx0, CS4206
+speakers present. Not checked: the screen itself during boot (user), the
+widgets' power state read back, HDMI sound with a monitor. The anonymous
+DTrace boot trace of fence writes was lost (dtrace -ae consumed it
+without printing).

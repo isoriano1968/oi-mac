@@ -230,6 +230,33 @@ time):
 First machine: the 555/560 iMac (no mux), then the iMac19,1, then the
 MacBook Pro 15".
 
+Sizing (2026-11-16, Linux workstation, Linux v7.2 Kbuild through the series' gen-tus.mk,
+reading only, no port started):
+- Steps 1-2 are bring-up, not porting: today's tus.txt (SI configuration,
+  386 Linux TUs) already compiles vi.c, gmc_v8_0, tonga_ih, gfx_v8_0,
+  sdma_v3_0, uvd_v6_0, vce_v3_0 and SMU7 powerplay (smu7_hwmgr,
+  smu7_powertune/thermal/clockpowergating, polaris10_smumgr,
+  smu7_smumgr). Missing for a Polaris attach: the polaris11/12/21
+  firmware (step C), the PCI IDs, and whatever the first run finds.
+- Step 3, DC: CONFIG_DRM_AMD_DC=y with DC_FP and DC_SI off adds 228 TUs
+  (list: notes/illumos-drm-amdgpu/polaris-dc-tus-7.2.txt): dc/gpio 32,
+  dc/link 31, dc/dce 22, dmub/src 20, dc/irq 20, dc/bios 13, dc/core 12,
+  amdgpu_dm 13, modules/hdcp 8, dce110 8, basics 7 (with dce_calcs,
+  bw_fixed, fixpt31_32: DCE bandwidth maths in fixed point), hwss 6, the
+  rest small. All MIT (44 SPDX, 184 MIT text): the licence gate passes.
+  FPU: DC_FP_START in dc_state.c and dc_resource.c sits under
+  CONFIG_DRM_AMD_DC_FP, but dsc/rc_calc.c calls it unguarded, and without
+  DC_FP dc_fpu.o (dc_fpu_begin/end) is not built. On Linux x86_64, DC
+  always selects DC_FP (Kconfig: ARCH_HAS_KERNEL_FPU_SUPPORT), so DC
+  without DC_FP is not a configuration Linux builds there. Ours needs
+  either a dc_fpu_begin/end stub (DSC is DCN-only, never reached on
+  DCE 11.2) or the real thing: illumos has kernel_fpu_begin/end
+  (uts/intel/os/fpu.c), and our LinuxKPI already maps Linux's to them
+  (include/asm/fpu/api.h, src/lkpi_cpu.c), which would also open DC_FP
+  (DCN, the 9070) later.
+  Roughly the size of the SI port again (614 TUs in all), with DRM
+  atomic/DP helpers on the drm_kms side.
+
 ## 6. Step E: the MacBook Pro 2017  [R graphics, M rest]
 
 Each item needs to be checked on the machine (from the illumos side;
