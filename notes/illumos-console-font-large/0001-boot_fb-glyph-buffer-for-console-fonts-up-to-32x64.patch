@@ -1,0 +1,40 @@
+diff --git a/usr/src/uts/i86pc/boot/boot_fb.c b/usr/src/uts/i86pc/boot/boot_fb.c
+--- a/usr/src/uts/i86pc/boot/boot_fb.c
++++ b/usr/src/uts/i86pc/boot/boot_fb.c
+@@ -60,10 +60,21 @@
+ };
+ 
+ /*
+- * We have largest font 16x32 with depth 32. This will allocate 2048
+- * bytes from BSS.
++ * The glyph buffer holds one character at depth 32. The loader can hand
++ * us any font module (loadfont), so unix sizes it for the largest glyph
++ * it accepts, 32x64 (HiDPI panels), which takes 8192 bytes from BSS.
++ * dboot, which builds this file too, has little room and keeps the
++ * 16x32 limit (2048 bytes). xbi_init_font() falls back to the built in
++ * font for larger glyphs.
+  */
+-#define	MAX_GLYPH	(16 * 32 * 4)
++#if defined(_BOOT)
++#define	MAX_GLYPH_WIDTH		16
++#define	MAX_GLYPH_HEIGHT	32
++#else
++#define	MAX_GLYPH_WIDTH		32
++#define	MAX_GLYPH_HEIGHT	64
++#endif
++#define	MAX_GLYPH	(MAX_GLYPH_WIDTH * MAX_GLYPH_HEIGHT * 4)
+ 
+ struct fontlist		cf_fontlist;
+ static bitmap_data_t	cf_data;
+@@ -110,6 +121,11 @@
+ 	if (checksum + fi->fi_checksum != 0)
+ 		return;
+ 
++	/* bit_to_pix() renders into glyph[]; it must fit. */
++	if (fi->fi_width == 0 || fi->fi_width > MAX_GLYPH_WIDTH ||
++	    fi->fi_height == 0 || fi->fi_height > MAX_GLYPH_HEIGHT)
++		return;
++
+ 	cf_data.width = fi->fi_width;
+ 	cf_data.height = fi->fi_height;
+ 	cf_data.uncompressed_size = fi->fi_bitmap_size;

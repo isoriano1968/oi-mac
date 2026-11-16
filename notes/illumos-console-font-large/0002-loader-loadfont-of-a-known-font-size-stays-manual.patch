@@ -1,0 +1,39 @@
+diff --git a/usr/src/boot/common/gfx_fb.c b/usr/src/boot/common/gfx_fb.c
+index da8d92c..b6469d6 100644
+--- a/usr/src/boot/common/gfx_fb.c
++++ b/usr/src/boot/common/gfx_fb.c
+@@ -2234,13 +2234,33 @@ insert_font(char *name, FONT_FLAGS flags)
+ 	/*
+ 	 * If we have an entry with the same glyph dimensions, replace
+ 	 * the file name and mark us. We only support unique dimensions.
++	 *
++	 * A manual load (loadfont file) must also make the entry the
++	 * manual font; otherwise set_font() goes on with the automatic
++	 * choice. That happens when the same loadfont runs twice, as with
++	 * a loader.conf "exec" line, or for a font of a size the system
++	 * already has. A different file is loaded now, so that the manual
++	 * entry does not keep the old glyphs.
+ 	 */
+ 	STAILQ_FOREACH(entry, &fonts, font_next) {
+ 		if (fh.fh_width == entry->font_data->width &&
+ 		    fh.fh_height == entry->font_data->height) {
++			bool same = entry->font_name != NULL &&
++			    strcmp(entry->font_name, font_name) == 0;
++
+ 			free(entry->font_name);
+ 			entry->font_name = font_name;
+-			entry->font_flags = FONT_RELOAD;
++			if (flags != FONT_MANUAL) {
++				entry->font_flags = FONT_RELOAD;
++				return (true);
++			}
++			reset_font_flags();
++			if (!same || entry->font_data->font == NULL) {
++				entry->font_flags = FONT_RELOAD;
++				if (load_font(entry->font_name) == NULL)
++					return (false);
++			}
++			entry->font_flags = FONT_MANUAL;
+ 			return (true);
+ 		}
+ 	}

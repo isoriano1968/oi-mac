@@ -1,0 +1,296 @@
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 11:00:00 +0100
+Subject: [PATCH] mp_startup: report a CPU that stops during startup
+
+When an application processor reaches the kernel and then stops, the
+control CPU spins in mp_startup_wait() (or, interrupts disabled, in
+tsc_sync_master()) for ever, and the boot hangs without a message; only
+the very first wait has a timeout.  Seen on a MacBookPro14,3 (i7-7700HQ).
+
+The target CPU now records each step of mp_startup_common() in
+mp_startup_step[]; the control CPU's waits for it, and the TSC sync loops,
+report after mp_startup_report (5 s; 0 turns it off) which CPU stopped in
+which step, and go on waiting.  Nothing else changes.
+---
+diff --git a/usr/src/uts/i86pc/os/mp_startup.c b/usr/src/uts/i86pc/os/mp_startup.c
+index bae07db..98fa083 100644
+--- a/usr/src/uts/i86pc/os/mp_startup.c
++++ b/usr/src/uts/i86pc/os/mp_startup.c
+@@ -1333,6 +1333,54 @@ workaround_errata_end()
+  */
+ static cpuset_t procset_slave, procset_master;
+ 
++/*
++ * Where each CPU is in its startup.  The target CPU records each step of
++ * mp_startup_common(); when the control CPU has waited mp_startup_report
++ * nanoseconds (0: never) in one of its handshakes without an answer, it
++ * says which CPU stopped in which step, and goes on waiting.  Without this
++ * a CPU that hangs after reaching the kernel hangs the boot with no message
++ * at all: the control CPU spins in mp_startup_wait() (or, with interrupts
++ * disabled, in tsc_sync_master(), which reports by itself).
++ */
++typedef enum mp_startup_step {
++	MP_STEP_NONE = 0,
++	MP_STEP_START,		/* control CPU: INIT/SIPI sent */
++	MP_STEP_IDENT,		/* in the kernel: cpuid prelude and ident */
++	MP_STEP_TSC_SYNC,	/* tsc_sync_slave() */
++	MP_STEP_UCODE_REV,	/* reading the microcode revision */
++	MP_STEP_UCODE_APPLY,	/* applying a microcode update */
++	MP_STEP_CPUID_BASIC,	/* cpuid basic pass */
++	MP_STEP_MLSETUP,	/* ap_mlsetup, PAT, syscall handlers */
++	MP_STEP_STI,		/* interrupts enabled at LOCK_LEVEL */
++	MP_STEP_ERRATA,		/* errata workarounds */
++	MP_STEP_XSAVE,		/* PCID, XSAVE */
++	MP_STEP_CPUID_LATE,	/* cpuid extended, dynamic, resolve */
++	MP_STEP_EVENTS,		/* post-startup fixups, cpu events */
++	MP_STEP_PG,		/* processor group ids, handshake */
++	MP_STEP_NSTEPS
++} mp_startup_step_t;
++
++static const char *mp_startup_step_names[MP_STEP_NSTEPS] = {
++	"none", "INIT/SIPI sent", "cpuid ident", "TSC sync",
++	"microcode revision", "microcode update", "cpuid basic",
++	"mlsetup", "interrupts on", "errata workarounds", "PCID/XSAVE",
++	"cpuid extended/dynamic/resolve", "fixups/cpu events",
++	"processor groups"
++};
++
++static volatile uint8_t mp_startup_step[NCPU];
++hrtime_t mp_startup_report = 5 * (hrtime_t)NANOSEC;
++
++#define	MP_STARTUP_STEP(id, step)	(mp_startup_step[(id)] = (step))
++
++const char *
++mp_startup_step_name(processorid_t cpuid)
++{
++	uint8_t step = mp_startup_step[cpuid];
++
++	return (step < MP_STEP_NSTEPS ? mp_startup_step_names[step] : "?");
++}
++
+ static void
+ mp_startup_wait(cpuset_t *sp, processorid_t cpuid)
+ {
+@@ -1345,6 +1393,30 @@ mp_startup_wait(cpuset_t *sp, processorid_t cpuid)
+ 	CPUSET_ATOMIC_DEL(*(cpuset_t *)sp, cpuid);
+ }
+ 
++/*
++ * mp_startup_wait() for the control CPU: the same, but if the target CPU
++ * makes no progress for mp_startup_report, say where it stopped.
++ */
++static void
++mp_startup_wait_target(cpuset_t *sp, processorid_t cpuid)
++{
++	cpuset_t tempset;
++	hrtime_t start = gethrtime(), next = start + mp_startup_report;
++
++	for (tempset = *sp; !CPU_IN_SET(tempset, cpuid);
++	    tempset = *(volatile cpuset_t *)sp) {
++		SMT_PAUSE();
++		if (mp_startup_report > 0 && gethrtime() > next) {
++			cmn_err(CE_WARN, "cpu%d: no progress for %lld s in "
++			    "startup step \"%s\"", cpuid,
++			    (longlong_t)((gethrtime() - start) / NANOSEC),
++			    mp_startup_step_name(cpuid));
++			next += 6 * mp_startup_report;
++		}
++	}
++	CPUSET_ATOMIC_DEL(*(cpuset_t *)sp, cpuid);
++}
++
+ static void
+ mp_startup_signal(cpuset_t *sp, processorid_t cpuid)
+ {
+@@ -1373,6 +1445,7 @@ mp_start_cpu_common(cpu_t *cp, boolean_t boot)
+ 
+ 	ASSERT(cp != NULL);
+ 	cpuid = cp->cpu_id;
++	MP_STARTUP_STEP(cpuid, MP_STEP_START);
+ 	ctx = mach_cpucontext_alloc(cp);
+ 	if (ctx == NULL) {
+ 		cmn_err(CE_WARN,
+@@ -1428,7 +1501,7 @@ mp_start_cpu_common(cpu_t *cp, boolean_t boot)
+ 	 * cpu_ucode_info for it along with the microcode to load, if any,
+ 	 * before signaling back to the CPU to continue startup.
+ 	 */
+-	mp_startup_wait(&procset_slave, cpuid);
++	mp_startup_wait_target(&procset_slave, cpuid);
+ 	ucode_locate(cp);
+ 	mp_startup_signal(&procset_master, cpuid);
+ 
+@@ -1448,7 +1521,7 @@ mp_start_cpu_common(cpu_t *cp, boolean_t boot)
+ 	 * on the cpuid probing results. Wait for mp_startup_common()
+ 	 * to signal that cpuid probing is done.
+ 	 */
+-	mp_startup_wait(&procset_slave, cpuid);
++	mp_startup_wait_target(&procset_slave, cpuid);
+ #ifndef __xpv
+ 	cpupm_init(cp);
+ #endif
+@@ -1715,6 +1788,7 @@ mp_startup_common(boolean_t boot)
+ 	 * already been enabled on the BSP long before APs are started.
+ 	 */
+ 	bzero(new_x86_featureset, BT_SIZEOFMAP(NUM_X86_FEATURES));
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_IDENT);
+ 	cpuid_execpass(cp, CPUID_PASS_PRELUDE, new_x86_featureset);
+ 	cpuid_execpass(cp, CPUID_PASS_IDENT, NULL);
+ 
+@@ -1738,6 +1812,7 @@ mp_startup_common(boolean_t boot)
+ 	mp_startup_signal(&procset_slave, cp->cpu_id);
+ 
+ #ifndef __xpv
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_TSC_SYNC);
+ 	if (tsc_gethrtime_enable)
+ 		tsc_sync_slave();
+ #endif
+@@ -1756,10 +1831,13 @@ mp_startup_common(boolean_t boot)
+ 	 * structure via ucode_locate().  With that done, we can apply the
+ 	 * microcode to this CPU (if any) and proceed with the BASIC cpuid pass.
+ 	 */
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_UCODE_REV);
+ 	ucode_read_rev(cp);
+ 	mp_startup_signal(&procset_slave, cp->cpu_id);
+ 	mp_startup_wait(&procset_master, cp->cpu_id);
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_UCODE_APPLY);
+ 	ucode_apply(cp);
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_CPUID_BASIC);
+ 	cpuid_execpass(cp, CPUID_PASS_BASIC, new_x86_featureset);
+ 
+ 	/*
+@@ -1768,6 +1846,7 @@ mp_startup_common(boolean_t boot)
+ 	 * since we get here by calling t_pc, we need to do that call
+ 	 * before swtch() overwrites it.
+ 	 */
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_MLSETUP);
+ 	(void) (*ap_mlsetup)();
+ 
+ #ifndef __xpv
+@@ -1799,6 +1878,7 @@ mp_startup_common(boolean_t boot)
+ 	 */
+ 	splx(ipltospl(LOCK_LEVEL));
+ 	sti();
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_STI);
+ 
+ 	/*
+ 	 * There exists a small subset of systems which expose differing
+@@ -1825,6 +1905,7 @@ mp_startup_common(boolean_t boot)
+ 	 * answer of dying horribly.  Provided the boot cpu is ok,
+ 	 * the system can be recovered by booting with use_mp set to zero.
+ 	 */
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_ERRATA);
+ 	if (workaround_errata(cp) != 0)
+ 		panic("critical workaround(s) missing for cpu%d", cp->cpu_id);
+ 
+@@ -1840,6 +1921,7 @@ mp_startup_common(boolean_t boot)
+ 	 */
+ 	cp->cpu_flags &= ~(CPU_POWEROFF | CPU_QUIESCED);
+ 
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_XSAVE);
+ 	enable_pcid();
+ 
+ 	/*
+@@ -1849,6 +1931,7 @@ mp_startup_common(boolean_t boot)
+ 		xsave_setup_msr(cp);
+ 	}
+ 
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_CPUID_LATE);
+ 	cpuid_execpass(cp, CPUID_PASS_EXTENDED, NULL);
+ 	cpuid_execpass(cp, CPUID_PASS_DYNAMIC, NULL);
+ 	cpuid_execpass(cp, CPUID_PASS_RESOLVE, NULL);
+@@ -1862,6 +1945,7 @@ mp_startup_common(boolean_t boot)
+ 
+ 	cp->cpu_flags |= CPU_RUNNING | CPU_READY | CPU_EXISTS;
+ 
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_EVENTS);
+ 	post_startup_cpu_fixups();
+ 
+ 	cpu_event_init_cpu(cp);
+@@ -1880,6 +1964,7 @@ mp_startup_common(boolean_t boot)
+ 	ASSERT(cp->cpu_base_spl == ipltospl(LOCK_LEVEL));
+ 	set_base_spl();		/* Restore the spl to its proper value */
+ 
++	MP_STARTUP_STEP(cp->cpu_id, MP_STEP_PG);
+ 	pghw_physid_create(cp);
+ 	/*
+ 	 * Delegate initialization tasks, which need to access the cpu_lock,
+diff --git a/usr/src/uts/i86pc/os/timestamp.c b/usr/src/uts/i86pc/os/timestamp.c
+index c991ed7..702db82 100644
+--- a/usr/src/uts/i86pc/os/timestamp.c
++++ b/usr/src/uts/i86pc/os/timestamp.c
+@@ -55,6 +55,7 @@
+ #include <sys/kobj_lex.h>
+ #include <sys/tsc.h>
+ #include <sys/prom_debug.h>
++#include <sys/promif.h>
+ #include <util/qsort.h>
+ 
+ /*
+@@ -521,6 +522,34 @@ tsc_gethrtimeunscaled_delta(void)
+ 	return (hrt);
+ }
+ 
++/*
++ * tsc_sync_master() spins with interrupts disabled for the slave's answer.
++ * If none comes for mp_startup_report (mp_startup.c; 0: never), say so with
++ * prom_printf, which works with interrupts disabled, and go on waiting.
++ */
++extern hrtime_t mp_startup_report;
++extern const char *mp_startup_step_name(processorid_t);
++
++static void
++tsc_sync_check(processorid_t slave, const char *what, hrtime_t start,
++    hrtime_t *next)
++{
++	hrtime_t now = tsc_read(), ticks;
++
++	if (mp_startup_report <= 0 || cpu_freq_hz == 0)
++		return;
++	ticks = (mp_startup_report / NANOSEC) * (hrtime_t)cpu_freq_hz;
++	if (*next == 0)
++		*next = start + ticks;
++	if (now < *next)
++		return;
++	prom_printf("WARNING: cpu%d: no answer in TSC sync (%s) for %lld s, "
++	    "startup step \"%s\"\n", slave, what,
++	    (longlong_t)((now - start) / (hrtime_t)cpu_freq_hz),
++	    mp_startup_step_name(slave));
++	*next = now + 6 * ticks;
++}
++
+ /*
+  * TSC Sync Master
+  *
+@@ -559,6 +588,7 @@ tsc_sync_master(processorid_t slave)
+ 	tsc_sync_t *tsc = tscp;
+ 	int cnt;
+ 	int hwtype;
++	hrtime_t wait_start, wait_next;
+ 
+ 	hwtype = get_hwenv();
+ 	if (!tsc_master_slave_sync_needed || (hwtype & HW_VIRTUAL) != 0)
+@@ -566,16 +596,22 @@ tsc_sync_master(processorid_t slave)
+ 
+ 	flags = clear_int_flag();
+ 	source = CPU->cpu_id;
++	wait_start = tsc_read();
++	wait_next = 0;
+ 
+ 	for (cnt = 0; cnt < SYNC_ITERATIONS; cnt++) {
+-		while (tsc_sync_go != TSC_SYNC_GO)
++		while (tsc_sync_go != TSC_SYNC_GO) {
+ 			SMT_PAUSE();
++			tsc_sync_check(slave, "GO", wait_start, &wait_next);
++		}
+ 
+ 		tsc->master_tsc = tsc_read();
+ 		membar_enter();
+ 		mtsc_after = tsc_read();
+-		while (tsc_sync_go != TSC_SYNC_DONE)
++		while (tsc_sync_go != TSC_SYNC_DONE) {
+ 			SMT_PAUSE();
++			tsc_sync_check(slave, "DONE", wait_start, &wait_next);
++		}
+ 		write_time =  mtsc_after - tsc->master_tsc;
+ 		if (write_time <= min_write_time) {
+ 			hrtime_t tdelta;
