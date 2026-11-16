@@ -1,0 +1,15 @@
+applegmux: src/applegmux.c, src/applegmux.h, files/gmuxctl.c,
+files/applegmux_link.c, files/applegmux_test.c, CDDL 1.0.
+
+  Copyright 2026 isoriano1968
+
+  The contents of these files are subject to the terms of the Common
+  Development and Distribution License, Version 1.0 only (the "License").
+  You may not use these files except in compliance with the License.
+  A copy of the License is available at http://www.illumos.org/license/CDDL
+  and at https://opensource.org/licenses/CDDL-1.0.
+
+The gmux register map and access protocols follow the documentation in
+Linux's drivers/platform/x86/apple-gmux.c and include/linux/apple-gmux.h
+(Andreas Heider, Seth Forshee, Lukas Wunner and others).  No code is taken
+from them.

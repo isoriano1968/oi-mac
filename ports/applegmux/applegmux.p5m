@@ -1,0 +1,54 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+# driver/graphics/applegmux: the backlight of the dual-GPU MacBook Pros,
+# through the gmux (ACPI APP000B).  A new pseudo driver, no OS file is
+# replaced; without a gmux it does not attach.  Built against osnet
+# $(OSNET_VERSION) (illumos-gate $(GATE_SHORT)); the incorporate dependency
+# holds pkg update to a newer osnet build until the module is rebuilt.
+
+set name=pkg.fmri value=pkg:/driver/graphics/applegmux@$(PKG_VERSION)
+set name=pkg.summary value="Apple gmux backlight driver"
+set name=pkg.description \
+    value="Driver for the gmux of the dual-GPU Apple MacBook Pros (and Mac Pro 2013), ACPI APP000B: the panel backlight through /dev/applegmux and gmuxctl(8), and the state of the display mux, read only; it never switches GPUs (OpenIndiana project)"
+set name=info.classification value=org.opensolaris.category.2008:Drivers/Display
+set name=illumos-gate.info.git-rev value=$(GATE_COMMIT)
+set name=variant.arch value=i386
+set name=variant.opensolaris.zone value=global value=nonglobal
+
+dir path=kernel group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv/amd64 group=sys mode=0755 owner=root \
+    variant.opensolaris.zone=global
+file applegmux path=kernel/drv/amd64/applegmux group=sys mode=0755 \
+    owner=root reboot-needed=true variant.opensolaris.zone=global
+file applegmux.conf path=kernel/drv/applegmux.conf group=sys mode=0644 \
+    owner=root variant.opensolaris.zone=global
+# Reading is for everyone; setting the backlight needs write access (root,
+# or the console user through an /etc/logindevperm line).
+driver name=applegmux perms="* 0644 root sys" variant.opensolaris.zone=global
+
+file applegmux_link.so path=usr/lib/devfsadm/linkmod/applegmux_link.so \
+    group=sys mode=0755 owner=root variant.opensolaris.zone=global
+file gmuxctl path=usr/sbin/gmuxctl group=bin mode=0555 owner=root \
+    variant.opensolaris.zone=global
+file applegmux.h path=usr/include/sys/applegmux.h group=bin mode=0644 \
+    owner=root
+
+license applegmux.license license="$(COMPONENT_LICENSE)"
+
+depend type=require fmri=system/kernel
+depend type=incorporate \
+    fmri=consolidation/osnet/osnet-incorporation@$(OSNET_VERSION)
