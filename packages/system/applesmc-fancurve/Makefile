@@ -23,7 +23,7 @@ BUILD_STYLE =		pkg
 include ../../../make-rules/shared-macros.mk
 
 COMPONENT_NAME =	applesmc-fancurve
-COMPONENT_VERSION =	1.0
+COMPONENT_VERSION =	1.1
 COMPONENT_SUMMARY =	Fan temperature curve for Intel Macs (Apple SMC)
 COMPONENT_PROJECT_URL =	https://github.com/isoriano1968
 COMPONENT_FMRI =	system/applesmc-fancurve
