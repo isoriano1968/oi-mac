@@ -39,7 +39,9 @@ marked **(check)** remain open after that look.
 - Only one of our fixes is needed **on the installer** to install at all: the
   **console-on-the-right-GPU fix** (UPSTREAM-DRAFT issue C). Without it the
   Mac Pro's screen freezes after the kernel starts, and so does the installer
-  UI. The MacBook Pro 15" (Intel + Radeon) probably has the same problem.
+  UI. The MacBook Pro 15" (14,3) does not: its installer screen appears, but
+  its keyboard is dead (SPI; a keyboard driver is needed on the medium,
+  notes/macbookpro-2017-drivers.md).
 - The **hubd root-on-USB fix** is not needed to *run* the installer. The live
   media's root is the RAM disk, so the bug cannot occur there. It is needed
   in the *installed* system when its root pool is on USB: the test stick, or
@@ -190,8 +192,9 @@ and whether it blocks getting online.
 
 | Fix | Module (package) | Blocks the installer? | Blocks the installed system? | Where |
 |---|---|---|---|---|
-| **Console on the GPU that owns the UEFI framebuffer** (issue C: `consplat.c`, `gfxp_fb.c`, `plat_dev_owns_boot_fb()` in `ddi_impl.c`) | `platform/i86pc/kernel/dacf/amd64/consconfig_dacf`, `.../misc/amd64/gfx_private` and `unix` (all `system/kernel/platform`) | **yes on the Mac Pro**: "cannot find driver for screen device", the screen freezes after boot, so the installer UI is never seen. Probably also the **MacBook Pro 15"** (iGPU + dGPU, the firmware framebuffer may be on the dGPU while the iGPU is first in tree order) **(check on the machine)**. No: iMac13,2, iMac14,1, Polaris iMacs (one visible GPU; the 13,2/14,1 installs prove it) | same | **installer** |
+| **Console on the GPU that owns the UEFI framebuffer** (issue C: `consplat.c`, `gfxp_fb.c`, `plat_dev_owns_boot_fb()` in `ddi_impl.c`) | `platform/i86pc/kernel/dacf/amd64/consconfig_dacf`, `.../misc/amd64/gfx_private` and `unix` (all `system/kernel/platform`) | **yes on the Mac Pro**: "cannot find driver for screen device", the screen freezes after boot, so the installer UI is never seen. **Not** the MacBook Pro 15" (14,3, iGPU + dGPU): the stock installer screen appears there (user, 2026-11-15); only the keyboard is dead (SPI, see notes/macbookpro-2017-drivers.md). No: iMac13,2, iMac14,1, Polaris iMacs (one visible GPU; the 13,2/14,1 installs prove it) | same | **installer** |
 | **hubd root on USB**, 2 bugs (`hubdi.c`: BUS_CONFIG_ALL before root, attach-time pass) | `kernel/misc/amd64/usba` (`driver/usb`). The patches are `notes/macpro-2013/illumos-usb-root/0001-…-not-found-after-it-moves-to-anot.patch` and `0002-…-attach-time-hub-pass-resets-the-USB-root-disk-.patch` (there is no file named `0001-hubd-usb-root-relocation.patch` any more); tree `~/src/illumos-usbroot`, branch usb-root-scan | **no**: the installer's root is the RAM disk. Both bugs need a USB *root pool* | **yes, if rpool is on USB**: panic "cannot mount root" on another port/Mac (bug A), rpool suspended right after boot (bug B, also with the right port). No, for an install to an internal disk | **installer, required** (USB-root installs are a goal): the medium carries it, and the installer copies it to the target |
+| **ESP on 4Kn disks** (installboot ignores mkfs's exit status; mkfs refuses FAT32 on the 256 MB ESP = 65,536 sectors of 4096 bytes) | `usr/sbin/installboot` (installboot fallback to FAT16: `notes/illumos-esp-4kn/0001-…`), `mkfs` pcfs (0002), libzfs warning (0003); userland, not the boot archive | **yes**: the installer runs the live image's installboot, which leaves the target ESP without a FAT, while the install reports success | **yes**: the target does not boot, and the Option menu does not show it. Seen on the MacBookPro14,3 NVMe (2026-11-15); every Mac with a 4Kn SSD | **installer, required** (r1): installboot in the live image's /usr (solaris.zlib); the updater then keeps it current. Until then: manual recipe, illumos-esp-4kn README 4 |
 | **scsa2usb `usb_pipe_xopen()`** (USB 3 disk drops after attach) | `kernel/drv/amd64/scsa2usb` (`driver/usb`) | low risk: the installer runs from a USB 3 stick, and a drop mid-install would end the install. Seen once, on the Seagate HDD; never on sticks. **No fix written yet** | **yes, for root on a USB 3 disk** (the external USB SSD): a drop suspends rpool. illumos has no UAS, so USB 3 SSD enclosures run through scsa2usb's bulk-only path | **installer**, in r2; moves into r1 if the r1 tests show drops |
 | **pciehp stuck power fault** (issue D) | `kernel/misc/amd64/pcie` (`system/kernel`) | no: the second D500 stays offline, which is harmless for the install | no | updater |
 | **bge BCM57766/57762** (`ports/bge-57766`, patches 0001-0003) | `kernel/drv/amd64/bge` (`driver/network/bge`) | no | **no**: stock bge already has 57762 (14e4:1682, Mac Pro) and 57766 (14e4:1686, iMacs) in `bge_hw.h` and the aliases in `driver-network-bge.p5m`. It attaches on the iMac13,2 and 14,1 and runs bge1 on the Mac Pro. 0001 (DMA areas below 2 GB) guards against an intermittent reset on machines with a lot of RAM; 0003 (placeholder MAC) matters only on T2 Macs, which we do not have | updater |
@@ -207,7 +210,12 @@ Not ours yet, but it decides whether a Mac can be installed at all:
     Apple's controller reports that class and works without Linux's Apple
     quirks is unknown **(check: `prtconf -v` from the installer's shell)**.
   - Keyboard/trackpad: SPI, no driver, so a USB keyboard is needed for the
-    install.
+    install. **Confirmed by the user on 2026-11-15**: the stock installer
+    boots from the stick, but the keyboard is dead. The drivers needed (LPSS
+    SPI + Apple topcase, modelled on FreeBSD's BSD-2 intelspi/atopcase) are
+    in notes/macbookpro-2017-drivers.md. Once they exist they belong in the
+    respun medium's boot archive, because the keyboard is needed before any
+    menu.
   - Network: no wired port, and the BCM43602 has no driver. Options: a USB
     Ethernet adapter with a CDC-ECM configuration (usbecm), or Thunderbolt
     Ethernet (BCM57762 = bge, if the Thunderbolt link is up from power-on).
@@ -336,7 +344,7 @@ How: the stock stick stays as it is. The Apple fixes come in two ways:
 Effort: small. It is the updater work, which is needed anyway.
 
 Risk: low. It cannot help with anything that must work before the installer
-UI is on the screen: **the Mac Pro (and probably the MBP 15") still cannot be
+UI is on the screen: **the Mac Pro (console) and the MBP 15" (SPI keyboard) still cannot be
 installed this way**. A USB-root install works if the shell step installs
 the hubd package into `/a` before the first boot. That step is manual and
 easy to forget.
@@ -353,7 +361,8 @@ scsa2usb.
 - USB-root installs are a goal, and only a medium that carries the fixed
   `driver/usb` gives them to the installed system from its first boot,
   without a manual step.
-- (a) is also the only clean way to the Mac Pro and the MBP 15" (console).
+- (a) is also the only clean way to the Mac Pro (console) and the MBP 15"
+  (SPI keyboard driver in the boot archive).
 - It reuses the same packages, so the installer and the updater carry the
   same bits.
 - (c) stays as the fallback until r1 exists.

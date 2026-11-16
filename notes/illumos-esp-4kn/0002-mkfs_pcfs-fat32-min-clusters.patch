@@ -1,0 +1,42 @@
+mkfs_pcfs: refuse FAT32 with fewer than 65525 clusters, suggest fat=16
+
+--- a/usr/src/cmd/fs.d/pcfs/mkfs/mkfs_main.c
++++ b/usr/src/cmd/fs.d/pcfs/mkfs/mkfs_main.c
+@@ -1232,7 +1232,10 @@
+ 			if (volsize <= FAT16_MAX_CLUSTERS) {
+ 				(void) fprintf(stderr,
+ 				    gettext("Requested size is too "
+-				    "small for FAT32.\n"));
++				    "small for FAT32 (%lu sectors of %u "
++				    "bytes).\nUse -o fat=16 or a larger "
++				    "partition.\n"), volsize,
++				    wbpb->bpb.bytes_per_sector);
+ 				exit(ERR_FAIL);
+ 			}
+ 			/* SPC must be a power of 2 */
+@@ -1379,6 +1382,25 @@
+ 	/* Compute a sector/fat figure */
+ 	switch (Fatentsize) {
+ 	case 32:
++		/*
++		 * A FAT32 needs more than FAT16_MAX_CLUSTERS (65524) data
++		 * clusters, or readers take it for a FAT16 (fatgen103).
++		 * The size check above does not count the FATs, so a
++		 * volume just above it, or a 256MB partition with 4096-byte
++		 * sectors (65536 sectors), cannot hold one.
++		 */
++		if ((volsize - wbpb->bpb.num_fats * fatsz) /
++		    wbpb->bpb.sectors_per_cluster <= FAT16_MAX_CLUSTERS) {
++			(void) fprintf(stderr,
++			    gettext("Requested size is too small for FAT32: "
++			    "%lu clusters of %lu bytes, at least %u are "
++			    "needed.\nUse -o fat=16 or a larger partition.\n"),
++			    (volsize - wbpb->bpb.num_fats * fatsz) /
++			    wbpb->bpb.sectors_per_cluster,
++			    (ulong_t)wbpb->bpb.sectors_per_cluster *
++			    wbpb->bpb.bytes_per_sector, FAT16_MAX_CLUSTERS + 1);
++			exit(ERR_FAIL);
++		}
+ 		wbpb->bpb.sectors_per_fat = 0;
+ 		wbpb->bpb32.big_sectors_per_fat = fatsz;
+ 		if (Verbose)

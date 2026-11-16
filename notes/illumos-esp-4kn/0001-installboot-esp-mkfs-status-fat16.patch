@@ -1,0 +1,75 @@
+installboot: check mkfs's exit status, fall back to FAT16 on a small (4Kn) ESP, report a failed pcfs mount
+
+--- a/usr/src/cmd/boot/installboot/i386/installboot.c
++++ b/usr/src/cmd/boot/installboot/i386/installboot.c
+@@ -191,6 +191,8 @@
+ 	ret = mount(blkdev, path, MS_OPTIONSTR,
+ 	    MNTTYPE_PCFS, NULL, 0, optbuf, MAX_MNTOPT_STR);
+ 	if (ret != 0) {
++		(void) fprintf(stderr, gettext("cannot mount %s as pcfs: %s\n"),
++		    blkdev, strerror(errno));
+ 		(void) rmdir(path);
+ 		free(path);
+ 		path = NULL;
+@@ -266,8 +268,13 @@
+ 	    bblock->buf_size / sector_size, offset / sector_size, abs);
+ }
+ 
++/*
++ * Run mkfs -F pcfs -o fat=<fat> on the ESP.  Only a clean exit of mkfs
++ * counts as success: mkfs refuses FAT32 on a partition with too few
++ * sectors (a 256MB ESP on a disk with 4096-byte sectors has 65536).
++ */
+ static bool
+-mkfs_pcfs(const char *dev)
++mkfs_pcfs(const char *dev, const char *fat)
+ {
+ 	pid_t pid, w;
+ 	posix_spawnattr_t attr;
+@@ -299,7 +306,7 @@
+ 	cmd[1] = "-F";
+ 	cmd[2] = "pcfs";
+ 	cmd[3] = "-o";
+-	cmd[4] = "fat=32";
++	cmd[4] = (char *)fat;
+ 	cmd[5] = (char *)dev;
+ 	cmd[6] = NULL;
+ 
+@@ -312,9 +319,9 @@
+ 		w = waitpid(pid, &status, 0);
+ 	} while (w == -1 && errno == EINTR);
+ 	if (w == -1)
+-		status = -1;
++		return (false);
+ 
+-	return (status != -1);
++	return (WIFEXITED(status) && WEXITSTATUS(status) == 0);
+ }
+ 
+ static void
+@@ -349,10 +356,21 @@
+ 		(void) printf(gettext("Creating pcfs on ESP %s\n"),
+ 		    plist->pl_devname);
+ 
+-		if (!mkfs_pcfs(plist->pl_devname)) {
+-			(void) fprintf(stderr, gettext("mkfs -F pcfs failed "
+-			    "on %s\n"), plist->pl_devname);
+-			return;
++		/*
++		 * The ESP should be FAT32.  When the partition is too small
++		 * for FAT32 (fewer than 65525 clusters, as a 256MB ESP on a
++		 * 4Kn disk), fall back to FAT16, which UEFI firmware and the
++		 * loader read as well.
++		 */
++		if (!mkfs_pcfs(plist->pl_devname, "fat=32")) {
++			(void) fprintf(stderr, gettext("mkfs -F pcfs -o fat=32 "
++			    "failed on %s, trying FAT16\n"),
++			    plist->pl_devname);
++			if (!mkfs_pcfs(plist->pl_devname, "fat=16")) {
++				(void) fprintf(stderr, gettext("mkfs -F pcfs "
++				    "failed on %s\n"), plist->pl_devname);
++				return;
++			}
+ 		}
+ 	}
+ 	blkdev = make_blkdev(plist->pl_devname);

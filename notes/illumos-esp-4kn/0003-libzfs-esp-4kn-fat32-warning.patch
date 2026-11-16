@@ -1,0 +1,24 @@
+libzfs: the FAT32 warning for 4Kn ESPs needs 264MB, not 256MB
+
+--- a/usr/src/lib/libzfs/common/libzfs_pool.c
++++ b/usr/src/lib/libzfs/common/libzfs_pool.c
+@@ -4739,12 +4739,17 @@
+ 			efi_free(vtoc);
+ 			return (zfs_error(hdl, EZFS_LABELFAILED, errbuf));
+ 		}
+-		/* 33MB is tested with mkfs -F pcfs */
++		/*
++		 * 33MB is tested with mkfs -F pcfs.  FAT32 needs more than
++		 * 65524 clusters plus reserved sectors and FATs; with
++		 * 4096-byte sectors 256MB (65536 sectors) is not enough,
++		 * 264MB (8 times 33MB) is.
++		 */
+ 		if (hdl->libzfs_printerr &&
+ 		    ((vtoc->efi_lbasize == 512 &&
+ 		    boot_size < 33 * 1024 * 1024) ||
+ 		    (vtoc->efi_lbasize == 4096 &&
+-		    boot_size < 256 * 1024 * 1024)))  {
++		    boot_size < 264 * 1024 * 1024)))  {
+ 			char buf[64];
+ 			zfs_nicenum(boot_size, buf, sizeof (buf));
+ 			(void) fprintf(stderr, dgettext(TEXT_DOMAIN,
