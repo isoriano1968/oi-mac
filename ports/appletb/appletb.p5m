@@ -1,0 +1,43 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+# driver/input/appletb: binds to one interface of the Apple iBridge (USB
+# 05ac:8600, configuration 1): the light-sensor HID interface $(ALS_IF), more
+# specific than hid's class alias.  The Touch Bar interface stays with hid.
+
+set name=pkg.fmri value=pkg:/driver/input/appletb@$(PKG_VERSION)
+set name=pkg.summary value="Apple T1 Touch Bar driver (MacBook Pro 2016-2017)"
+set name=pkg.description \
+    value="Turns on the Touch Bar of the MacBook Pro 2016-2017 (Apple T1 iBridge, USB 05ac:8600) and puts it in function-key mode (Esc, F1-F12; tunable appletb_mode: 0 Esc only, 1 F-keys, 2 special keys, 3 off). The keys reach the console and X through hid and usbkbm (OpenIndiana project)"
+set name=info.classification value="org.opensolaris.category.2008:Drivers/Other Peripherals"
+set name=variant.arch value=i386
+set name=variant.opensolaris.zone value=global value=nonglobal
+
+dir path=kernel group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv/amd64 group=sys mode=0755 owner=root \
+    variant.opensolaris.zone=global
+file appletb path=kernel/drv/amd64/appletb group=sys mode=0755 owner=root \
+    reboot-needed=true variant.opensolaris.zone=global
+
+driver name=appletb alias=usbif5ac,8600.config1.$(ALS_IF) \
+    variant.opensolaris.zone=global
+
+license appletb.license license="$(COMPONENT_LICENSE)"
+
+depend type=require fmri=system/kernel
+depend type=require fmri=driver/usb
+depend type=incorporate \
+    fmri=consolidation/osnet/osnet-incorporation@$(OSNET_VERSION)
