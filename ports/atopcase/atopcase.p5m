@@ -1,0 +1,66 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+# driver/input/atopcase: the MacBook (2015-2017) SPI keyboard.  A new
+# driver, no OS file is replaced.  It binds to the Intel LPSS SPI
+# controllers of the Skylake/Kaby Lake PCHs and attaches only where ACPI
+# has an Apple topcase (APP000D) below the controller; elsewhere attach
+# fails and the device stays unused, as it is today (illumos has no SPI
+# driver).  Built against osnet $(OSNET_VERSION) (illumos-gate
+# $(GATE_SHORT)); the incorporate dependency holds pkg update to a newer
+# osnet build until the module is rebuilt.
+
+set name=pkg.fmri value=pkg:/driver/input/atopcase@$(PKG_VERSION)
+set name=pkg.summary value="Apple MacBook SPI keyboard and trackpad driver (topcase)"
+set name=pkg.description \
+    value="Driver for the internal keyboard of the 2015-2017 Intel MacBooks and MacBook Pros (Apple topcase on the Intel LPSS SPI controller, ACPI APP000D), a port of FreeBSD's atopcase(4) and intelspi(4) with an illumos kbtrans console keyboard; Fn+digits give F1-F12 and Fn+` gives Esc on Touch Bar models. The trackpad is a relative mouse on /dev/atopcase/mouse (VUID events), read by Xorg through an xorg.conf.d snippet (OpenIndiana project)"
+set name=info.classification value="org.opensolaris.category.2008:Drivers/Other Peripherals"
+set name=info.upstream-url value=https://cgit.freebsd.org/src/tree/sys/dev/atopcase
+set name=illumos-gate.info.git-rev value=$(GATE_COMMIT)
+set name=variant.arch value=i386
+set name=variant.opensolaris.zone value=global value=nonglobal
+
+dir path=kernel group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv group=sys mode=0755 owner=root variant.opensolaris.zone=global
+dir path=kernel/drv/amd64 group=sys mode=0755 owner=root \
+    variant.opensolaris.zone=global
+file atopcase path=kernel/drv/amd64/atopcase group=sys mode=0755 owner=root \
+    reboot-needed=true variant.opensolaris.zone=global
+file atopcase.conf path=kernel/drv/atopcase.conf group=sys mode=0644 \
+    owner=root preserve=true variant.opensolaris.zone=global
+
+# Sunrise Point-LP (13"), Sunrise Point-H and Kaby Lake-H / 200-series (15")
+driver name=atopcase perms="* 0666 root sys" \
+    alias=pciex8086,9d29 alias=pciex8086,9d2a \
+    alias=pciex8086,a129 alias=pciex8086,a12a \
+    alias=pciex8086,a2a9 alias=pciex8086,a2aa \
+    alias=pci8086,9d29 alias=pci8086,9d2a \
+    alias=pci8086,a129 alias=pci8086,a12a \
+    alias=pci8086,a2a9 alias=pci8086,a2aa \
+    variant.opensolaris.zone=global
+
+# /dev/atopcase/keyboard and /dev/atopcase/mouse
+file atopcase_link.so path=usr/lib/devfsadm/linkmod/atopcase_link.so \
+    group=sys mode=0755 owner=root variant.opensolaris.zone=global
+# Xorg: the trackpad as a relative mouse (VUID)
+file 60-atopcase-trackpad.conf \
+    path=usr/share/X11/xorg.conf.d/60-atopcase-trackpad.conf group=bin \
+    mode=0444 owner=root variant.opensolaris.zone=global
+
+license atopcase.license license="$(COMPONENT_LICENSE)"
+
+depend type=require fmri=system/kernel
+depend type=incorporate \
+    fmri=consolidation/osnet/osnet-incorporation@$(OSNET_VERSION)
