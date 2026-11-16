@@ -22,7 +22,9 @@
 # driver is new code: patches/0001 is the illumos-gate commit that adds it
 # (branch applesmc of the VM's ~/src/illumos-usbroot; upstream as illumos
 # issue 18700); patches/0002 adds the fan minimum writes, smcfan(8), its SMF
-# service and rights profile (cmd/smcfan).  Both apply to the whole tree.
+# service and rights profile (cmd/smcfan); patches/0003 lets the driver and
+# smcfan handle fans whose keys are "flt " instead of fpe2 (newer SMCs, the
+# MacBook Pro 2016-2017).  All apply to the whole tree.
 # Only the directories the patches touch and the kernel headers the driver
 # includes that system/header does not ship (sys/sensors.h, sys/acpica.h,
 # sys/acpi/) are extracted.  Built out of tree as ports/audiohd-apple: the flags of
@@ -187,7 +189,7 @@ check: all $(BUILD_DIR)/applesmc_fan_test
 # The package version: 0.5.11 as the osnet drivers, branch part = the
 # year, the OS build the module was built and tested against (the VM's),
 # and our revision.  Kernel interfaces used: DDI, ksensor(9E), acpica.
-PKG_VERSION=	0.5.11-2026.0.0.3
+PKG_VERSION=	0.5.11-2026.0.0.4
 MIN_OSNET=	0.5.11-2026.0.0.23344
 GATE_SHORT=	$(shell echo $(GATE_COMMIT) | cut -c1-10)
 REPO?=		$(HOME)/oi-repo

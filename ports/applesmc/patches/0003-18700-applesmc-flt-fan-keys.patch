@@ -1,0 +1,466 @@
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 09:00:00 +0100
+Subject: [PATCH 3/3] 18700 applesmc: fans with "flt " keys (MacBook Pro 2016-2017)
+
+Newer SMCs keep the fan keys (F<n>Ac, Mn, Mx, Tg) as "flt " (IEEE single
+in rpm, little endian, 4 bytes) instead of fpe2.  The driver now accepts
+both: it keeps fan values as rpm * 4 and converts at the SMC with integer
+arithmetic; writes must use the key's own type and length.  smcfan reads
+and writes either type.  APPLESMC_IOC_FANMIN still answers in fpe2.
+---
+diff --git a/usr/src/cmd/smcfan/smcfan.c b/usr/src/cmd/smcfan/smcfan.c
+index a1a243c..6e4cedb 100644
+--- a/usr/src/cmd/smcfan/smcfan.c
++++ b/usr/src/cmd/smcfan/smcfan.c
+@@ -53,9 +53,10 @@ static const char *presets[] = { "auto", "cool", "cooler", "max", NULL };
+ 
+ typedef struct fan {
+ 	int		f_n;
+-	uint16_t	f_act, f_tg, f_mn;	/* fpe2 raw: rpm * 4 */
++	uint16_t	f_act, f_tg, f_mn;	/* rpm * 4 (the fpe2 scale) */
+ 	uint16_t	f_orig, f_max;		/* from APPLESMC_IOC_FANMIN */
+ 	boolean_t	f_hastg;
++	boolean_t	f_flt;			/* F<n>Mn is "flt ", not fpe2 */
+ } fan_t;
+ 
+ static int smcfd = -1;
+@@ -102,18 +103,48 @@ fan_keyname(char key[5], int n, const char *what)
+ 	key[4] = '\0';
+ }
+ 
++/*
++ * A fan value from the SMC's encoding to rpm * 4: fpe2 (14.2 fixed point,
++ * big endian, 2 bytes) or "flt " (IEEE single in rpm, little endian, 4
++ * bytes, the newer SMCs of the MacBook Pro 2016-2017 and later).
++ */
++static int
++fan_decode(const applesmc_key_t *ak, uint16_t *v, boolean_t *flt)
++{
++	if (strncmp(ak->ak_type, "fpe2", 4) == 0 && ak->ak_len == 2) {
++		*v = be16(ak->ak_data);
++		*flt = B_FALSE;
++		return (0);
++	}
++	if (strncmp(ak->ak_type, "flt ", 4) == 0 && ak->ak_len == 4) {
++		uint32_t bits = ak->ak_data[0] | (ak->ak_data[1] << 8) |
++		    (ak->ak_data[2] << 16) | ((uint32_t)ak->ak_data[3] << 24);
++		float f;
++
++		(void) memcpy(&f, &bits, sizeof (f));
++		if (!(f >= 0.0f))
++			f = 0.0f;
++		*v = f * 4.0f >= 65535.0f ? 0xffff : (uint16_t)(f * 4.0f);
++		*flt = B_TRUE;
++		return (0);
++	}
++	return (-1);
++}
++
+ static int
+-fan_key(int n, const char *what, uint16_t *v)
++fan_key(int n, const char *what, uint16_t *v, boolean_t *flt)
+ {
+ 	char key[5];
+ 	applesmc_key_t ak;
++	boolean_t isflt;
+ 
+ 	fan_keyname(key, n, what);
+ 	if (smc_ioc(APPLESMC_IOC_READ, key, &ak) != 0)
+ 		return (-1);
+-	if (strncmp(ak.ak_type, "fpe2", 4) != 0 || ak.ak_len != 2)
++	if (fan_decode(&ak, v, &isflt) != 0)
+ 		return (-1);
+-	*v = be16(ak.ak_data);
++	if (flt != NULL)
++		*flt = isflt;
+ 	return (0);
+ }
+ 
+@@ -141,17 +172,17 @@ load_fans(void)
+ 		}
+ 		f->f_orig = be16(ak.ak_data);
+ 		f->f_max = be16(&ak.ak_data[2]);
+-		if (fan_key(i, "Ac", &f->f_act) != 0 ||
+-		    fan_key(i, "Mn", &f->f_mn) != 0)
++		if (fan_key(i, "Ac", &f->f_act, NULL) != 0 ||
++		    fan_key(i, "Mn", &f->f_mn, &f->f_flt) != 0)
+ 			continue;
+-		f->f_hastg = fan_key(i, "Tg", &f->f_tg) == 0;
++		f->f_hastg = fan_key(i, "Tg", &f->f_tg, NULL) == 0;
+ 		nfans++;
+ 	}
+ 	if (nfans == 0)
+ 		errx(EXIT_NOTSUP, "no fan the driver can set");
+ }
+ 
+-/* The floor a preset gives a fan, fpe2 raw. */
++/* The floor a preset gives a fan, rpm * 4. */
+ static uint16_t
+ preset_min(const fan_t *f, int p)
+ {
+@@ -218,14 +249,29 @@ set_min(fan_t *f, uint16_t raw)
+ {
+ 	applesmc_key_t ak;
+ 	char key[5];
++	boolean_t flt;
+ 
+ 	fan_keyname(key, f->f_n, "Mn");
+ 	bzero(&ak, sizeof (ak));
+ 	(void) memcpy(ak.ak_key, key, APPLESMC_KEYLEN);
+-	(void) memcpy(ak.ak_type, "fpe2", APPLESMC_KEYLEN);
+-	ak.ak_len = 2;
+-	ak.ak_data[0] = raw >> 8;
+-	ak.ak_data[1] = raw & 0xff;
++	if (f->f_flt) {
++		/* rpm as an IEEE single, little endian; exact for 16 bits */
++		float rpm = raw / 4.0f;
++		uint32_t bits;
++
++		(void) memcpy(&bits, &rpm, sizeof (bits));
++		(void) memcpy(ak.ak_type, "flt ", APPLESMC_KEYLEN);
++		ak.ak_len = 4;
++		ak.ak_data[0] = bits & 0xff;
++		ak.ak_data[1] = (bits >> 8) & 0xff;
++		ak.ak_data[2] = (bits >> 16) & 0xff;
++		ak.ak_data[3] = bits >> 24;
++	} else {
++		(void) memcpy(ak.ak_type, "fpe2", APPLESMC_KEYLEN);
++		ak.ak_len = 2;
++		ak.ak_data[0] = raw >> 8;
++		ak.ak_data[1] = raw & 0xff;
++	}
+ 	if (ioctl(smcfd, APPLESMC_IOC_WRITE, &ak) != 0) {
+ 		if (errno == EPERM || errno == EACCES)
+ 			errx(EXIT_PERM, "%s: %s (needs the \"Apple SMC Fan "
+@@ -234,7 +280,9 @@ set_min(fan_t *f, uint16_t raw)
+ 		warn("%s", key);
+ 		return (-1);
+ 	}
+-	f->f_mn = be16(ak.ak_data);
++	/* The driver returns the value it wrote, clamped, in the key's type. */
++	if (fan_decode(&ak, &f->f_mn, &flt) != 0)
++		f->f_mn = raw;
+ 	if (f->f_mn != raw)
+ 		warnx("%s: %u rpm is outside %u-%u, set to %u rpm", key,
+ 		    raw / 4, f->f_orig / 4, f->f_max / 4, f->f_mn / 4);
+diff --git a/usr/src/man/man4d/applesmc.4d b/usr/src/man/man4d/applesmc.4d
+index 1702b85..13b3ca8 100644
+--- a/usr/src/man/man4d/applesmc.4d
++++ b/usr/src/man/man4d/applesmc.4d
+@@ -53,7 +53,10 @@ The only keys the driver writes are the fan minimums and targets
+ .Sy F Ns Ar n Ns Sy Mn ,
+ .Sy F Ns Ar n Ns Sy \&Tg ,
+ type
+-.Sy fpe2
++.Sy fpe2 ,
++or
++.Sy flt
++on newer SMCs such as those of the MacBook Pro 2016 and 2017
+ .Pc ,
+ limited to the range from the minimum the fan had when the driver attached
+ to its maximum
+@@ -110,7 +113,9 @@ return in
+ the minimum fan
+ .Ar n
+ had at attach and its maximum, each two bytes of type
+-.Sy fpe2 .
++.Sy fpe2 ,
++also for a fan whose keys are of type
++.Sy flt .
+ .It Dv APPLESMC_IOC_WRITE
+ Write
+ .Fa ak_len
+@@ -122,9 +127,13 @@ Only
+ .Sy F Ns Ar n Ns Sy Mn
+ and
+ .Sy F Ns Ar n Ns Sy \&Tg
+-of a fan whose keys are of type
++of a fan whose minimum and maximum keys have one type,
+ .Sy fpe2
+-can be written, with a length of 2; the value is limited as described
++.Pq length 2
++or
++.Sy flt
++.Pq length 4 ,
++can be written, with the type and length of the key; the value is limited as described
+ above, and the value written is returned in
+ .Fa ak_data .
+ The device must be open for writing, which, like this command, needs the
+diff --git a/usr/src/uts/common/sys/applesmc.h b/usr/src/uts/common/sys/applesmc.h
+index 3ef7191..530935f 100644
+--- a/usr/src/uts/common/sys/applesmc.h
++++ b/usr/src/uts/common/sys/applesmc.h
+@@ -25,12 +25,14 @@
+  * them; decoding by type is left to the consumer.
+  *
+  * The only keys that can be written are the fan minimums and targets
+- * (F<n>Mn, F<n>Tg, type fpe2), with APPLESMC_IOC_WRITE on a descriptor open
+- * for writing, by a caller with the sys_config privilege. The driver clamps
++ * (F<n>Mn, F<n>Tg, type fpe2, or "flt " on newer SMCs; ak_type and ak_len
++ * as the key has them), with APPLESMC_IOC_WRITE on a descriptor open for
++ * writing, by a caller with the sys_config privilege. The driver clamps
+  * the value to [the F<n>Mn it found at attach, F<n>Mx], returns the value
+  * written in ak_data, and restores the original F<n>Mn at detach.
+  * APPLESMC_IOC_FANMIN returns, for ak_key "F<n>Mn", that original minimum
+- * in ak_data[0-1] and F<n>Mx in ak_data[2-3] (fpe2, ak_len 4).
++ * in ak_data[0-1] and F<n>Mx in ak_data[2-3], always as fpe2 (rpm * 4,
++ * ak_len 4), also for a fan with "flt " keys.
+  *
+  * This interface is private and may change.
+  */
+diff --git a/usr/src/uts/i86pc/io/applesmc.c b/usr/src/uts/i86pc/io/applesmc.c
+index 6cf351f..beeaf07 100644
+--- a/usr/src/uts/i86pc/io/applesmc.c
++++ b/usr/src/uts/i86pc/io/applesmc.c
+@@ -25,7 +25,8 @@
+  * the same handshake as the key bytes.
+  *
+  * The SMC runs the fans and thermal protection on its own. The only keys this
+- * driver writes are the fan floors and targets (F<n>Mn, F<n>Tg, type fpe2),
++ * driver writes are the fan floors and targets (F<n>Mn, F<n>Tg, type fpe2,
++ * or "flt " on newer SMCs such as the MacBook Pro 2016-2017),
+  * for privileged callers and clamped to [the F<n>Mn found at attach, F<n>Mx]:
+  * the SMC keeps controlling above that floor with its own protection. The
+  * original F<n>Mn of every fan that was written is restored at detach. It
+@@ -87,15 +88,19 @@ typedef struct smc_sensor {
+ 
+ /*
+  * Fan keys are F<n>.., n a single digit. Values of type fpe2 are unsigned
+- * 14.2 fixed point (rpm * 4), big endian, 2 bytes; the driver keeps them raw.
++ * 14.2 fixed point (rpm * 4), big endian, 2 bytes. Newer SMCs (MacBook Pro
++ * 2016-2017 and later) use "flt ": an IEEE single in rpm, little endian, 4
++ * bytes. The driver keeps every fan value as rpm * 4 (the fpe2 scale) and
++ * converts at the SMC, with integer arithmetic only.
+  */
+ #define	SMC_MAX_FANS		10
+ 
+ typedef struct smc_fan {
+-	boolean_t	sf_valid;	/* F<n>Mn and F<n>Mx are fpe2 */
++	boolean_t	sf_valid;	/* F<n>Mn and F<n>Mx have one fan type */
++	boolean_t	sf_flt;		/* that type is "flt ", else fpe2 */
+ 	boolean_t	sf_written;	/* restore sf_min at detach */
+-	uint16_t	sf_min;		/* F<n>Mn at attach */
+-	uint16_t	sf_max;		/* F<n>Mx at attach */
++	uint16_t	sf_min;		/* F<n>Mn at attach, rpm * 4 */
++	uint16_t	sf_max;		/* F<n>Mx at attach, rpm * 4 */
+ } smc_fan_t;
+ 
+ /*
+@@ -126,9 +131,73 @@ smc_fpe2_put(uint8_t *b, uint16_t v)
+ 	b[1] = v & 0xff;
+ }
+ 
++/*
++ * "flt " (little-endian IEEE single, rpm) to rpm * 4, rounded down and
++ * limited to [0, 0xffff]; NaN, infinities and denormals give 0.
++ */
++static uint16_t
++smc_flt_get(const uint8_t *b)
++{
++	uint32_t bits = b[0] | (b[1] << 8) | (b[2] << 16) |
++	    ((uint32_t)b[3] << 24);
++	int exp = (bits >> 23) & 0xff;
++	uint32_t m = (bits & 0x7fffff) | 0x800000;
++	int shift;
++
++	if ((bits & 0x80000000U) != 0 || exp == 0 || exp == 0xff)
++		return (0);
++	/* value * 4 = m * 2^(exp - 150 + 2) */
++	shift = exp - 148;
++	if (shift >= 0)
++		return (shift > 0 ? 0xffff : (m > 0xffff ? 0xffff : m));
++	if (shift <= -24)
++		return (0);
++	m >>= -shift;
++	return (m > 0xffff ? 0xffff : (uint16_t)m);
++}
++
++/* rpm * 4 to "flt " (rpm); exact, since v has at most 16 bits. */
++static void
++smc_flt_put(uint8_t *b, uint16_t v)
++{
++	uint32_t bits = 0;
++	int h;
++
++	if (v != 0) {
++		for (h = 15; (v & (1U << h)) == 0; h--)
++			;
++		/* v / 4 = 1.f * 2^(h - 2) */
++		bits = ((uint32_t)(h - 2 + 127) << 23) |
++		    (((uint32_t)v << (23 - h)) & 0x7fffff);
++	}
++	b[0] = bits & 0xff;
++	b[1] = (bits >> 8) & 0xff;
++	b[2] = (bits >> 16) & 0xff;
++	b[3] = bits >> 24;
++}
++
++/* A fan value in the fan's own type: 2 (fpe2) or 4 ("flt ") bytes. */
++static uint16_t
++smc_fanval_get(const smc_fan_t *sf, const uint8_t *b)
++{
++	return (sf->sf_flt ? smc_flt_get(b) : smc_fpe2_get(b));
++}
++
++static uint8_t
++smc_fanval_put(const smc_fan_t *sf, uint8_t *b, uint16_t v)
++{
++	if (sf->sf_flt) {
++		smc_flt_put(b, v);
++		return (4);
++	}
++	smc_fpe2_put(b, v);
++	return (2);
++}
++
+ /*
+  * Check a write of fan key `key' (type `type', `len' bytes) against the
+- * fans known at attach and clamp its value in place to [sf_min, sf_max].
++ * fans known at attach and clamp its value in place to [sf_min, sf_max],
++ * in the fan's own type (fpe2 or "flt ").
+  * Returns 0 or the errno for the ioctl.
+  */
+ static int
+@@ -143,18 +212,24 @@ smc_fan_check(const smc_fan_t *fans, uint_t nfans, const char *key,
+ 		return (EPERM);
+ 	if ((uint_t)n >= nfans || !fans[n].sf_valid)
+ 		return (ENOENT);
+-	if (type[0] != 'f' || type[1] != 'p' || type[2] != 'e' ||
+-	    type[3] != '2' || len != 2)
+-		return (EINVAL);
+ 	sf = &fans[n];
++	/* The key must have the type the fan's Mn and Mx had at attach. */
++	if (sf->sf_flt) {
++		if (type[0] != 'f' || type[1] != 'l' || type[2] != 't' ||
++		    type[3] != ' ' || len != 4)
++			return (EINVAL);
++	} else if (type[0] != 'f' || type[1] != 'p' || type[2] != 'e' ||
++	    type[3] != '2' || len != 2) {
++		return (EINVAL);
++	}
+ 	if (sf->sf_min > sf->sf_max)
+ 		return (EINVAL);
+-	v = smc_fpe2_get(data);
++	v = smc_fanval_get(sf, data);
+ 	if (v < sf->sf_min)
+ 		v = sf->sf_min;
+ 	if (v > sf->sf_max)
+ 		v = sf->sf_max;
+-	smc_fpe2_put(data, v);
++	(void) smc_fanval_put(sf, data, v);
+ 	return (0);
+ }
+ 
+@@ -479,13 +554,14 @@ smc_create_sensors(applesmc_t *smc)
+ }
+ 
+ /*
+- * Read one fpe2 fan key; 0 and *v on success.
++ * Read one fan key, fpe2 or "flt "; 0, *v (rpm * 4) and *flt on success.
+  */
+ static int
+-smc_fan_read(applesmc_t *smc, int fan, const char *what, uint16_t *v)
++smc_fan_read(applesmc_t *smc, int fan, const char *what, uint16_t *v,
++    boolean_t *flt)
+ {
+ 	char key[APPLESMC_KEYLEN], type[APPLESMC_KEYLEN];
+-	uint8_t len, flags, buf[2];
++	uint8_t len, flags, buf[4];
+ 	int ret;
+ 
+ 	key[0] = 'F';
+@@ -494,11 +570,15 @@ smc_fan_read(applesmc_t *smc, int fan, const char *what, uint16_t *v)
+ 	key[3] = what[1];
+ 	if ((ret = smc_key_info(smc, key, &len, type, &flags)) != 0)
+ 		return (ret);
+-	if (bcmp(type, "fpe2", 4) != 0 || len != 2)
++	if (bcmp(type, "fpe2", 4) == 0 && len == 2)
++		*flt = B_FALSE;
++	else if (bcmp(type, "flt ", 4) == 0 && len == 4)
++		*flt = B_TRUE;
++	else
+ 		return (ENOTSUP);
+-	if ((ret = smc_read_key(smc, key, buf, 2)) != 0)
++	if ((ret = smc_read_key(smc, key, buf, len)) != 0)
+ 		return (ret);
+-	*v = smc_fpe2_get(buf);
++	*v = *flt ? smc_flt_get(buf) : smc_fpe2_get(buf);
+ 	return (0);
+ }
+ 
+@@ -517,11 +597,14 @@ smc_scan_fans(applesmc_t *smc)
+ 	smc->smc_nfans = MIN(n, SMC_MAX_FANS);
+ 	for (i = 0; i < smc->smc_nfans; i++) {
+ 		smc_fan_t *sf = &smc->smc_fans[i];
++		boolean_t mnflt, mxflt;
+ 
+-		if (smc_fan_read(smc, i, "Mn", &sf->sf_min) == 0 &&
+-		    smc_fan_read(smc, i, "Mx", &sf->sf_max) == 0 &&
+-		    sf->sf_min <= sf->sf_max)
++		if (smc_fan_read(smc, i, "Mn", &sf->sf_min, &mnflt) == 0 &&
++		    smc_fan_read(smc, i, "Mx", &sf->sf_max, &mxflt) == 0 &&
++		    mnflt == mxflt && sf->sf_min <= sf->sf_max) {
++			sf->sf_flt = mnflt;
+ 			sf->sf_valid = B_TRUE;
++		}
+ 	}
+ 	mutex_exit(&smc->smc_lock);
+ }
+@@ -533,7 +616,7 @@ static void
+ smc_restore_fans(applesmc_t *smc)
+ {
+ 	char key[APPLESMC_KEYLEN];
+-	uint8_t buf[2];
++	uint8_t buf[4], len;
+ 	uint_t i;
+ 
+ 	mutex_enter(&smc->smc_lock);
+@@ -546,8 +629,8 @@ smc_restore_fans(applesmc_t *smc)
+ 		key[1] = '0' + i;
+ 		key[2] = 'M';
+ 		key[3] = 'n';
+-		smc_fpe2_put(buf, sf->sf_min);
+-		if (smc_write_key(smc, key, buf, 2) != 0)
++		len = smc_fanval_put(sf, buf, sf->sf_min);
++		if (smc_write_key(smc, key, buf, len) != 0)
+ 			dev_err(smc->smc_dip, CE_WARN, "failed to restore "
+ 			    "F%uMn", i);
+ 		else
+@@ -692,7 +775,7 @@ applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
+ 			ret = EPERM;
+ 			break;
+ 		}
+-		if (ak.ak_len != 2) {
++		if (ak.ak_len != 2 && ak.ak_len != 4) {
+ 			ret = EINVAL;
+ 			break;
+ 		}
+@@ -700,11 +783,15 @@ applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
+ 		ret = smc_key_info(smc, ak.ak_key, &len, type, &flags);
+ 		if (ret != 0)
+ 			break;
++		if (ak.ak_len != len) {
++			ret = EINVAL;
++			break;
++		}
+ 		ret = smc_fan_check(smc->smc_fans, smc->smc_nfans, ak.ak_key,
+ 		    type, len, ak.ak_data);
+ 		if (ret != 0)
+ 			break;
+-		ret = smc_write_key(smc, ak.ak_key, ak.ak_data, 2);
++		ret = smc_write_key(smc, ak.ak_key, ak.ak_data, len);
+ 		if (ret == 0 && ak.ak_key[2] == 'M')
+ 			smc->smc_fans[fan].sf_written = B_TRUE;
+ 		bcopy(type, ak.ak_type, APPLESMC_KEYLEN);
+@@ -724,7 +811,10 @@ applesmc_ioctl(dev_t dev, int cmd, intptr_t arg, int mode, cred_t *cr,
+ 			ret = ENOENT;
+ 			break;
+ 		}
+-		/* data[0-1] the minimum, data[2-3] the maximum, fpe2 */
++		/*
++		 * data[0-1] the minimum, data[2-3] the maximum, as fpe2
++		 * (rpm * 4) whatever the fan's own key type is.
++		 */
+ 		bcopy("fpe2", ak.ak_type, APPLESMC_KEYLEN);
+ 		ak.ak_len = 4;
+ 		ak.ak_flags = 0;
