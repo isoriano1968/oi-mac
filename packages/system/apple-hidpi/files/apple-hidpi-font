@@ -1,0 +1,12 @@
+# system/apple/hidpi: the console font for HiDPI (Retina) panels.  The
+# loader loads it as the manual font (also for its own menu), and passes it
+# to the kernel console.  Remove the package, or this file, for the stock
+# font choice.
+#
+# The loader reads /boot/conf.d twice (OI 2026.10).  In the second pass
+# loadfont finds a font of the same size already in its list and only marks
+# it for reload, dropping the manual choice, so the automatic font (14x28
+# at 1280x800) wins.  Setting screen-font after it selects 32x64 again (its
+# hook marks the font manual), in both passes.
+exec="loadfont /boot/fonts/spleen-32x64.fnt"
+screen-font="32x64"

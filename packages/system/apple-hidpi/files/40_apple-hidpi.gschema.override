@@ -1,0 +1,6 @@
+# system/apple/hidpi: GNOME at scale 2 on HiDPI (Retina) panels.  Without
+# a KMS driver the X server cannot read the panel size from EDID, reports
+# 96 dpi, and GNOME's automatic scale (0) stays at 1.  This is the schema
+# default, so it also covers the GDM greeter; users can change it.
+[org.gnome.desktop.interface]
+scaling-factor=2

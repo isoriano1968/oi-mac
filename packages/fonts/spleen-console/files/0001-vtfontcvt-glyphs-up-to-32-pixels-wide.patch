@@ -1,0 +1,117 @@
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Mon, 16 Nov 2026 10:00:00 +0100
+Subject: [PATCH] vtfontcvt: glyphs up to 32 pixels wide
+
+parse_bitmap_line() handled 1 or 2 bytes per glyph row only ("Unsupported
+wbytes"), so 24 and 32 pixel wide fonts such as Spleen 32x64 could not be
+converted, although the VFNT format, the loader and tem take any width
+(howmany(width, 8) bytes per row).  Read each row as 64 bits and store
+wbytes bytes; fonts up to 32 wide, double-width glyphs included.  The
+output for 8 and 16 wide fonts is unchanged (Spleen 12x24 and 16x32:
+byte-identical).
+---
+diff --git a/usr/src/cmd/vtfontcvt/vtfontcvt.c b/usr/src/cmd/vtfontcvt/vtfontcvt.c
+index a5d15ce..da85880 100644
+--- a/usr/src/cmd/vtfontcvt/vtfontcvt.c
++++ b/usr/src/cmd/vtfontcvt/vtfontcvt.c
+@@ -34,6 +34,7 @@
+ 
+ #include <assert.h>
+ #include <err.h>
++#include <inttypes.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -343,15 +344,25 @@ add_char(unsigned curchar, unsigned map_idx, uint8_t *bytes, uint8_t *bytes_r)
+ }
+ 
+ 
++/*
++ * One row of a glyph: `line' holds the row's bits (as the hex digits of a
++ * BDF BITMAP line), `dwidth' wide, for one glyph or for a double-width
++ * glyph's left and right halves. Rows up to 64 bits are supported, so
++ * glyphs up to 32 pixels wide (64 for a double-width glyph of a 32 wide
++ * font), each stored as wbytes bytes, most significant first.
++ */
+ static int
+-parse_bitmap_line(uint8_t *left, uint8_t *right, unsigned int line,
++parse_bitmap_line(uint8_t *left, uint8_t *right, uint64_t line,
+     unsigned int dwidth)
+ {
+ 	uint8_t *p;
+-	unsigned int i, subline;
++	unsigned int i, b;
++	uint64_t subline;
+ 
+ 	if (dwidth != width && dwidth != width * 2)
+ 		errx(1, "Bitmap with unsupported width %u!", dwidth);
++	if (howmany(dwidth, 8) * 8 > 64)
++		errx(1, "Bitmap width %u is more than 64 bits!", dwidth);
+ 
+ 	/* Move pixel data right to simplify splitting double characters. */
+ 	line >>= (howmany(dwidth, 8) * 8) - dwidth;
+@@ -359,19 +370,13 @@ parse_bitmap_line(uint8_t *left, uint8_t *right, unsigned int line,
+ 	for (i = dwidth / width; i > 0; i--) {
+ 		p = (i == 2) ? right : left;
+ 
+-		subline = line & ((1 << width) - 1);
++		subline = width == 64 ? line : line & ((1ULL << width) - 1);
+ 		subline <<= (howmany(width, 8) * 8) - width;
+ 
+-		if (wbytes == 1) {
+-			*p = subline;
+-		} else if (wbytes == 2) {
+-			*p++ = subline >> 8;
+-			*p = subline;
+-		} else {
+-			errx(1, "Unsupported wbytes %u!", wbytes);
+-		}
++		for (b = 0; b < wbytes; b++)
++			p[b] = subline >> (8 * (wbytes - 1 - b));
+ 
+-		line >>= width;
++		line = width == 64 ? 0 : line >> width;
+ 	}
+ 
+ 	return (0);
+@@ -382,7 +387,8 @@ parse_bdf(FILE *fp, unsigned int map_idx)
+ {
+ 	char ln[BUFSIZ];
+ 	uint8_t bytes[wbytes * height], bytes_r[wbytes * height];
+-	unsigned int curchar = 0, dwidth = 0, i, line;
++	unsigned int curchar = 0, dwidth = 0, i;
++	uint64_t line;
+ 
+ 	memset(bytes, 0, sizeof (bytes));
+ 	memset(bytes_r, 0, sizeof (bytes_r));
+@@ -398,7 +404,7 @@ parse_bdf(FILE *fp, unsigned int map_idx)
+ 			for (i = 0; i < height; i++) {
+ 				if (fgets(ln, sizeof (ln), fp) == NULL)
+ 					errx(1, "Unexpected EOF!");
+-				if (sscanf(ln, "%x", &line) <= 0)
++				if (sscanf(ln, "%" SCNx64, &line) <= 0)
+ 					err(1, "sscanf failed at %s", ln);
+ 				if (parse_bitmap_line(bytes + i * wbytes,
+ 				    bytes_r + i * wbytes, line, dwidth) != 0)
+@@ -430,9 +436,10 @@ static int
+ parse_hex(FILE *fp, unsigned int map_idx)
+ {
+ 	char ln[BUFSIZ], *p;
+-	char fmt_str[8];
++	char fmt_str[16];
+ 	uint8_t *bytes = NULL, *bytes_r = NULL;
+-	unsigned curchar = 0, i, line, chars_per_row, dwidth;
++	unsigned curchar = 0, i, chars_per_row, dwidth;
++	uint64_t line;
+ 	int rv = 0;
+ 
+ 	while (fgets(ln, sizeof (ln), fp) != NULL) {
+@@ -459,7 +466,7 @@ parse_hex(FILE *fp, unsigned int map_idx)
+ 			dwidth = width;
+ 			if (chars_per_row / 2 > (width + 7) / 8)
+ 				dwidth *= 2; /* Double-width character. */
+-			(void) snprintf(fmt_str, sizeof (fmt_str), "%%%ux",
++			(void) snprintf(fmt_str, sizeof (fmt_str), "%%%u" SCNx64,
+ 			    chars_per_row);
+ 
+ 			for (i = 0; i < height; i++) {

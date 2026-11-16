@@ -1,0 +1,28 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+set name=pkg.fmri value=pkg:/$(COMPONENT_FMRI)@$(COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="$(COMPONENT_SUMMARY)"
+set name=pkg.description \
+    value="Defaults for Intel Macs with HiDPI (Retina) panels: the loader and kernel console use the Spleen 32x64 font (/boot/conf.d/apple-hidpi-font), and GNOME, including the GDM greeter, runs at scaling-factor 2 (a GSettings schema override). Removing the package returns to the stock font and scale."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+license $(COMPONENT_LICENSE_FILE) license='$(COMPONENT_LICENSE)'
+file files/apple-hidpi-font path=boot/conf.d/apple-hidpi-font mode=0444
+file files/40_apple-hidpi.gschema.override \
+    path=usr/share/glib-2.0/schemas/40_apple-hidpi.gschema.override \
+    mode=0444 restart_fmri=svc:/application/desktop-cache/gconf-cache:default
+depend type=require fmri=pkg:/system/font/console/spleen
+depend type=require fmri=pkg:/gnome/config/gsettings-desktop-schemas
