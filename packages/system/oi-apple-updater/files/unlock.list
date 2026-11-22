@@ -1,0 +1,24 @@
+# Packages that oi-local replaces within OI's userland incorporation: the
+# updater turns their version-lock facet off before installing.  (The osnet
+# packages need none: oi-local's 23395.1 is inside OI's 23395 lock.)
+desktop/gnome/apple-media-keys
+desktop/system-monitor/mac-sensors
+library/audio/pulseaudio
+library/audio/pulseaudio/32
+service/gnome/desktop-cache
+service/hal
+system/file-system/fstyp-ntfs
+system/file-system/ntfsprogs
+system/hal/probe-storage-gpt
+system/hal/removable-media-policy
+system/hal/storage-fuse
+x11/library/libdrm
+x11/library/mesa
+x11/server/xephyr
+x11/server/xorg
+x11/server/xorg/driver/xorg-input-keyboard
+x11/server/xorg/driver/xorg-input-mouse
+x11/server/xorg/driver/xorg-video-illumosfb
+x11/server/xserver-common
+x11/server/xvfb
+x11/trusted/trusted-xorg

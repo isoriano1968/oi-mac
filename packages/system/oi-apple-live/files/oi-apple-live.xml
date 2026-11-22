@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+    This file and its contents are supplied under the terms of the
+    Common Development and Distribution License ("CDDL"), version 1.0.
+    You may only use this file in accordance with the terms of version
+    1.0 of the CDDL.
+
+    A full copy of the text of the CDDL should have accompanied this
+    source.  A copy of the CDDL is also available via the Internet at
+    http://www.illumos.org/license/CDDL.
+
+    Copyright 2026 isoriano1968
+
+    system/oi-apple-live: live-only pieces of the OI-Apple media on, or
+    (on an installed system) off plus the first-boot fixes.  Runs before
+    gdm, so X sees the right configuration.
+-->
+<service_bundle type="manifest" name="system/oi-apple-live">
+	<service name="system/oi-apple-live" type="service" version="1">
+		<create_default_instance enabled="true"/>
+		<single_instance/>
+		<dependency name="fs-local" grouping="require_all"
+		    restart_on="none" type="service">
+			<service_fmri value="svc:/system/filesystem/local"/>
+		</dependency>
+		<dependent name="oi-apple-live_gdm" grouping="optional_all"
+		    restart_on="none">
+			<service_fmri value="svc:/application/graphical-login/gdm"/>
+		</dependent>
+		<exec_method type="method" name="start"
+		    exec="/lib/svc/method/svc-oi-apple-live start"
+		    timeout_seconds="300"/>
+		<exec_method type="method" name="stop"
+		    exec="/lib/svc/method/svc-oi-apple-live stop"
+		    timeout_seconds="30"/>
+		<property_group name="startd" type="framework">
+			<propval name="duration" type="astring" value="transient"/>
+		</property_group>
+		<stability value="Unstable"/>
+		<template>
+			<common_name>
+				<loctext xml:lang="C">OI-Apple live media setup and first boot</loctext>
+			</common_name>
+		</template>
+	</service>
+</service_bundle>

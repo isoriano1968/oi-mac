@@ -1,0 +1,29 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+set name=pkg.fmri value=pkg:/$(COMPONENT_FMRI)@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="$(COMPONENT_SUMMARY)"
+set name=pkg.description value="For the OI-Apple installer media and the systems installed from them: X uses the console keyboard and mouse (/dev/kbd, /dev/mouse; the MacBooks' internal keyboard and trackpad through atopcase), and svc:/system/oi-apple-live turns the live-only pieces on in the live system (X on the firmware framebuffer, the Install OpenIndiana launcher) and off on the installed system, where it also hands GDM's automatic login to the installed user at the first boot."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+license $(COMPONENT_LICENSE_FILE) license='$(COMPONENT_LICENSE)'
+file path=etc/X11/xorg.conf.d/20-oi-apple-input.conf mode=0444
+file path=lib/svc/manifest/system/oi-apple-live.xml mode=0444 \
+    restart_fmri=svc:/system/manifest-import:default
+file path=lib/svc/method/svc-oi-apple-live mode=0555
+file path=usr/bin/oi-apple-install mode=0555
+file path=usr/share/applications/oi-apple-install.desktop mode=0444
+file path=usr/share/oi-apple/live/10-oi-apple-live-fb.conf mode=0444

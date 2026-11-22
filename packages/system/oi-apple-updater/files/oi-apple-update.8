@@ -1,0 +1,66 @@
+.\" This file and its contents are supplied under the terms of the
+.\" Common Development and Distribution License ("CDDL"), version 1.0.
+.\" Copyright 2026 isoriano1968
+.Dd November 17, 2026
+.Dt OI-APPLE-UPDATE 8
+.Os
+.Sh NAME
+.Nm oi-apple-update
+.Nd install the OI-Apple packages an Intel Mac needs
+.Sh SYNOPSIS
+.Nm
+.Op Fl n1
+.Op Fl R Ar root
+.Op Fl g Ar origin
+.Op Fl m Ar model
+.Op Ar group ...
+.Sh DESCRIPTION
+.Nm
+reads the Mac's model from
+.Xr smbios 8
+and its graphics devices from
+.Xr prtconf 8 ,
+chooses the group packages
+.Pq Sy group/apple/ Ns Ar group
+for it from
+.Pa /usr/share/oi-apple/models.conf ,
+and installs them with
+.Sy metapackages/oi-apple
+from the publisher
+.Sy oi-local
+into a new boot environment.
+It stops when the running OS build is not the one oi-local's kernel
+packages were built for.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl n
+Show the plan and what
+.Xr pkg 1
+would do; change nothing.
+.It Fl 1
+Activate the new boot environment for the next boot only
+.Pq Sy beadm activate -t .
+.It Fl R Ar root
+Install into the image at
+.Ar root
+instead of a new boot environment.
+.It Fl g Ar origin
+Add an origin to oi-local: a
+.Pa .p5p
+archive, a repository directory or an http(s) URL.
+Default: the OI-Apple archive on mounted media
+.Pq Pa /.cdrom/oi-apple/*.p5p .
+.It Fl m Ar model
+Use this model instead of the one
+.Xr smbios 8
+reports.
+.El
+.Sh FILES
+.Bl -tag -width Ds
+.It Pa /usr/share/oi-apple/models.conf
+models, PCI devices and groups; the osnet build
+.It Pa /usr/share/oi-apple/unlock.list
+packages whose version-lock facet is turned off
+.El
+.Sh EXIT STATUS
+0 on success or when there is nothing to do, 1 on errors, 2 on usage errors.

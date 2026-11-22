@@ -1,0 +1,25 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+set name=pkg.fmri value=pkg:/group/oi-mac/desktop_install@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="OI Mac: the live desktop package set"
+set name=pkg.description value="Everything the OI Mac GNOME live media and the systems installed from them need: OpenIndiana's live desktop set (as mate_install, without MATE), GNOME with the OI Mac components, the installers and the X session tools."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+
+<include oi_live_base>
+<include oi_mac_gnome>
+<include oi_mac_live>

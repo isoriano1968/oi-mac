@@ -1,0 +1,121 @@
+#!/bin/ksh93
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+# distro_const finalizer for the OI Mac media (oi-mac-gnome.xml), after
+# boot_archive_configure and before boot_archive_archive: changes to the
+# live root itself (the boot archive build area), which does not exist
+# yet when oi-mac-publishers runs.
+#
+# 1. Core files to /tmp (tmpfs): the live root is a ramdisk with little free
+# space, and a crash loop leaving a core in its working directory each
+# time fills it (ISO v4, v5: "file system full", gdm in maintenance).
+#
+# Args (as every DC finalizer): reader socket, pkg image area, tmp dir,
+# boot archive build area, media area.
+#
+if [ "$#" != "5" ] ; then
+	print -u2 "Usage: $0: Requires 5 args"
+	exit 1
+fi
+BA=$4
+set -e
+
+CA=$BA/etc/coreadm.conf
+if [[ ! -f $CA ]]; then
+	print -u2 "$0: no $CA in the boot archive"
+	exit 1
+fi
+sed 's#^COREADM_INIT_PATTERN=.*#COREADM_INIT_PATTERN=/tmp/core.%f.%p#' \
+    $CA > $CA.new
+cat $CA.new > $CA
+rm -f $CA.new
+grep -q '^COREADM_INIT_PATTERN=/tmp/core.%f.%p$' $CA
+grep -n COREADM_INIT_PATTERN $CA
+
+# GDM: log in the live user.  slimcd_boot_archive_configure means to do
+# this, but its nawk program uses "continue" outside a loop, a syntax
+# error: nawk prints nothing and an empty custom.conf replaces GDM's
+# (no automatic login, no InitialSetupEnable=False).  Write it again from
+# the package image's copy; fail the build if it is not right.
+PI=$2
+GC=$BA/etc/gdm/custom.conf
+if [[ -d $BA/etc/gdm ]]; then
+	if [[ ! -s $PI/etc/gdm/custom.conf ]]; then
+		print -u2 "$0: no $PI/etc/gdm/custom.conf"
+		exit 1
+	fi
+	/usr/bin/nawk '/^\[daemon\]/ { print; print "AutomaticLoginEnable=true";
+	    print "AutomaticLogin=jack"; print "GdmXserverTimeout=30"; next }
+	    { print }' $PI/etc/gdm/custom.conf > $GC.new
+	cat $GC.new > $GC
+	rm -f $GC.new
+	grep -q '^AutomaticLogin=jack$' $GC
+	grep -q '^InitialSetupEnable=False$' $GC
+	grep -E -n 'AutomaticLogin|InitialSetupEnable' $GC
+fi
+
+# pkg in the live system: the boot archive keeps /var/pkg/lock as a
+# symlink into the read-only solarismisc (/mnt/misc), and pkg opens its
+# lock file without following symlinks (ELOOP): every root pkg command
+# fails ("Cannot update file: 'lock' ... contains a symlink", v10b).
+# An empty lock file on the ramdisk instead.
+PL=$BA/var/pkg/lock
+if [[ -L $PL || ! -e $PL ]]; then
+	rm -f $PL
+	: > $PL
+	chmod 644 $PL
+fi
+[[ -f $PL && ! -L $PL ]]
+ls -l $PL
+
+# GNOME locks the live session after 5 idle minutes, behind jack's
+# password (v10b).  An autostart entry in the live user's home (from
+# system/install/media/internal; the installer drops jack and /jack)
+# turns the lock and the idle blanking off for the live session only.
+# The live /jack is a tmpfs that live-sysidtool-system fills from
+# /.cdrom/jack, the medium's root (the package image), at boot: the
+# boot archive's /jack is only its mount point (v10d).
+AD=$PI/jack/.config/autostart
+if [[ ! -d $AD ]]; then
+	print -u2 "$0: no $AD in the package image"
+	exit 1
+fi
+NL=$AD/oi-mac-live-nolock.desktop
+cat > $NL <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=OI Mac live session: no screen lock
+Exec=/bin/sh -c "gsettings set org.gnome.desktop.screensaver lock-enabled false; gsettings set org.gnome.desktop.session idle-delay 0"
+NoDisplay=true
+OnlyShowIn=GNOME;
+X-GNOME-Autostart-Phase=Initialization
+EOF
+OWN=$(ls -nd $AD | /usr/bin/nawk '{ print $3 ":" $4 }')
+chown $OWN $NL
+chmod 644 $NL
+grep -q 'lock-enabled false' $NL
+ls -ln $NL
+
+# graphviz: its plugin list (config6) is made by "dot -c" in the SMF
+# service application/graphviz/configure-plugins, which fails on the
+# live system's read-only /usr (maintenance, and dot renders nothing:
+# "No formats found").  Make it here, in the package image (/usr is
+# archived after this finalizer); the installed system gets the same
+# file and the service finds it current.
+if [[ -x $PI/usr/bin/dot ]]; then
+	GV=$PI/usr/lib/amd64/graphviz
+	/usr/sbin/chroot $PI /usr/bin/dot -c
+	[[ -s $GV/config6 ]]
+	ls -l $GV/config6
+fi
+exit 0

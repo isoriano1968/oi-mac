@@ -1,0 +1,113 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+# The GNOME desktop and the OI Mac components (publisher oi-local).
+# Many of these names are OI's obsolete GNOME 2 packages (gdm,
+# gnome-session, nautilus, eog, gnome-terminal, ...); ours (publisher
+# oi-local, locked by the userland incorporation) replace them.  pkglint
+# only sees OI's catalog and takes them for dependencies on obsolete
+# packages, hence pkg.linted (action005) on every dependency of this file.
+
+depend type=require fmri=pkg:/system/boot/loader pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/SUNWcs pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/oi-apple-live pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/apple/oi-apple-updater pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/apple/macbookpro-2017 pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/apple/hidpi pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/drm-core pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/drm-helpers pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/drm-kms pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/drmadm pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/linuxkpi pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/amdgpu pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/libportal pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/audio/gstreamer/plugin/gtk4 pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/network/urtwn pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/service/gnome/desktop-cache pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/colord-gtk pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/font/truetype/cantarell pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/libspelling pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/gnome-autoar pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/server/xorg/driver/xorg-video-illumosfb pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/applegmux pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/audio/audiohd pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/input/atopcase pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/input/appletb pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/service/hal pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/usbvc pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/sensor/applesmc pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/driver/graphics/drm-devlink pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/hal/storage-fuse pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/hal/probe-storage-gpt pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/gnome-video-effects pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/library/accountsservice pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/desktop/gnome/apple-media-keys pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/file-system/fstyp-ntfs pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/hal/removable-media-policy pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/desktop/preference/mac-input pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/gsound pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/applesmc-fancurve pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/editor/vscodium pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/audio/gstreamer pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/audio/gstreamer/plugin/good pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/desktop/system-monitor/mac-sensors pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/service/image/colord pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/server/xorg/driver/xorg-input-keyboard pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/server/xorg/driver/xorg-input-mouse pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/library/polkit pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/web/browser/chromium pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/audio/pulseaudio pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/font/console/spleen pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/media/libva-utils pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/graphics/libva pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/library/libdrm pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/duktape pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/geoclue pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/library/spirv-tools pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/file-system/ntfsprogs pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/firmware/amdgpu-polaris pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/firmware/urtwn pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/server/xephyr pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/server/xorg pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/server/xserver-common pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/x11/library/mesa pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/media/mikmod pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/geocode-glib-2 pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/evolution-data-server pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/terminal/gnome-terminal pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/search/tinysparql pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/gtk4 pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/gnome/gcr-4 pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/libgweather pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/gnome-screenshot pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/preferences/control-center pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/desktop/system-monitor/gnome-system-monitor pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/media/cheese pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/gnome-session pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/library/desktop/libgdm pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/display-manager/gdm pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/preferences/gnome-tweaks pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/gnome-settings-daemon pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/image/viewer/eog pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/window-manager/mutter pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/gnome-shell pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/disk-analyzer/baobab pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/image/gnome-backgrounds pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/desktop/calculator/gnome-calculator pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/editor/gnome-text-editor pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/file-manager/nautilus pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/media/showtime pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/system/font/truetype/adwaita pkg.linted.pkglint.action005=true
+depend type=require fmri=pkg:/gnome/gnome-shell/extension/dash-to-dock pkg.linted.pkglint.action005=true

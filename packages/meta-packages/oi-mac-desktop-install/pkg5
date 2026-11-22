@@ -1,0 +1,7 @@
+{
+    "dependencies": [],
+    "fmris": [
+        "group/oi-mac/desktop_install"
+    ],
+    "name": "oi-mac-desktop-install"
+}

@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# oi-apple-install -- "Install OpenIndiana" on the OI-Apple live desktop:
+# runs OpenIndiana's text installer as root in this terminal.  The
+# installer copies the live system (with its kernel, loader, drivers and
+# desktop, all from packages) onto the disk chosen in it, which may also be
+# a USB disk.  svc:/system/oi-apple-live finishes the job at the first boot
+# from that disk.
+#
+PATH=/usr/sbin:/usr/bin:/sbin
+export PATH
+if [ ! -f /.livecd ]; then
+	echo "oi-apple-install: this is not the live system." >&2
+	exit 1
+fi
+[ "$(id -u)" = 0 ] || exec /usr/bin/pfexec /bin/sh "$0" "$@"
+cat <<EOT
+Install OpenIndiana (OI-Apple)
+
+  Keys in the installer: F2 = continue, F3 = back, F9 = quit
+  (on a Mac keyboard: Fn+2, Fn+3, Fn+9; Esc+2 / Esc+3 also work).
+  The disk you choose is erased.
+
+EOT
+TERM=${TERM:-xterm-256color} /usr/bin/text-install
+rc=$?
+echo
+echo "The installer ended (exit status $rc). Press Enter to close."
+read x
+exit $rc

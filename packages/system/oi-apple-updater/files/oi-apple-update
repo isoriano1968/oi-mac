@@ -1,0 +1,159 @@
+#!/bin/ksh93
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+# oi-apple-update -- the OI-Apple Updater: installs the OI-Apple packages
+# this Mac needs (metapackages/oi-apple and group/apple/<group> from
+# /usr/share/oi-apple/models.conf) from the publisher oi-local into a new
+# boot environment.  See oi-apple-update(8).
+#
+PATH=/usr/sbin:/usr/bin
+export PATH
+PROG=oi-apple-update
+CONF=/usr/share/oi-apple/models.conf
+UNLOCK=/usr/share/oi-apple/unlock.list
+PUB=oi-local
+
+usage() {
+	cat >&2 <<EOT
+usage: $PROG [-n] [-1] [-R root] [-g origin]... [-m model] [group...]
+  -n         dry run: show the plan and what pkg would do, change nothing
+  -1         activate the new boot environment for the next boot only
+  -R root    install into the image at root (e.g. /a from the installer's
+             shell) instead of a new boot environment
+  -g origin  add an origin to $PUB (a .p5p file, a directory or an
+             http(s) URL); default: the OI-Apple archive on mounted media
+  -m model   use this model instead of the one smbios reports
+  group...   these groups instead of the ones models.conf names
+EOT
+	exit 2
+}
+
+die() { print -u2 "$PROG: $*"; exit 1; }
+
+DRY= ONCE= ROOT= MODEL= ORIGINS=
+while getopts "n1R:g:m:" o; do
+	case $o in
+	n) DRY=1 ;;
+	1) ONCE=1 ;;
+	R) ROOT=$OPTARG ;;
+	g) ORIGINS="$ORIGINS $OPTARG" ;;
+	m) MODEL=$OPTARG ;;
+	*) usage ;;
+	esac
+done
+shift $((OPTIND - 1))
+[[ -n $DRY || $(id -u) == 0 ]] || exec pfexec "$0" "$@"
+[[ -r $CONF ]] || die "$CONF missing"
+PKG="pkg"
+[[ -n $ROOT ]] && PKG="pkg -R $ROOT"
+
+# 1. Is this a Mac, which one, which groups.
+SYS=$(smbios -t SMB_TYPE_SYSTEM 2>/dev/null)
+VENDOR=$(print -r -- "$SYS" | nawk -F': *' '/Manufacturer:/ { print $2; exit }')
+[[ -z $MODEL ]] && MODEL=$(print -r -- "$SYS" | nawk -F': *' '/Product:/ { print $2; exit }')
+if [[ $VENDOR != "Apple Inc." ]] && (( $# == 0 )); then
+	die "not a Mac (smbios manufacturer: ${VENDOR:-unknown}); name the groups to install anyway"
+fi
+
+PCI=$(prtconf -pv 2>/dev/null | nawk '
+	/vendor-id:/ { v = $2 } /device-id:/ { d = $2;
+	    sub(/^0+/, "", v); sub(/^0+/, "", d); print v "," d }' | sort -u)
+
+if (( $# > 0 )); then
+	GROUPS="$*"
+else
+	GROUPS=
+	while read kw pat rest; do
+		[[ $kw == model ]] || continue
+		[[ $MODEL == $pat ]] || continue
+		GROUPS=$rest; break
+	done < $CONF
+	while read kw id grp; do
+		case $kw in
+		pci)	print -r -- "$PCI" | grep -qx "$id" &&
+			    [[ " $GROUPS " != *" $grp "* ]] && GROUPS="$GROUPS $grp" ;;
+		no-pci)	print -r -- "$PCI" | grep -q "^$id," &&
+			    GROUPS=$(print -- " $GROUPS " | sed "s/ $grp / /g; s/drm-[a-z0-9-]*//g") ;;
+		esac
+	done < $CONF
+fi
+GROUPS=$(print -- $GROUPS)
+[[ -n $GROUPS ]] || die "no groups for model $MODEL"
+
+# 2. The osnet build must be the one oi-local's kernel packages are made for.
+WANT=$(nawk '$1 == "osnet" { print $2 }' $CONF)
+HAVE=$($PKG list -H -v consolidation/osnet/osnet-incorporation 2>/dev/null |
+    sed 's/.*@\([^:]*\):.*/\1/; s/^\([^,]*\),[^-]*/\1/')
+[[ $HAVE == $WANT* ]] ||
+    die "this system runs osnet ${HAVE:-unknown}, oi-local is built for $WANT: rebuild needed (osnet-apple), or update OpenIndiana to that build first"
+
+print "OI-Apple Updater"
+print "  model:   ${MODEL:-unknown}"
+print "  osnet:   $HAVE"
+print "  groups:  $GROUPS"
+print "  target:  ${ROOT:-a new boot environment}"
+
+# 3. The publisher and its origins: the archive on the OI-Apple media
+# (mounted at /.cdrom on the live system, or found on removable media).
+if [[ -z $ORIGINS ]]; then
+	for p in /.cdrom/oi-apple/*.p5p /media/*/oi-apple/*.p5p; do
+		[[ -f $p ]] && ORIGINS="$ORIGINS $p"
+	done
+fi
+G=
+for o in $ORIGINS; do
+	[[ $o == /* && -e $o ]] && o=file://$o
+	G="$G -g $o"
+done
+if [[ -n $DRY ]]; then
+	print "  origins: ${ORIGINS:-(as configured)}"
+else
+	if [[ -n $G ]]; then
+		$PKG set-publisher $G $PUB || die "pkg set-publisher failed"
+	fi
+	$PKG publisher $PUB >/dev/null 2>&1 || die "publisher $PUB has no origin: use -g"
+	# 4. version locks of the packages oi-local replaces
+	F=$(grep -v '^#' $UNLOCK | sed 's/^/facet.version-lock./; s/$/=false/')
+	[[ -n $F ]] && $PKG change-facet $F >/dev/null 2>&1
+fi
+
+PKGS="metapackages/oi-apple"
+for g in $GROUPS; do PKGS="$PKGS group/apple/$g"; done
+
+# 5. Install: into the alternate root, or a new boot environment.
+if [[ -n $DRY ]]; then
+	$PKG install -nv $PKGS
+	exit $?
+fi
+if [[ -n $ROOT ]]; then
+	$PKG install --accept $PKGS
+	rc=$?
+	(( rc == 0 || rc == 4 )) || die "pkg install failed ($rc)"
+	bootadm update-archive -R "$ROOT"
+	print "Installed into $ROOT."
+	exit 0
+fi
+BE=oi-apple-$(date +%Y%m%d-%H%M)
+pkg install --accept --be-name $BE --no-backup-be $PKGS
+rc=$?
+(( rc == 4 )) && { print "Nothing to do: everything is up to date."; exit 0; }
+(( rc == 0 )) || die "pkg install failed ($rc)"
+if beadm list -H $BE >/dev/null 2>&1; then
+	if [[ -n $ONCE ]]; then
+		beadm activate -t $BE && print "$BE is active for the next boot only."
+	fi
+	print "Reboot to use $BE; the previous boot environment stays in the boot menu."
+else
+	print "Installed into the running boot environment."
+fi
+exit 0

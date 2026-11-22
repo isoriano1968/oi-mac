@@ -1,0 +1,91 @@
+#!/bin/ksh93
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+# distro_const finalizer for the OI Mac media (oi-mac-gnome.xml), after
+# oi-mac-publishers: the build gate for the package image.  The media
+# install a group package (group/oi-mac/desktop_install); this checks that
+# what a live desktop and an installed system cannot do without is really
+# in the image, and stops the build otherwise.  ISO v1 to v8 lacked pkg,
+# dbus-launch, xinit and the fonts: nothing required them, and the tests
+# ran pkg from the build host, never inside the image.
+#
+# Args (as every DC finalizer): reader socket, pkg image area, tmp dir,
+# boot archive build area, media area.
+#
+if [ "$#" != "5" ] ; then
+	print -u2 "Usage: $0: Requires 5 args"
+	exit 1
+fi
+IMG=$2
+PKG="/usr/bin/pkg -R $IMG"
+bad=0
+
+# the group and the packages behind the must-have files
+PKGS="group/oi-mac/desktop_install package/pkg system/library/dbus/dbus-x11
+    x11/session/xinit x11/xrdb x11/xset x11/xrandr x11/xhost x11/xprop
+    x11/xmodmap x11/session/sessreg gnome/gnome-session
+    system/display-manager/gdm file/gnu-coreutils
+    system/font/truetype/dejavu system/font/truetype/liberation
+    system/font/xorg/xorg-core gnome/gnome-keyring library/gnome/gvfs
+    desktop/xdg/xdg-utils system/network/wificonfig service/network/ssh
+    security/sudo"
+for p in $PKGS; do
+	if ! $PKG list -H $p >/dev/null 2>&1; then
+		print -u2 "must-have: package $p is not installed"
+		bad=1
+	fi
+done
+
+# files: a package can be installed and still miss what matters
+FILES="usr/bin/pkg usr/bin/dbus-launch usr/bin/dbus-daemon usr/bin/xinit
+    usr/bin/xrdb usr/bin/xset usr/bin/xrandr usr/bin/sessreg
+    usr/bin/gnome-session usr/sbin/gdm usr/bin/realpath
+    usr/bin/gnome-keyring-daemon usr/libexec/gvfsd usr/bin/xdg-open
+    usr/bin/zenity sbin/wificonfig usr/bin/ssh usr/bin/sudo
+    etc/gdm/custom.conf"
+for f in $FILES; do
+	if [[ ! -e $IMG/$f ]]; then
+		print -u2 "must-have: /$f is missing"
+		bad=1
+	fi
+done
+for d in usr/share/fonts/TrueType/dejavu usr/share/fonts/TrueType/liberation \
+    usr/share/fonts/X11/misc; do
+	if [[ -z $(ls $IMG/$d 2>/dev/null) ]]; then
+		print -u2 "must-have: /$d is empty or missing"
+		bad=1
+	fi
+done
+
+# the installed system's publishers: hipster with an origin, oi-local and
+# amix sticky (oi-mac-publishers), nothing of the build
+pub=$($PKG publisher -H -F tsv 2>&1)
+print -- "$pub"
+for p in oi-local amix openindiana.org; do
+	if ! print -- "$pub" | /usr/bin/nawk -F'\t' -v p=$p '$1 == p {f=1} END {exit !f}'; then
+		print -u2 "must-have: publisher $p is not configured"
+		bad=1
+	fi
+done
+if ! print -- "$pub" | /usr/bin/grep -F 'https://pkg.openindiana.org/hipster/' >/dev/null &&
+    ! print -- "$pub" | /usr/bin/grep -F 'http://pkg.openindiana.org/hipster/' >/dev/null; then
+	print -u2 "must-have: openindiana.org has no hipster origin"
+	bad=1
+fi
+
+if (( bad )); then
+	print -u2 "$0: the image lacks must-haves, build stopped"
+	exit 1
+fi
+print "must-have: all present"
+exit 0

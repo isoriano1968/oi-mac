@@ -1,0 +1,86 @@
+#!/bin/ksh93
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+# distro_const finalizer for the OI-Apple media (oi-apple-text.xml,
+# oi-apple-gnome.xml).  Runs after gen_cd_content, so what it adds is on
+# the medium but not in the installer's copy list (the installed system
+# gets its software from packages only):
+#   1. the OI Extras boot menu: "Boot with [2] CPUs" (-B boot-ncpus=2; the
+#      MacBookPro14,3 can hang starting all of them);
+#   2. /oi-apple/oi-apple-<osnet>.p5p: metapackages/oi-apple, the
+#      group/apple packages and what they need from oi-local, the first
+#      origin of oi-apple-update (no network needed); for OI Mac (AMIX_URL
+#      set) all of the image's oi-local repository, and amix.p5p.
+# Args (as every DC finalizer): reader socket, pkg image area, tmp dir,
+# boot archive build area, media area.  Settings: oi-apple-media.conf
+# next to this script (written by build-media.sh).
+#
+if [ "$#" != "5" ] ; then
+	print -u2 "Usage: $0: Requires 5 args"
+	exit 1
+fi
+IMG=$2
+. "$(dirname "$0")/oi-apple-media.conf" || exit 1
+set -e
+
+# 1. boot menu
+M=$IMG/boot/menu.rc.local
+grep -q 'set extrasmenu_caption\[3\]' $M
+grep -q 'oi-apple-media-mod' $M || cat >> $M <<'EOT'
+
+\ OI-Apple (oi-apple-media-mod): start only two CPUs
+: init_ncpus2
+	s" boot-ncpus=2" extras_enabled? if
+		toggle_menuitem ( n -- n )
+	then
+;
+
+: toggle_ncpus2
+	s" boot-ncpus=2" 2dup extras_enabled? if
+		extras_disable
+	else
+		extras_enable
+	then
+	toggle_menuitem ( n -- n )
+	menu-redraw
+	TRUE
+;
+
+set extrasmenu_init[5]="init_ncpus2"
+set extrasmenu_caption[5]="Only [2] CPUs.......... Off"
+set extrastoggled_text[5]="Only [2] CPUs.......... On"
+set extrasmenu_command[5]="toggle_ncpus2"
+set extrasmenu_keycode[5]=50
+set extrasansi_caption[5]="Only ^[1m2^[m CPUs.......... ^[34;1mOff^[m"
+set extrastoggled_ansi[5]="Only ^[1m2^[m CPUs.......... ^[32;7mOn^[m"
+EOT
+
+# 2. the updater's package archive(s)
+mkdir -p $IMG/oi-apple
+P=$IMG/oi-apple/oi-apple-$OSNET_BUILD.p5p
+rm -f $P
+if [[ -n ${AMIX_URL:-} ]]; then
+	# OI Mac: the image's repositories hold exactly its set: all of it
+	/usr/bin/pkgrecv -s "$OI_LOCAL_URL" -a -d $P '*'
+	A=$IMG/oi-apple/amix.p5p
+	rm -f $A
+	/usr/bin/pkgrecv -s "$AMIX_URL" -a -d $A '*'
+	ls -l $A
+else
+	/usr/bin/pkgrecv -s "$OI_LOCAL_URL" -a -d $P -r \
+	    metapackages/oi-apple $(/usr/bin/pkgrepo list -H -s "$OI_LOCAL_URL" \
+	    'group/apple/*' | nawk '{ print $2 }' | sort -u)
+fi
+/usr/bin/pkgrepo list -s $P | nawk 'NR > 1 { n++ } END { print n " packages in the updater archive" }'
+ls -l $P
+exit 0

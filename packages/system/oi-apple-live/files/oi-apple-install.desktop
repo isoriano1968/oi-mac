@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Install OpenIndiana
+Comment=Install this system (with the Apple drivers) onto a disk of this Mac
+Exec=gnome-terminal --title="Install OpenIndiana" --geometry=100x34 -- /usr/bin/oi-apple-install
+TryExec=/etc/oi-apple/live/oi-apple-install
+Icon=system-software-install
+Terminal=false
+Categories=System;

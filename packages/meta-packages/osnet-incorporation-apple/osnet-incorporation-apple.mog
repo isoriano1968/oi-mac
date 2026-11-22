@@ -1,0 +1,7 @@
+#
+# Copyright 2026 isoriano1968. CDDL-1.0.
+#
+# OI's osnet-incorporation 23395 as $(NEW) on oi-local (see Makefile).
+<transform set name=pkg.fmri -> edit value '@[^:]*' '@$(NEW)'>
+<transform set name=pkg.fmri -> edit value 'pkg://[^/]*/' 'pkg://oi-local/'>
+<transform set name=pkg.description -> edit value '$' ' (OI-Apple: republished on oi-local, as osnet-apple is made for this build)'>

@@ -1,0 +1,1876 @@
+# verify-accept -- pkg verify findings accepted on a system installed from
+# the OI Mac r1 medium; read by verify-check.sh.  One finding per line:
+#	package|action: path|error
+# Nothing else is accepted.  Made from the v10d install (2026-11-22).
+#
+# desktop/shared-mime-info, usr/share/mime: DC's
+#   slimcd_pre_boot_archive_pkg_image_mod runs the mime-types-cache method
+#   in the image; update-mime-database writes the tree again as root:root
+#   0644, and the caches and six XML files with other content (they cover
+#   the MIME types of all packages in the image).
+# system/boot/loader, boot/cdboot: DC's create_iso runs mkisofs with
+#   -boot-info-table, which writes the table into that file in the image.
+#
+# print/cups, var/cache/cups (expected 0775, found 0770): cupsd sets 0770
+#   itself when it starts; OI's manifest is wrong, plain OI fails the same.
+#   Known issue of r1, upstream fix in notes/oi-mac-r1-upstream/.
+# system/boot/real-mode, boot/solaris/bootenv.rc (expected root:sys, found
+#   root:root): the installer (ICT) writes it again by rename and loses the
+#   group; plain OI the same.  Known issue of r1, upstream fix as above.
+#
+desktop/shared-mime-info|file: usr/share/mime/image/tiff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/tiff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.adobe.photoshop.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.adobe.photoshop.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.djvu+multipage.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.djvu+multipage.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.djvu.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.djvu.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.dwg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.dwg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.dxf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.dxf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.microsoft.icon.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.microsoft.icon.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.ms-modi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.ms-modi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.rn-realpix.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.rn-realpix.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.wap.wbmp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.wap.wbmp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.zbrush.pcx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/vnd.zbrush.pcx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/webp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/webp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/wmf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/wmf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-3ds.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-3ds.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-adobe-dng.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-adobe-dng.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-applix-graphics.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-applix-graphics.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-bzeps.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-bzeps.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-canon-cr2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-canon-cr2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-canon-cr3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-canon-cr3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-canon-crw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-canon-crw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-cmu-raster.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-cmu-raster.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-compressed-xcf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-compressed-xcf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-dcraw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-dcraw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-dds.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-dds.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-dib.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-dib.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-eps.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-eps.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-exr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-exr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-fpx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-fpx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-fuji-raf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-fuji-raf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-gimp-gbr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-gimp-gbr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-gimp-gih.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-gimp-gih.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-gimp-pat.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-gimp-pat.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-gzeps.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-gzeps.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-icns.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-icns.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-ilbm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-ilbm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-jng.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-jng.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-jp2-codestream.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-jp2-codestream.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-kodak-dcr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-kodak-dcr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-kodak-k25.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-kodak-k25.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-kodak-kdc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-kodak-kdc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-lwo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-lwo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-lws.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-lws.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-macpaint.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-macpaint.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-minolta-mrw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-minolta-mrw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-msod.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-msod.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-niff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-niff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-nikon-nef.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-nikon-nef.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-nikon-nrw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-nikon-nrw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-olympus-orf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-olympus-orf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-panasonic-rw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-panasonic-rw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-panasonic-rw2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-panasonic-rw2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-pentax-pef.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-pentax-pef.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-photo-cd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-photo-cd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-pict.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-pict.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-anymap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-anymap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-bitmap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-bitmap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-graymap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-graymap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-pixmap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-portable-pixmap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-quicktime.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-quicktime.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-rgb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-rgb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-sgi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-sgi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-sigma-x3f.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-sigma-x3f.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-skencil.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-skencil.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-sony-arw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-sony-arw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-sony-sr2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-sony-sr2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-sony-srf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-sony-srf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-sun-raster.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-sun-raster.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-tga.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-tga.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-tiff-multipage.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-tiff-multipage.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-win-bitmap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-win-bitmap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-xbitmap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-xbitmap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-xcf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-xcf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-xcursor.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-xcursor.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-xfig.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-xfig.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-xpixmap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-xpixmap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/x-xwindowdump.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/x-xwindowdump.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/blockdevice.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/blockdevice.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/chardevice.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/chardevice.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/directory.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/directory.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/fifo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/fifo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/mount-point.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/mount-point.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/socket.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/socket.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/inode/symlink.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/inode/symlink.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/magic|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/magic|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/magic|Hash
+desktop/shared-mime-info|file: usr/share/mime/message/delivery-status.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/delivery-status.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/message/disposition-notification.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/disposition-notification.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/message/external-body.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/external-body.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/message/news.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/news.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/message/partial.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/partial.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/message/rfc822.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/rfc822.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/message/x-gnu-rmail.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/message/x-gnu-rmail.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/mime.cache|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/mime.cache|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/mime.cache|Hash
+desktop/shared-mime-info|file: usr/share/mime/model/3mf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/3mf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/gltf+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/gltf+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/gltf-binary.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/gltf-binary.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/iges.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/iges.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/mtl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/mtl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/obj.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/obj.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/stl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/stl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/model/vrml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/model/vrml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/alternative.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/alternative.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/appledouble.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/appledouble.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/digest.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/digest.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/encrypted.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/encrypted.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/mixed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/mixed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/related.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/related.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/report.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/report.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/signed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/signed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/multipart/x-mixed-replace.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/multipart/x-mixed-replace.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/subclasses|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/subclasses|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/subclasses|Hash
+desktop/shared-mime-info|file: usr/share/mime/text/cache-manifest.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/cache-manifest.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/calendar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/calendar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/css.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/css.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/csv-schema.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/csv-schema.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/csv.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/csv.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/enriched.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/enriched.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/html.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/html.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/htmlh.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/htmlh.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/javascript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/javascript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/jscript.encode.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/jscript.encode.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/julia.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/julia.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/markdown.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/markdown.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/org.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/org.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/plain.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/plain.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/rfc822-headers.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/rfc822-headers.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/richtext.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/richtext.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/rust.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/rust.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/sgml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/sgml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/spreadsheet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/spreadsheet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/tab-separated-values.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/tab-separated-values.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/tcl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/tcl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/troff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/troff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/turtle.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/turtle.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vbscript.encode.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vbscript.encode.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vbscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vbscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vcard.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vcard.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.familysearch.gedcom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.familysearch.gedcom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.graphviz.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.graphviz.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.rn-realtext.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.rn-realtext.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.senx.warpscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.senx.warpscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.sun.j2me.app-descriptor.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.sun.j2me.app-descriptor.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.trolltech.linguist.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.trolltech.linguist.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.wap.wml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.wap.wml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.wap.wmlscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vnd.wap.wmlscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/vtt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/vtt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-adasrc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-adasrc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-authors.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-authors.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-basic.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-basic.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-bibtex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-bibtex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-blueprint.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-blueprint.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-c++hdr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-c++hdr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-c++src.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-c++src.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-changelog.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-changelog.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-chdr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-chdr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-cmake.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-cmake.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-cobol.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-cobol.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-common-lisp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-common-lisp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-component.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-component.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-copying.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-copying.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-credits.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-credits.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-crystal.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-crystal.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-csharp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-csharp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-csrc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-csrc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-dbus-service.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-dbus-service.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-dcl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-dcl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-devicetree-binary.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-devicetree-binary.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-devicetree-source.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-devicetree-source.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-dsl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-dsl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-dsrc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-dsrc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-eiffel.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-eiffel.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-elixir.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-elixir.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-emacs-lisp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-emacs-lisp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-erlang.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-erlang.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-fortran.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-fortran.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-gcode-gx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-gcode-gx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-genie.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-genie.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-gettext-translation-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-gettext-translation-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-gettext-translation.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-gettext-translation.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-gherkin.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-gherkin.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-go.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-go.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-google-video-pointer.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-google-video-pointer.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-gradle.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-gradle.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-groovy.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-groovy.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-haskell.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-haskell.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-idl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-idl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-imelody.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-imelody.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-install.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-install.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-iptables.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-iptables.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-java.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-java.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-kaitai-struct.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-kaitai-struct.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-kotlin.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-kotlin.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-ldif.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-ldif.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-lilypond.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-lilypond.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-literate-haskell.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-literate-haskell.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-log.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-log.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-lua.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-lua.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-makefile.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-makefile.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-matlab.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-matlab.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-maven+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-maven+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-meson.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-meson.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-microdvd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-microdvd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-moc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-moc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-modelica.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-modelica.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-mof.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-mof.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-mpl2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-mpl2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-mpsub.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-mpsub.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-mrml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-mrml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-ms-regedit.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-ms-regedit.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-mup.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-mup.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-nfo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-nfo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-nim.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-nim.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-nimscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-nimscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-objc++src.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-objc++src.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-objcsrc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-objcsrc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-ocaml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-ocaml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-ocl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-ocl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-ooc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-ooc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-opencl-src.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-opencl-src.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-opml+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-opml+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-pascal.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-pascal.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-patch.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-patch.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-python.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-python.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-python3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-python3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-qml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-qml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-readme.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-readme.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-reject.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-reject.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-rpm-spec.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-rpm-spec.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-rst.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-rst.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-sagemath.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-sagemath.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-sass.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-sass.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-scala.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-scala.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-scheme.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-scheme.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-scons.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-scons.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-scss.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-scss.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-setext.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-setext.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-ssa.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-ssa.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-subviewer.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-subviewer.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-svhdr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-svhdr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-svsrc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-svsrc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-systemd-unit.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-systemd-unit.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-tex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-tex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-texinfo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-texinfo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-todo-txt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-todo-txt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-troff-me.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-troff-me.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-troff-mm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-troff-mm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-troff-ms.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-troff-ms.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-twig.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-twig.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-txt2tags.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-txt2tags.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-typst.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-typst.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-uil.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-uil.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-uri.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-uri.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-uuencode.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-uuencode.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-vala.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-vala.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-vb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-vb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-verilog.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-verilog.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-vhdl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-vhdl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-xmi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-xmi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x-xslfo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x-xslfo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/x.gcode.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/x.gcode.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/text/xmcd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/text/xmcd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/treemagic|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/treemagic|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/types|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/types|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/types|Hash
+desktop/shared-mime-info|file: usr/share/mime/version|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/version|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/3gpp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/3gpp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/3gpp2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/3gpp2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/annodex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/annodex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/dv.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/dv.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/isivideo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/isivideo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/mj2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/mj2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/mp2t.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/mp2t.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/mp4.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/mp4.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/mpeg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/mpeg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/quicktime.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/quicktime.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.avi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.avi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.mpegurl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.mpegurl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.radgamettools.bink.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.radgamettools.bink.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.radgamettools.smacker.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.radgamettools.smacker.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.rn-realvideo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.rn-realvideo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.vivo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.vivo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.youtube.yt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/vnd.youtube.yt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/wavelet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/wavelet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/webm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/webm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-anim.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-anim.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-flic.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-flic.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-flv.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-flv.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-javafx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-javafx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-matroska-3d.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-matroska-3d.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-matroska.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-matroska.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-mjpeg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-mjpeg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-mng.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-mng.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-ms-wmv.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-ms-wmv.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-nsv.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-nsv.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-ogm+ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-ogm+ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-sgi-movie.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-sgi-movie.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/video/x-theora+ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/video/x-theora+ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/audio-cdda.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/audio-cdda.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/audio-dvd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/audio-dvd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/audio-player.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/audio-player.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-bd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-bd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-cd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-cd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-dvd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-dvd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-hddvd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/blank-hddvd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/ebook-reader.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/ebook-reader.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/image-dcf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/image-dcf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/image-picturecd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/image-picturecd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/ostree-repository.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/ostree-repository.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/software.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/software.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/unix-software.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/unix-software.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-bluray.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-bluray.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-dvd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-dvd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-hddvd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-hddvd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-svcd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-svcd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-vcd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/video-vcd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-content/win32-software.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-content/win32-software.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/x-epoc/x-sisx-app.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/x-epoc/x-sisx-app.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-libgrx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-libgrx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-linux-psf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-linux-psf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-pcf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-pcf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-speedo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-speedo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-sunos-news.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-sunos-news.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-tex-tfm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-tex-tfm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-tex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-tex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-ttx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-ttx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-type1.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-type1.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-vfont.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-vfont.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gameboy-color-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gameboy-color-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gameboy-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gameboy-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gamecube-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gamecube-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gamegear-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gamegear-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gba-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gba-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gd-rom-cue.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gd-rom-cue.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gdbm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gdbm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gdscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gdscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-genesis-32x-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-genesis-32x-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-genesis-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-genesis-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gerber-job.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gerber-job.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gettext-translation.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gettext-translation.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-glade.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-glade.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gnucash.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gnucash.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gnumeric.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gnumeric.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gnuplot.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gnuplot.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-go-sgf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-go-sgf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-project.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-project.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-resource.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-resource.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-scene.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-scene.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-shader.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-godot-shader.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-graphite.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-graphite.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gtk-builder.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gtk-builder.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gtktalog.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gtktalog.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gz-font-linux-psf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gz-font-linux-psf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gzdvi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gzdvi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gzpdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gzpdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-gzpostscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-gzpostscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-hdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-hdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-hfe-floppy-image.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-hfe-floppy-image.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-hwp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-hwp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-hwt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-hwt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ica.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ica.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-iff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-iff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ipod-firmware.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ipod-firmware.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ips-patch.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ips-patch.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ipynb+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ipynb+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-iso9660-appimage.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-iso9660-appimage.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-it87.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-it87.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-jce-keystore.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-jce-keystore.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-jnlp-file.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-jnlp-file.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-keystore.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-keystore.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-pack200.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-java-pack200.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-java.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-java.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-jbuilder-project.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-jbuilder-project.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-karbon.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-karbon.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kchart.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kchart.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexi-connectiondata.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexi-connectiondata.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexiproject-shortcut.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexiproject-shortcut.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexiproject-sqlite2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexiproject-sqlite2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexiproject-sqlite3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kexiproject-sqlite3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kformula.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kformula.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-killustrator.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-killustrator.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kivio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kivio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kontour.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kontour.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kpovmodeler.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kpovmodeler.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kpresenter.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kpresenter.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-krita.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-krita.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kspread-crypt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kspread-crypt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kspread.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kspread.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ksysv-package.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ksysv-package.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kugar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kugar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kword-crypt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kword-crypt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-kword.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-kword.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lha.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lha.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lhz.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lhz.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lmdb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lmdb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lrzip-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lrzip-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lrzip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lrzip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lyx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lyx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lz4-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lz4-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lz4.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lz4.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzip-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzip-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzma-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzma-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzma.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzma.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzop.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzop.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzpdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-lzpdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-m4.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-m4.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-macbinary.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-macbinary.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-magicpoint.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-magicpoint.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mame-chd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mame-chd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-markaby.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-markaby.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-matroska.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-matroska.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mif.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mif.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mimearchive.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mimearchive.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mobipocket-ebook.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mobipocket-ebook.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-modrinth-modpack+zip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-modrinth-modpack+zip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mozilla-bookmarks.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mozilla-bookmarks.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-ne-executable.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-ne-executable.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-pdb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-pdb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-shortcut.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-shortcut.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-wim.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ms-wim.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-msdownload.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-msdownload.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-msi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-msi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mswinurl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mswinurl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-mswrite.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-mswrite.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-msx-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-msx-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-n64-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-n64-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nautilus-link.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nautilus-link.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-navi-animation.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-navi-animation.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-neo-geo-pocket-color-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-neo-geo-pocket-color-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-neo-geo-pocket-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-neo-geo-pocket-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nes-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nes-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-netcdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-netcdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-netshow-channel.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-netshow-channel.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nintendo-3ds-executable.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nintendo-3ds-executable.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nintendo-3ds-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nintendo-3ds-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nintendo-ds-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nintendo-ds-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nuscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nuscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-nzb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-nzb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-object.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-object.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ole-storage.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ole-storage.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-oleo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-oleo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-openvpn-profile.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-openvpn-profile.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-openzim.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-openzim.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pagemaker.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pagemaker.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pak.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pak.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-par2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-par2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-partial-download.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-partial-download.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pc-engine-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pc-engine-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pef-executable.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pef-executable.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-perf-data.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-perf-data.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-perl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-perl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-php.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-php.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pkcs7-certificates.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pkcs7-certificates.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-planperfect.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-planperfect.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pocket-word.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pocket-word.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-powershell.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-powershell.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-profile.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-profile.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pyspread-bz-spreadsheet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pyspread-bz-spreadsheet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-pyspread-spreadsheet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-pyspread-spreadsheet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-python-bytecode.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-python-bytecode.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-qed-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-qed-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-qemu-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-qemu-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-qpress.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-qpress.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-qtiplot.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-qtiplot.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-quattropro.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-quattropro.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-quicktime-media-link.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-quicktime-media-link.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-qw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-qw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-raw-disk-image-xz-compressed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-raw-disk-image-xz-compressed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-raw-floppy-disk-image.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-raw-floppy-disk-image.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-riff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-riff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-rpm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-rpm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ruby.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ruby.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sami.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sami.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-saturn-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-saturn-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sega-cd-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sega-cd-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sega-pico-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sega-pico-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sg1000-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sg1000-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-shar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-shar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-shared-library-la.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-shared-library-la.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sharedlib.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sharedlib.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-shellscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-shellscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-shorten.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-shorten.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-siag.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-siag.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-slp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-slp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sms-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sms-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-source-rpm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-source-rpm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-spss-por.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-spss-por.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-spss-sav.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-spss-sav.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sqlite2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sqlite2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-stuffit.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-stuffit.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-stuffitx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-stuffitx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-subrip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-subrip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sv4cpio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sv4cpio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-sv4crc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-sv4crc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-t602.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-t602.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tarz.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tarz.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tex-gf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tex-gf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tex-pk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tex-pk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tgif.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tgif.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-theme.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-theme.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-thomson-cartridge-memo7.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-thomson-cartridge-memo7.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-thomson-cassette.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-thomson-cassette.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-thomson-sap-image.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-thomson-sap-image.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tiled-tmx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tiled-tmx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tiled-tsx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tiled-tsx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-toutdoux.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-toutdoux.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-trash.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-trash.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-troff-man-compressed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-troff-man-compressed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-troff-man.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-troff-man.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-tzo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-tzo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ufraw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ufraw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ustar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ustar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-vdi-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-vdi-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-vhd-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-vhd-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-vhdx-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-vhdx-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-virtual-boy-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-virtual-boy-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-vmdk-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-vmdk-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wais-source.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wais-source.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wii-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wii-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wii-wad.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wii-wad.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-windows-themepack.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-windows-themepack.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wonderswan-color-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wonderswan-color-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wonderswan-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wonderswan-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wpg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wpg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-wwf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-wwf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-x509-ca-cert.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-x509-ca-cert.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-xar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-xar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-xbel.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-xbel.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-xpinstall.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-xpinstall.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-xz-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-xz-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-xz.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-xz.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-xzpdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-xzpdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-zerosize.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-zerosize.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-zip-compressed-fb2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-zip-compressed-fb2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-zoo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-zoo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-zpaq.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-zpaq.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-zstd-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-zstd-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xhtml+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xhtml+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xliff+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xliff+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xml-dtd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xml-dtd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xml-external-parsed-entity.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xml-external-parsed-entity.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xslt+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xslt+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/xspf+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/xspf+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/yaml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/yaml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/zip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/zip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/zlib.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/zlib.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/zstd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/zstd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/aac.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/aac.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/ac3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/ac3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/amr-wb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/amr-wb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/amr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/amr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/annodex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/annodex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/basic.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/basic.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/flac.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/flac.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/midi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/midi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/mobile-xmf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/mobile-xmf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/mp2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/mp2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/mp4.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/mp4.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/mpeg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/mpeg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/prs.sid.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/prs.sid.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/usac.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/usac.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.audible.aax.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.audible.aax.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.audible.aaxc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.audible.aaxc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.dts.hd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.dts.hd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.dts.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.dts.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.rn-realaudio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.rn-realaudio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.wave.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/vnd.wave.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/webm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/webm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-adpcm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-adpcm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-aifc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-aifc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-aiff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-aiff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-amzxml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-amzxml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-ape.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-ape.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-dff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-dff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-dsf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-dsf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-flac+ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-flac+ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-gsm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-gsm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-iriver-pla.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-iriver-pla.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-it.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-it.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-m4b.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-m4b.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-m4r.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-m4r.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-matroska.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-matroska.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-minipsf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-minipsf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-mo3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-mo3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-mod.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-mod.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-mpegurl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-mpegurl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-ms-asx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-ms-asx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-ms-wma.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-ms-wma.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-musepack.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-musepack.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-opus+ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-opus+ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-pn-audibleaudio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-pn-audibleaudio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-psf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-psf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-psflib.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-psflib.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-riff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-riff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-s3m.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-s3m.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-scpls.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-scpls.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-speex+ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-speex+ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-speex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-speex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-stm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-stm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-tak.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-tak.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-tta.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-tta.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-voc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-voc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-vorbis+ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-vorbis+ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-wavpack-correction.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-wavpack-correction.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-wavpack.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-wavpack.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-xi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-xi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-xm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-xm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/audio/x-xmf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/audio/x-xmf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/chemical/x-pdb.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/chemical/x-pdb.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/font/collection.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/font/collection.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/font/otf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/font/otf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/font/ttf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/font/ttf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/font/woff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/font/woff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/font/woff2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/font/woff2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/generic-icons|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/generic-icons|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/globs|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/globs|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/globs|Hash
+desktop/shared-mime-info|file: usr/share/mime/globs2|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/globs2|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/globs2|Hash
+desktop/shared-mime-info|file: usr/share/mime/icons|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/icons|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/apng.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/apng.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/astc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/astc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/avif.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/avif.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/bmp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/bmp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/cgm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/cgm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/dpx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/dpx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/emf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/emf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/g3fax.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/g3fax.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/gif.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/gif.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/heif.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/heif.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/ief.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/ief.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/jp2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/jp2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/jpeg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/jpeg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/jpm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/jpm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/jpx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/jpx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/jxl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/jxl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/jxr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/jxr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/ktx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/ktx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/ktx2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/ktx2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/openraster.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/openraster.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/png.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/png.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/qoi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/qoi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/rle.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/rle.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/svg+xml-compressed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/svg+xml-compressed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/image/svg+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/image/svg+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/XMLnamespaces|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/XMLnamespaces|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/aliases|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/aliases|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/aliases|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/andrew-inset.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/andrew-inset.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/annodex.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/annodex.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/appinstaller.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/appinstaller.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/appx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/appx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/appxbundle.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/appxbundle.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/atom+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/atom+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/cbor.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/cbor.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/dicom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/dicom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/ecmascript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/ecmascript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/epub+zip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/epub+zip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/fits.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/fits.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/font-tdpfr.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/font-tdpfr.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/geo+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/geo+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/gml+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/gml+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/gnunet-directory.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/gnunet-directory.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/gpx+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/gpx+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/gzip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/gzip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/illustrator.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/illustrator.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/its+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/its+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/java-archive.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/java-archive.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/jrd+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/jrd+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/json-patch+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/json-patch+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/json5.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/json5.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/ld+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/ld+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/mac-binhex40.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/mac-binhex40.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/mathematica.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/mathematica.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/mathml+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/mathml+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/mbox.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/mbox.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/metalink+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/metalink+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/metalink4+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/metalink4+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/msix.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/msix.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/msixbundle.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/msixbundle.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/msword-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/msword-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/msword.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/msword.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/mxf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/mxf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/octet-stream.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/octet-stream.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/oda.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/oda.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/ogg.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/ogg.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/ovf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/ovf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/owl+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/owl+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/oxps.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/oxps.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pgp-encrypted.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pgp-encrypted.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pgp-keys.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pgp-keys.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pgp-signature.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pgp-signature.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs10.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs10.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs10.xml|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs7-mime.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs7-mime.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs7-mime.xml|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs7-signature.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs7-signature.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs7-signature.xml|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs8-encrypted.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs8-encrypted.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs8.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs8.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkcs8.xml|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-cert.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-cert.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-cert.xml|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-crl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-crl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-crl.xml|Hash
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-pkipath.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/pkix-pkipath.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/postscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/postscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/prs.plucker.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/prs.plucker.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/ram.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/ram.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/raml+yaml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/raml+yaml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/rdf+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/rdf+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/relax-ng-compact-syntax.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/relax-ng-compact-syntax.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/rss+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/rss+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/rtf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/rtf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/schema+json.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/schema+json.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/sdp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/sdp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/sieve.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/sieve.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/smil+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/smil+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/sparql-query.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/sparql-query.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/sparql-results+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/sparql-results+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/sql.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/sql.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/toml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/toml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/trig.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/trig.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.adobe.flash.movie.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.adobe.flash.movie.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.amazon.mobi8-ebook.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.amazon.mobi8-ebook.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.android.package-archive.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.android.package-archive.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.appimage.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.appimage.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.keynote.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.keynote.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.mpegurl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.mpegurl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.numbers.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.numbers.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.pages.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.pages.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.pkpass.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.apple.pkpass.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.chess-pgn.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.chess-pgn.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.coffeescript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.coffeescript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.comicbook+zip.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.comicbook+zip.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.comicbook-rar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.comicbook-rar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.corel-draw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.corel-draw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.cups-ppd.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.cups-ppd.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.dart.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.dart.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.dbf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.dbf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.debian.binary-package.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.debian.binary-package.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.efi.img.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.efi.img.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.efi.iso.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.efi.iso.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.emusic-emusic_package.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.emusic-emusic_package.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.flatpak.ref.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.flatpak.ref.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.flatpak.repo.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.flatpak.repo.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.flatpak.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.flatpak.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.framemaker.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.framemaker.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.gerber.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.gerber.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.google-earth.kml+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.google-earth.kml+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.google-earth.kmz.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.google-earth.kmz.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.hp-hpgl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.hp-hpgl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.hp-pcl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.hp-pcl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.iccprofile.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.iccprofile.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.lotus-1-2-3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.lotus-1-2-3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.lotus-wordpro.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.lotus-wordpro.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.microsoft.portable-executable.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.microsoft.portable-executable.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.microsoft.windows.thumbnail-cache.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.microsoft.windows.thumbnail-cache.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.mozilla.xul+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.mozilla.xul+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-access.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-access.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-asf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-asf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-cab-compressed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-cab-compressed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.addin.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.addin.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.sheet.binary.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.sheet.binary.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.sheet.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.sheet.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.template.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.template.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-excel.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-htmlhelp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-htmlhelp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-officetheme.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-officetheme.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.addin.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.addin.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.presentation.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.presentation.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.slide.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.slide.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.slideshow.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.slideshow.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.template.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.template.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-powerpoint.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-publisher.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-publisher.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-tnef.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-tnef.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.drawing.macroenabled.main+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.drawing.macroenabled.main+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.drawing.main+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.drawing.main+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.stencil.macroenabled.main+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.stencil.macroenabled.main+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.stencil.main+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.stencil.main+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.template.macroenabled.main+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.template.macroenabled.main+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.template.main+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-visio.template.main+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-word.document.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-word.document.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-word.template.macroenabled.12.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-word.template.macroenabled.12.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-works.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-works.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-wpl.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-wpl.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-xpsdocument.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.ms-xpsdocument.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.nintendo.snes.rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.nintendo.snes.rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.chart-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.chart-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.chart.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.chart.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.database.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.database.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.formula-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.formula-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.formula.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.formula.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.graphics-flat-xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.graphics-flat-xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.graphics-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.graphics-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.graphics.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.graphics.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.image.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.image.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.presentation-flat-xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.presentation-flat-xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.presentation-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.presentation-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.presentation.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.presentation.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.spreadsheet-flat-xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.spreadsheet-flat-xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.spreadsheet-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.spreadsheet-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.spreadsheet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.spreadsheet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-flat-xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-flat-xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-master.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-master.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-web.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text-web.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.oasis.opendocument.text.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openofficeorg.extension.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openofficeorg.extension.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.presentation.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.presentation.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.slide.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.slide.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.slideshow.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.slideshow.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.presentationml.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.spreadsheetml.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.spreadsheetml.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.wordprocessingml.document.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.wordprocessingml.document.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.wordprocessingml.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.openxmlformats-officedocument.wordprocessingml.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.palm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.palm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.rar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.rar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.rn-realmedia.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.rn-realmedia.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.smaf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.smaf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.snap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.snap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sqlite3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sqlite3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.squashfs.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.squashfs.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.calc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.calc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.chart.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.chart.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.draw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.draw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.impress.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.impress.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.mail.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.mail.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.math.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.math.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.writer.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.stardivision.writer.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.calc.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.calc.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.calc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.calc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.draw.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.draw.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.draw.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.draw.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.impress.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.impress.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.impress.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.impress.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.math.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.math.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.writer.global.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.writer.global.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.writer.template.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.writer.template.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.writer.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.sun.xml.writer.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.symbian.install.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.symbian.install.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.tcpdump.pcap.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.tcpdump.pcap.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.visio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.visio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.wordperfect.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/vnd.wordperfect.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/wasm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/wasm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/winhlp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/winhlp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-7z-compressed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-7z-compressed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-abiword.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-abiword.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ace.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ace.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-alz.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-alz.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-amiga-disk-format.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-amiga-disk-format.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-amipro.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-amipro.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-aportisdoc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-aportisdoc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-apple-diskimage.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-apple-diskimage.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-apple-systemprofiler+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-apple-systemprofiler+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-appleworks-document.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-appleworks-document.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-applix-spreadsheet.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-applix-spreadsheet.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-applix-word.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-applix-word.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-arc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-arc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-archive.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-archive.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-arj.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-arj.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-asar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-asar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-asp.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-asp.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-atari-2600-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-atari-2600-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-atari-7800-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-atari-7800-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-atari-lynx-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-atari-lynx-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-awk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-awk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bat.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bat.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bcpio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bcpio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bittorrent.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bittorrent.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-blender.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-blender.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bps-patch.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bps-patch.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bsdiff.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bsdiff.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzdvi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzdvi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip1-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip1-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip1.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip1.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip2-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip2-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip2.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip2.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip3-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip3-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip3.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzip3.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzpdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzpdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzpostscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-bzpostscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cb7.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cb7.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cbt.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cbt.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-ccmx.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-ccmx.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cdrdao-toc.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cdrdao-toc.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cisco-vpn-settings.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cisco-vpn-settings.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-class-file.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-class-file.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-compress.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-compress.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-compressed-iso.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-compressed-iso.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-compressed-tar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-compressed-tar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-core.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-core.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cpio-compressed.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cpio-compressed.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cpio.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cpio.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-csh.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-csh.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-cue.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-cue.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-dar.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-dar.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-designer.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-designer.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-desktop.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-desktop.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-dia-diagram.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-dia-diagram.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-dia-shape.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-dia-shape.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-discjuggler-cd-image.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-discjuggler-cd-image.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-docbook+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-docbook+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-doom-wad.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-doom-wad.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-dosexec.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-dosexec.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-dreamcast-rom.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-dreamcast-rom.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-dvi.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-dvi.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-e-theme.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-e-theme.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-egon.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-egon.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-eris-link+cbor.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-eris-link+cbor.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-excellon.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-excellon.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-executable.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-executable.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-fds-disk.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-fds-disk.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-fictionbook+xml.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-fictionbook+xml.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-fishscript.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-fishscript.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-fluid.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-fluid.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-afm.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-afm.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-bdf.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-bdf.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-dos.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-dos.xml|Mode: 0644 should be 0444
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-framemaker.xml|Group: 'root (0)' should be 'bin (2)'
+desktop/shared-mime-info|file: usr/share/mime/application/x-font-framemaker.xml|Mode: 0644 should be 0444
+system/boot/loader|file: boot/cdboot|Hash
+print/cups|dir: var/cache/cups|Mode: 0770 should be 0775
+system/boot/real-mode|file: boot/solaris/bootenv.rc|Group: 'root (0)' should be 'sys (3)'

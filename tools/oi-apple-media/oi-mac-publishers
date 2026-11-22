@@ -1,0 +1,153 @@
+#!/bin/ksh93
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+# Copyright 2026 isoriano1968
+#
+# distro_const finalizer for the OI Mac media (oi-mac-gnome.xml), right
+# after im_pop: im_pop has set the post-install publishers (openindiana.org,
+# hipster-encumbered) and removed the build's localhost depots.  This puts
+# oi-local and amix back in front, sticky and without an origin, so the
+# installed system keeps our builds (pkg update does not replace them with
+# hipster's) and names no build host or home directory.  oi-apple-update
+# adds an origin later (the medium's p5p archives).  Then the live boot's
+# /etc/system.d/.self-assembly (apix_enable = 0 of macbookpro-2017).
+#
+# Args (as every DC finalizer): reader socket, pkg image area, tmp dir,
+# boot archive build area, media area.
+#
+if [ "$#" != "5" ] ; then
+	print -u2 "Usage: $0: Requires 5 args"
+	exit 1
+fi
+IMG=$2
+set -e
+PKG="/usr/bin/pkg -R $IMG"
+
+$PKG set-publisher --sticky --search-first oi-local
+$PKG set-publisher --sticky --search-after=oi-local amix
+$PKG set-publisher --sticky openindiana.org
+$PKG publisher
+# nothing may point at the build: no file:// or localhost origin
+if $PKG publisher -F tsv | grep -E 'file:|localhost|127\.0\.0\.1'; then
+	print -u2 "$0: build origin left in the image"
+	exit 1
+fi
+# no record of the build: pkg's cache (manifests the solver fetched,
+# action caches: pkg makes them again when needed)
+# and the history of the build's pkg commands
+rm -rf $IMG/var/pkg/cache/*
+$PKG purge-history
+
+# /etc/system.d for the live boot: bootadm assembles the fragments into
+# .self-assembly (which the kernel reads), but the medium's boot archive is
+# made by distro_const without bootadm.  Same order as bootadm (sorted, no
+# dot files); the installer's bootadm update-archive makes its own.
+SD=$IMG/etc/system.d
+if [[ -d $SD ]]; then
+	rm -f $SD/.self-assembly
+	for f in $(cd $SD && ls | sort); do
+		[[ -f $SD/$f ]] && cat $SD/$f
+	done > $SD/.self-assembly.tmp
+	mv $SD/.self-assembly.tmp $SD/.self-assembly
+	chmod 0644 $SD/.self-assembly
+	grep -n apix_enable $SD/.self-assembly
+fi
+
+# diagnostic images only (build-media.sh with OI_MAC_DIAG=1, never
+# published): every 15 s for the first 3 minutes the state of the live
+# root, SMF and gdm/Xorg, to the console and to the first serial port
+. "$(dirname "$0")/oi-apple-media.conf"
+if [[ $OI_MAC_DIAG == 1 ]]; then
+	D=$IMG/etc/rc2.d/S99oi-mac-diag
+	cat > $D <<'DIAG'
+#!/bin/sh
+# OI-Mac diagnostic image: state of the live boot, every 15 s for 3 min
+diag() {
+	echo "==== oi-mac-diag $(date '+%T') uptime $(uptime)"
+	df -k / /tmp
+	svcs -xv
+	echo "-- files over 1 MB on /, newest first"
+	ls -lt $(find / -mount -type f -size +2048 2>/dev/null) | head -15
+	for f in /var/svc/log/application-graphical-login-gdm:default.log \
+	    /var/log/gdm/*.log /var/log/Xorg.0.log; do
+		[ -f "$f" ] || continue
+		echo "-- tail $f"
+		tail -25 "$f"
+	done
+	coreadm | head -3
+}
+# serial port only: the whole Xorg log, the input devices and a core's stack
+full() {
+	echo "==== oi-mac-diag full $(date '+%T')"
+	ls -lL /etc/X11/xorg.conf.d /dev/mouse /dev/kbd /dev/atopcase 2>&1
+	svcs -l atopcase-settings 2>&1 | head -12
+	prtconf -D 2>/dev/null | egrep -i 'mouse|kbd|8042|hid|atopcase'
+	for f in /var/log/Xorg.0.log.old /var/log/Xorg.0.log; do
+		[ -f "$f" ] || continue
+		echo "-- $f"
+		cat "$f"
+	done
+	ls -l /tmp/core.* 2>&1 | head
+	for c in $(ls /tmp/core.* 2>/dev/null | head -3); do
+		echo "-- pstack $c"; pstack "$c"
+	done
+	# the greeter session: gdm user, ConsoleKit, D-Bus, gdm's own logs
+	echo "-- session stack"
+	getent passwd gdm; getent group gdm
+	ls -ld /var/lib/gdm /var/lib/gdm/.local /var/lib/gdm/.local/share \
+	    /var/lib/gdm/.cache /var/lib/gdm/.config /var/run/gdm /var/log/gdm 2>&1
+	svcs -p gdm consolekit dbus accounts polkit 2>&1
+	svcs -d gdm 2>&1; svcs -l consolekit 2>&1 | head -14
+	ls -l /etc/dbus-1/system.d /usr/share/dbus-1/system.d \
+	    /usr/share/dbus-1/system-services 2>&1
+	cat /etc/dbus-1/system.d/ConsoleKit.conf 2>&1
+	dbus-send --system --print-reply --dest=org.freedesktop.DBus / \
+	    org.freedesktop.DBus.ListNames 2>&1
+	dbus-send --system --print-reply --dest=org.freedesktop.DBus / \
+	    org.freedesktop.DBus.ListActivatableNames 2>&1
+	/usr/bin/dbus-daemon --version 2>&1 | head -1
+	/usr/bin/dbus-daemon --system --nofork --print-address --nopidfile \
+	    --address=unix:path=/tmp/oi-mac-diag-dbus.sock 2>&1 &
+	dp=$!; sleep 3; kill $dp 2>/dev/null; rm -f /tmp/oi-mac-diag-dbus.sock
+	echo "-- ck-list-sessions"; ck-list-sessions 2>&1
+	for f in /var/log/ConsoleKit/history /var/log/gdm/* \
+	    /var/lib/gdm/.local/share/xorg/* /var/lib/gdm/.xsession-errors \
+	    /var/lib/gdm/.cache/gdm/session.log \
+	    /var/svc/log/system-consolekit:default.log \
+	    /var/svc/log/system-dbus:default.log \
+	    /var/svc/log/application-graphical-login-gdm:default.log; do
+		[ -f "$f" ] || continue
+		echo "-- tail $f"; tail -80 "$f"
+	done
+	echo "-- messages"
+	egrep -i 'gdm|gnome-session|console-kit|ConsoleKit|dbus|polkit|accounts' \
+	    /var/adm/messages 2>/dev/null | tail -60
+	echo "==== oi-mac-diag full end"
+}
+(
+	n=0
+	while [ $n -lt 12 ]; do
+		out=$(diag 2>&1)
+		echo "$out" > /dev/console
+		[ -c /dev/cua/a ] && echo "$out" > /dev/cua/a
+		if [ $n -eq 5 ] || [ $n -eq 11 ]; then
+			[ -c /dev/cua/a ] && full > /dev/cua/a 2>&1
+		fi
+		n=$((n + 1))
+		sleep 15
+	done
+) </dev/null >/dev/null 2>&1 &
+exit 0
+DIAG
+	chmod 0744 $D
+	print "diagnostic image: $D"
+fi
+exit 0

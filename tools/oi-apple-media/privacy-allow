@@ -1,0 +1,9 @@
+# privacy-allow: accepted hits of privacy-scan.sh (extended regex on the
+# hit line "label: detail"), one per line, each with its reason above it.
+
+# OI's own sudo setting (system/security/sudo), no user in it.
+^sudo: etc/sudoers\.d/_illumos_nopty: Defaults !use_pty *$
+
+# The system CA bundle, built from OI's public root certificates
+# (system/ca-certificates): a CA's own contact address in a certificate.
+^pattern: etc/certs/ca-certificates\.crt \(added\): [0-9]+:info@e-szigno\.hu$
