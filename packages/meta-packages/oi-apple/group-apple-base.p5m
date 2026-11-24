@@ -1,0 +1,30 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+
+set name=pkg.fmri value=pkg:/group/apple/base@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="OI-Apple: kernel and boot fixes for every Mac"
+set name=pkg.description value="hubd root pool on USB (driver/usb), console on the GPU that owns the UEFI framebuffer, AP-start reports and large console fonts (system/kernel/platform), the loader's loadfont fix, the 4Kn ESP fixes in installboot (SUNWcs) and mkfs pcfs (system/extended-system-utilities), bge BCM57766 hardening, the live/first-boot setup and virtual console hotkeys."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+depend type=require fmri=pkg:/driver/usb@0.5.11-2026.0.0.23395.1
+depend type=require fmri=pkg:/system/kernel/platform@0.5.11-2026.0.0.23395.1
+depend type=require fmri=pkg:/system/boot/loader@1.1-2026.0.0.23395.1
+depend type=require fmri=pkg:/SUNWcs@0.5.11-2026.0.0.23395.1
+depend type=require fmri=pkg:/system/extended-system-utilities@0.5.11-2026.0.0.23395.1
+depend type=require fmri=pkg:/driver/network/bge@0.5.11-2026.0.0.23395.1
+depend type=require fmri=pkg:/system/oi-apple-live
+depend type=require fmri=pkg:/system/vt-hotkeys

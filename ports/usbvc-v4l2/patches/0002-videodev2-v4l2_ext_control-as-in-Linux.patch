@@ -1,0 +1,78 @@
+From 13f276d3ea43e337a7030714144fa3fb80dcfb64 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Tue, 17 Nov 2026 12:09:29 +0100
+Subject: [PATCH 2/2] NNNNN sys/videodev2.h: v4l2_ext_control(s) as in Linux
+ V4L2
+
+struct v4l2_ext_control had the old Linux 2.6 form: a named union
+`value` and no size field, and was not packed (24 bytes, Linux: 20).
+Programs written for current V4L2, such as Chromium's video capture,
+assign ctrl.value directly and do not compile. Now as in Linux: size,
+reserved2[1], an anonymous union with the pointer members, packed.
+struct v4l2_ext_controls gets the which/ctrl_class union and
+request_fd (same size and offsets as before), plus V4L2_CTRL_WHICH_*.
+usbvc does not implement VIDIOC_[GST]_EXT_CTRLS, so no binary in use
+changes.
+---
+ usr/src/uts/common/sys/videodev2.h | 31 ++++++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 6 deletions(-)
+
+diff --git a/usr/src/uts/common/sys/videodev2.h b/usr/src/uts/common/sys/videodev2.h
+index 21f4a701..7be5b4f2 100644
+--- a/usr/src/uts/common/sys/videodev2.h
++++ b/usr/src/uts/common/sys/videodev2.h
+@@ -980,26 +980,45 @@ struct v4l2_control
+ 	int32_t		value;
+ };
+ 
++/*
++ * Packed as in Linux (20 bytes on amd64): VIDIOC_[GST]_EXT_CTRLS pass an
++ * array of these.
++ */
++#pragma pack(1)
+ struct v4l2_ext_control
+ {
+ 	uint32_t id;
+-	uint32_t reserved2[2];
++	uint32_t size;		/* payload size for pointer types */
++	uint32_t reserved2[1];
+ 	union {
+ 		int32_t value;
+ 		int64_t value64;
+-		void *reserved;
+-	} value;
+-}; /*  __attribute__ ((packed)), comment for solaris to compile */
++		char *string;
++		uint8_t *p_u8;
++		uint16_t *p_u16;
++		uint32_t *p_u32;
++		void *ptr;
++	};
++};
++#pragma pack()
+ 
+ struct v4l2_ext_controls
+ {
+-	uint32_t ctrl_class;
++	union {
++		uint32_t ctrl_class;
++		uint32_t which;	/* V4L2_CTRL_WHICH_* */
++	};
+ 	uint32_t count;
+ 	uint32_t error_idx;
+-	uint32_t reserved[2];
++	int32_t request_fd;
++	uint32_t reserved[1];
+ 	struct v4l2_ext_control *controls;
+ };
+ 
++#define	V4L2_CTRL_WHICH_CUR_VAL		0
++#define	V4L2_CTRL_WHICH_DEF_VAL		0x0f000000
++#define	V4L2_CTRL_WHICH_REQUEST_VAL	0x0f010000
++
+ /*  Values for ctrl_class field */
+ #define	V4L2_CTRL_CLASS_USER 0x00980000	/* Old-style 'user' controls */
+ #define	V4L2_CTRL_CLASS_MPEG 0x00990000	/* MPEG-compression controls */
+-- 
+2.56.0
+

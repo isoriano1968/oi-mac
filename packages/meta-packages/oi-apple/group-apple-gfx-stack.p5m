@@ -1,0 +1,29 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+
+set name=pkg.fmri value=pkg:/group/apple/gfx-stack@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="OI-Apple: graphics stack (libdrm, Mesa 26, Xorg 21.1)"
+set name=pkg.description value="libdrm 2.4.134, Mesa 26 and Xorg 21.1 with its input drivers and the framebuffer driver, installed as one set."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+depend type=require fmri=pkg:/x11/library/libdrm@2.4.134-2026.0.0.99
+depend type=require fmri=pkg:/x11/library/mesa@26.2.7
+depend type=require fmri=pkg:/x11/server/xorg@21.1.25
+depend type=require fmri=pkg:/x11/server/xserver-common@21.1.25
+depend type=require fmri=pkg:/x11/server/xorg/driver/xorg-input-keyboard@1.9.0-2026.0.0.5
+depend type=require fmri=pkg:/x11/server/xorg/driver/xorg-input-mouse@1.9.5-2026.0.0.1
+depend type=require fmri=pkg:/x11/server/xorg/driver/xorg-video-illumosfb@0.5-2026.0.0.2

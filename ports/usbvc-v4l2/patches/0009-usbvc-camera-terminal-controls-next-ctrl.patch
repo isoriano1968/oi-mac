@@ -1,0 +1,735 @@
+From 017107e070940c02b9fffe5d9421cbbd0b5b2f87 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 06:24:00 +0100
+Subject: [PATCH] NNNNN usbvc: camera terminal controls (exposure, focus), more
+ processing unit controls, V4L2_CTRL_FLAG_NEXT_CTRL
+
+Only brightness, contrast, saturation, hue and gamma were offered, and
+only by probing their IDs one by one.  Programs that list controls with
+V4L2_CTRL_FLAG_NEXT_CTRL (GStreamer's extra-controls) found none, and the
+camera terminal had no controls at all: a C920 with auto exposure
+priority on halves its frame rate in low light, and it could not be
+turned off.
+
+- usbvc: control table with the V4L2 control ID, unit (processing unit
+  or camera terminal), selector, length, bmControls bit and type, sorted
+  by ID; Linux's control names.
+- usbvc: new controls: white balance automatic and temperature, gain,
+  power line frequency (menu), sharpness, backlight compensation; auto
+  exposure (menu: auto, manual, shutter and aperture priority, from
+  CT_AE_MODE's bitmap), exposure time absolute, exposure dynamic
+  framerate (CT_AE_PRIORITY), focus absolute and automatic continuous.
+- usbvc: VIDIOC_QUERYCTRL with V4L2_CTRL_FLAG_NEXT_CTRL; VIDIOC_QUERYMENU.
+- usbvc: values of 1, 2 or 4 bytes; brightness and hue are signed.
+- usbvc: bmControls bits 8 and above were tested at the wrong bit.
+---
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 534 ++++++++++++------
+ .../sys/usb/clients/video/usbvc/usbvc_var.h   |  16 +-
+ 2 files changed, 369 insertions(+), 181 deletions(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index 1a21faa9..de1c440e 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -47,6 +47,7 @@ static int usbvc_v4l2_enqueue_buf(usbvc_state_t *, usbvc_buf_t *,
+ static int usbvc_v4l2_dequeue_buffer(usbvc_state_t *,
+ 				struct v4l2_buffer *, int);
+ static int usbvc_v4l2_query_ctrl(usbvc_state_t *, struct v4l2_queryctrl *);
++static int usbvc_v4l2_query_menu(usbvc_state_t *, struct v4l2_querymenu *);
+ static int usbvc_v4l2_get_ctrl(usbvc_state_t *, struct v4l2_control *);
+ static int usbvc_v4l2_set_ctrl(usbvc_state_t *, struct v4l2_control *);
+ static int usbvc_v4l2_set_parm(usbvc_state_t *, struct v4l2_streamparm *);
+@@ -62,43 +63,69 @@ static int usbvc_v4l2_enum_frameintervals(usbvc_state_t *,
+ static int usbvc_v4l2_copyin_buf(int, intptr_t, struct v4l2_buffer *, int);
+ static int usbvc_v4l2_copyout_buf(int, intptr_t, struct v4l2_buffer *, int);
+ static void usbvc_v4l2_fcc_name(uint32_t, char *, size_t);
+-/* Video controls that supported by usbvc driver */
+-static usbvc_v4l2_ctrl_map_t usbvc_v4l2_ctrls[] = {
+-	{
+-		"Brightness",
+-		PU_BRIGHTNESS_CONTROL,
+-		2,
+-		0,
+-		V4L2_CTRL_TYPE_INTEGER
+-	},
+-	{
+-		"Contrast",
+-		PU_CONTRAST_CONTROL,
+-		2,
+-		1,
+-		V4L2_CTRL_TYPE_INTEGER
+-	},
+-	{
+-		"Saturation",
+-		PU_SATURATION_CONTROL,
+-		2,
+-		3,
+-		V4L2_CTRL_TYPE_INTEGER
+-	},
+-	{
+-		"Hue",
+-		PU_HUE_CONTROL,
+-		2,
+-		2,
+-		V4L2_CTRL_TYPE_INTEGER
+-	},
+-	{
+-		"Gamma",
+-		PU_GAMMA_CONTROL,
+-		2,
+-		5,
+-		V4L2_CTRL_TYPE_INTEGER
+-	}
++/*
++ * Video controls supported by the usbvc driver, sorted by V4L2 control ID
++ * (V4L2_CTRL_FLAG_NEXT_CTRL walks them in this order).  The names are
++ * Linux's, so programs that address controls by name (GStreamer's
++ * extra-controls, e.g. "exposure_dynamic_framerate") find the same ones.
++ * bit is the control's bit in the bmControls of the processing unit or
++ * camera terminal descriptor (UVC 1.1, 3.7.2.3 and 3.7.2.5).
++ */
++static const usbvc_v4l2_ctrl_map_t usbvc_v4l2_ctrls[] = {
++	{ V4L2_CID_BRIGHTNESS, "Brightness", VC_PROCESSING_UNIT,
++	    PU_BRIGHTNESS_CONTROL, 2, 0, V4L2_CTRL_TYPE_INTEGER,
++	    USBVC_CTRL_SIGNED },
++	{ V4L2_CID_CONTRAST, "Contrast", VC_PROCESSING_UNIT,
++	    PU_CONTRAST_CONTROL, 2, 1, V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_SATURATION, "Saturation", VC_PROCESSING_UNIT,
++	    PU_SATURATION_CONTROL, 2, 3, V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_HUE, "Hue", VC_PROCESSING_UNIT,
++	    PU_HUE_CONTROL, 2, 2, V4L2_CTRL_TYPE_INTEGER, USBVC_CTRL_SIGNED },
++	{ V4L2_CID_AUTO_WHITE_BALANCE, "White Balance, Automatic",
++	    VC_PROCESSING_UNIT, PU_WHITE_BALANCE_TEMPERATURE_AUTO_CONTROL, 1,
++	    12, V4L2_CTRL_TYPE_BOOLEAN, 0 },
++	{ V4L2_CID_GAMMA, "Gamma", VC_PROCESSING_UNIT,
++	    PU_GAMMA_CONTROL, 2, 5, V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_GAIN, "Gain", VC_PROCESSING_UNIT,
++	    PU_GAIN_CONTROL, 2, 9, V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_POWER_LINE_FREQUENCY, "Power Line Frequency",
++	    VC_PROCESSING_UNIT, PU_POWER_LINE_FREQUENCY_CONTROL, 1, 10,
++	    V4L2_CTRL_TYPE_MENU, 0 },
++	{ V4L2_CID_WHITE_BALANCE_TEMPERATURE, "White Balance Temperature",
++	    VC_PROCESSING_UNIT, PU_WHITE_BALANCE_TEMPERATURE_CONTROL, 2, 6,
++	    V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_SHARPNESS, "Sharpness", VC_PROCESSING_UNIT,
++	    PU_SHARPNESS_CONTROL, 2, 4, V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_BACKLIGHT_COMPENSATION, "Backlight Compensation",
++	    VC_PROCESSING_UNIT, PU_BACKLIGHT_COMPENSATION_CONTROL, 2, 8,
++	    V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_EXPOSURE_AUTO, "Auto Exposure", VC_INPUT_TERMINAL,
++	    CT_AE_MODE_CONTROL, 1, 1, V4L2_CTRL_TYPE_MENU,
++	    USBVC_CTRL_AE_MODE },
++	{ V4L2_CID_EXPOSURE_ABSOLUTE, "Exposure Time, Absolute",
++	    VC_INPUT_TERMINAL, CT_EXPOSURE_TIME_ABSOLUTE_CONTROL, 4, 3,
++	    V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_EXPOSURE_AUTO_PRIORITY, "Exposure, Dynamic Framerate",
++	    VC_INPUT_TERMINAL, CT_AE_PRIORITY_CONTROL, 1, 2,
++	    V4L2_CTRL_TYPE_BOOLEAN, 0 },
++	{ V4L2_CID_FOCUS_ABSOLUTE, "Focus, Absolute", VC_INPUT_TERMINAL,
++	    CT_FOCUS_ABSOLUTE_CONTROL, 2, 5, V4L2_CTRL_TYPE_INTEGER, 0 },
++	{ V4L2_CID_FOCUS_AUTO, "Focus, Automatic Continuous",
++	    VC_INPUT_TERMINAL, CT_FOCUS_AUTO_CONTROL, 1, 17,
++	    V4L2_CTRL_TYPE_BOOLEAN, 0 }
++};
++
++/*
++ * CT_AE_MODE values (a bitmap: one bit per mode) for the V4L2 menu indices
++ * V4L2_EXPOSURE_AUTO, _MANUAL, _SHUTTER_PRIORITY and _APERTURE_PRIORITY.
++ */
++static const uint8_t usbvc_ae_modes[] = { 0x02, 0x01, 0x04, 0x08 };
++static const char *usbvc_ae_mode_names[] = {
++	"Auto Mode", "Manual Mode", "Shutter Priority Mode",
++	"Aperture Priority Mode"
++};
++static const char *usbvc_plf_names[] = {
++	"Disabled", "50 Hz", "60 Hz", "Auto"
+ };
+ 
+ 
+@@ -838,6 +865,22 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 
+ 		break;
+ 	}
++	case VIDIOC_QUERYMENU:
++	{
++		struct v4l2_querymenu querymenu;
++
++		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++		    "V4L2 ioctl: QUERYMENU");
++		USBVC_COPYIN(querymenu);
++		if (usbvc_v4l2_query_menu(usbvcp, &querymenu) != USB_SUCCESS) {
++			rv = EINVAL;
++
++			break;
++		}
++		USBVC_COPYOUT(querymenu);
++
++		break;
++	}
+ 	case VIDIOC_G_CTRL:
+ 	{
+ 		struct v4l2_control ctrl;
+@@ -1835,101 +1878,178 @@ usbvc_v4l2_dequeue_buffer(usbvc_state_t *usbvcp, struct v4l2_buffer *buf,
+ 
+ 
+ /*
+- * Check if a ctrl_id is supported by the device, if yes, find the
+- * corresponding processing unit and fill usbvc_v4l2_ctrl_t
++ * Find the unit or camera terminal that has the control m (its bit set in
++ * the descriptor's bmControls) and return its ID in *entity_id.
++ * Todo: check if the ctrl and the unit is really for the right stream
++ * interface in case of multi stream interfaces.
+  */
+ static int
+-usbvc_v4l2_match_ctrl(usbvc_state_t *usbvcp, usbvc_v4l2_ctrl_t *ctrl,
+-    uint32_t ctrl_id)
++usbvc_v4l2_find_entity(usbvc_state_t *usbvcp, const usbvc_v4l2_ctrl_map_t *m,
++    uint8_t *entity_id)
+ {
+-	uint8_t		idx;
+-	usbvc_units_t	*unit;
+-	uchar_t		bit;
++	const uint8_t	*raw, *bm;
++	uint8_t		size;
+ 
+-	USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+-	    "usbvc_v4l2_match_ctrl: ctrl_id=%x", ctrl_id);
+-	if (ctrl_id >= V4L2_CID_PRIVATE_BASE) {
++	if (m->unit == VC_PROCESSING_UNIT) {
++		usbvc_units_t *unit;
+ 
+-		return (USB_FAILURE);
+-	}
+-	if (ctrl_id < V4L2_CID_BASE) {
++		for (unit = list_head(&usbvcp->usbvc_unit_list); unit != NULL;
++		    unit = list_next(&usbvcp->usbvc_unit_list, unit)) {
++			if (unit->descr->bDescriptorSubType !=
++			    VC_PROCESSING_UNIT || unit->bmControls == NULL)
++				continue;
++			size = unit->descr->unit.processing.bControlSize;
++			bm = unit->bmControls;
++			if (m->bit < size * 8 &&
++			    (bm[m->bit / 8] & (1 << (m->bit % 8)))) {
++				*entity_id = unit->descr->bUnitID;
+ 
+-		return (USB_FAILURE);
++				return (USB_SUCCESS);
++			}
++		}
++	} else {
++		usbvc_terms_t *term;
++
++		for (term = list_head(&usbvcp->usbvc_term_list); term != NULL;
++		    term = list_next(&usbvcp->usbvc_term_list, term)) {
++			/* camera terminals only: bmControls is set */
++			if (term->bmControls == NULL)
++				continue;
++			/*
++			 * Camera terminal descriptor: bTerminalID at offset 3,
++			 * bControlSize at 14, bmControls from 15 (checked when
++			 * parsed).
++			 */
++			raw = (const uint8_t *)term->descr;
++			size = raw[14];
++			bm = term->bmControls;
++			if (m->bit < size * 8 &&
++			    (bm[m->bit / 8] & (1 << (m->bit % 8)))) {
++				*entity_id = raw[3];
++
++				return (USB_SUCCESS);
++			}
++		}
+ 	}
+ 
+-	/* get the idx of ctrl array usbvc_v4l2_ctrl */
+-	idx = ctrl_id - V4L2_CID_BASE;
+-	if (ctrl_id == V4L2_CID_GAMMA) {
++	return (USB_FAILURE);
++}
+ 
+-		/* The 4th one is for Gamma ctrl */
+-		bit = usbvc_v4l2_ctrls[4].bit;
+-	} else if ((ctrl_id >= V4L2_CID_BRIGHTNESS) &&
+-	    (ctrl_id <= V4L2_CID_HUE)) {
+ 
+-		/* The idxth one is for this ctrl */
+-		bit = usbvc_v4l2_ctrls[idx].bit;
+-	} else {
++/*
++ * Check if a ctrl_id is supported by the device, if yes, find the
++ * corresponding processing unit or camera terminal and fill
++ * usbvc_v4l2_ctrl_t.  With V4L2_CTRL_FLAG_NEXT_CTRL, the first supported
++ * control after the given ID; *ctrl_id is then set to its ID.
++ */
++static int
++usbvc_v4l2_match_ctrl(usbvc_state_t *usbvcp, usbvc_v4l2_ctrl_t *ctrl,
++    uint32_t *ctrl_id)
++{
++	uint32_t	id = *ctrl_id;
++	boolean_t	next = B_FALSE;
++	uint_t		i;
+ 
+-		return (USB_FAILURE);
++	USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++	    "usbvc_v4l2_match_ctrl: ctrl_id=%x", id);
++	if (id & V4L2_CTRL_FLAG_NEXT_CTRL) {
++		next = B_TRUE;
++		id &= ~(V4L2_CTRL_FLAG_NEXT_CTRL |
++		    V4L2_CTRL_FLAG_NEXT_COMPOUND);
+ 	}
+-	unit = (usbvc_units_t *)list_head(&usbvcp->usbvc_unit_list);
+ 
+-	/*
+-	 * Check if there is a processing unit supportting this ctrl.
+-	 * Todo: check if the ctrl and the unit is really for the right
+-	 * stream interface in case of multi stream interfaces.
+-	 */
+-	while (unit != NULL) {
++	for (i = 0; i < NELEM(usbvc_v4l2_ctrls); i++) {
++		const usbvc_v4l2_ctrl_map_t *m = &usbvc_v4l2_ctrls[i];
+ 
+-		if (unit->descr->bDescriptorSubType == VC_PROCESSING_UNIT) {
++		if (next ? (m->cid <= id) : (m->cid != id))
++			continue;
++		mutex_enter(&usbvcp->usbvc_mutex);
++		if (usbvc_v4l2_find_entity(usbvcp, m, &ctrl->entity_id) ==
++		    USB_SUCCESS) {
++			mutex_exit(&usbvcp->usbvc_mutex);
++			ctrl->ctrl_map = m;
++			*ctrl_id = m->cid;
+ 
+-			if (bit >=
+-			    (unit->descr->unit.processing.bControlSize * 8)) {
++			return (USB_SUCCESS);
++		}
++		mutex_exit(&usbvcp->usbvc_mutex);
++		if (!next)
++			break;
++	}
+ 
+-				/*
+-				 * If this unit's bmControls size is smaller
+-				 * than bit, then next
+-				 */
+-				unit = (usbvc_units_t *)
+-				    list_next(&usbvcp->usbvc_unit_list, unit);
++	return (USB_FAILURE);
++}
+ 
+-				continue;
+-			} else {
+ 
+-				/*
+-				 * The first two bytes of bmControls are
+-				 * for ctrls
+-				 */
+-				if ((bit < 8) &&
+-				    unit->bmControls[0] & (0x1 << bit)) {
++/* A control's value from its wLength little endian bytes */
++static int32_t
++usbvc_v4l2_ctrl_decode(const usbvc_v4l2_ctrl_map_t *m, const uint8_t *p)
++{
++	uint32_t v;
+ 
+-					break;
+-				}
+-				if ((bit >= 8 && bit < 16) &&
+-				    unit->bmControls[1] & (0x1 << bit)) {
++	switch (m->len) {
++	case 1:
++		v = p[0];
++		if (m->flags & USBVC_CTRL_SIGNED)
++			return ((int8_t)v);
+ 
+-					break;
+-				}
+-			}
+-		}
+-		unit = (usbvc_units_t *)list_next(&usbvcp->usbvc_unit_list,
+-		    unit);
++		return ((int32_t)v);
++	case 2:
++		LE_TO_UINT16(p, 0, v);
++		if (m->flags & USBVC_CTRL_SIGNED)
++			return ((int16_t)v);
++
++		return ((int32_t)v);
++	default:
++		LE_TO_UINT32(p, 0, v);
++
++		return ((int32_t)v);
+ 	}
+-	if (unit == NULL) {
++}
++
++
++/* Get one value (req: GET_CUR, GET_MIN, ...) of a control */
++static int
++usbvc_v4l2_ctrl_req(usbvc_state_t *usbvcp, usbvc_v4l2_ctrl_t *ctrl,
++    uint8_t req, int32_t *value)
++{
++	mblk_t	*data;
++
++	if ((data = allocb(ctrl->ctrl_map->len, BPRI_LO)) == NULL) {
+ 
+ 		return (USB_FAILURE);
+ 	}
+-	ctrl->entity_id = unit->descr->bUnitID;
+-	if (ctrl_id == V4L2_CID_GAMMA) {
+-		ctrl->ctrl_map = &usbvc_v4l2_ctrls[4];
+-	} else {
+-		ctrl->ctrl_map = &usbvc_v4l2_ctrls[idx];
++	if (usbvc_vc_get_ctrl(usbvcp, req, ctrl->entity_id,
++	    ctrl->ctrl_map->selector, ctrl->ctrl_map->len, data) !=
++	    USB_SUCCESS || data == NULL ||
++	    data->b_wptr - data->b_rptr < ctrl->ctrl_map->len) {
++		if (data != NULL)
++			freemsg(data);
++
++		return (USB_FAILURE);
+ 	}
++	*value = usbvc_v4l2_ctrl_decode(ctrl->ctrl_map, data->b_rptr);
++	freemsg(data);
+ 
+ 	return (USB_SUCCESS);
+ }
+ 
+ 
++/* CT_AE_MODE bitmap -> V4L2 menu index (0: auto for unknown values) */
++static int32_t
++usbvc_ae_mode_index(int32_t mode)
++{
++	int32_t i;
++
++	for (i = 0; i < (int32_t)NELEM(usbvc_ae_modes); i++) {
++		if (usbvc_ae_modes[i] == mode)
++			return (i);
++	}
++
++	return (V4L2_EXPOSURE_AUTO);
++}
++
++
+ /*
+  * Implement ioctl VIDIOC_QUERYCTRL, query the ctrl types that the device
+  * supports
+@@ -1938,71 +2058,119 @@ static int
+ usbvc_v4l2_query_ctrl(usbvc_state_t *usbvcp, struct v4l2_queryctrl *queryctrl)
+ {
+ 	usbvc_v4l2_ctrl_t	ctrl;
+-	mblk_t			*data;
+-	char			req[16];
+-
+-	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, queryctrl->id) !=
+-	    USB_SUCCESS) {
++	uint32_t		id = queryctrl->id;
++	int32_t			v;
++	const char		*req;
+ 
+-		return (USB_FAILURE);
+-	}
+-	if ((data = allocb(ctrl.ctrl_map->len, BPRI_LO)) == NULL) {
++	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, &id) != USB_SUCCESS) {
+ 
+ 		return (USB_FAILURE);
+ 	}
++	bzero(queryctrl, sizeof (*queryctrl));
++	queryctrl->id = id;
++	queryctrl->type = ctrl.ctrl_map->type;
++	(void) strncpy((char *)queryctrl->name, ctrl.ctrl_map->name,
++	    sizeof (queryctrl->name));
+ 
+-	if (usbvc_vc_get_ctrl(usbvcp, GET_MIN, ctrl.entity_id,
+-	    ctrl.ctrl_map->selector, ctrl.ctrl_map->len, data) !=
+-	    USB_SUCCESS) {
+-		(void) strncpy(&req[0], "GET_MIN", sizeof (req));
+-
++	if (ctrl.ctrl_map->flags & USBVC_CTRL_AE_MODE) {
++		/* GET_RES is the bitmap of the modes the camera has */
++		req = "GET_RES";
++		if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_RES, &v) !=
++		    USB_SUCCESS)
++			goto fail;
++		queryctrl->minimum = 0;
++		queryctrl->step = 1;
++		for (id = 0; id < NELEM(usbvc_ae_modes); id++) {
++			if (v & usbvc_ae_modes[id])
++				queryctrl->maximum = id;
++		}
++		if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_DEF, &v) ==
++		    USB_SUCCESS)
++			queryctrl->default_value = usbvc_ae_mode_index(v);
++
++		return (USB_SUCCESS);
++	}
++	if (ctrl.ctrl_map->type == V4L2_CTRL_TYPE_BOOLEAN) {
++		/* many cameras have no GET_MIN/MAX/RES (or GET_DEF) here */
++		queryctrl->minimum = 0;
++		queryctrl->maximum = 1;
++		queryctrl->step = 1;
++		if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_DEF, &v) ==
++		    USB_SUCCESS)
++			queryctrl->default_value = (v != 0);
++
++		return (USB_SUCCESS);
++	}
++
++	req = "GET_MIN";
++	if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_MIN, &v) != USB_SUCCESS)
+ 		goto fail;
+-	}
+-	LE_TO_UINT16(data->b_rptr, 0, queryctrl->minimum);
+-	if (usbvc_vc_get_ctrl(usbvcp, GET_MAX, ctrl.entity_id,
+-	    ctrl.ctrl_map->selector, ctrl.ctrl_map->len, data) != USB_SUCCESS) {
+-		(void) strncpy(&req[0], "GET_MAX", sizeof (req));
+-
++	queryctrl->minimum = v;
++	req = "GET_MAX";
++	if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_MAX, &v) != USB_SUCCESS)
+ 		goto fail;
+-	}
+-	LE_TO_UINT16(data->b_rptr, 0, queryctrl->maximum);
++	queryctrl->maximum = v;
++	if (ctrl.ctrl_map->type == V4L2_CTRL_TYPE_MENU) {
++		queryctrl->step = 1;
++	} else {
++		req = "GET_RES";
++		if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_RES, &v) !=
++		    USB_SUCCESS)
++			goto fail;
++		queryctrl->step = v;
++	}
++	req = "GET_DEF";
++	if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_DEF, &v) != USB_SUCCESS)
++		goto fail;
++	queryctrl->default_value = v;
+ 
+-	if (usbvc_vc_get_ctrl(usbvcp, GET_RES, ctrl.entity_id,
+-	    ctrl.ctrl_map->selector, ctrl.ctrl_map->len, data) != USB_SUCCESS) {
+-		(void) strncpy(&req[0], "GET_RES", sizeof (req));
++	return (USB_SUCCESS);
+ 
+-		goto fail;
+-	}
+-	LE_TO_UINT16(data->b_rptr, 0, queryctrl->step);
++fail:
++	USB_DPRINTF_L2(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++	    "usbvc_v4l2_query_ctrl: %x fail when %s", id, req);
+ 
+-	if (usbvc_vc_get_ctrl(usbvcp, GET_DEF, ctrl.entity_id,
+-	    ctrl.ctrl_map->selector, ctrl.ctrl_map->len, data) != USB_SUCCESS) {
+-		(void) strncpy(&req[0], "GET_DEF", sizeof (req));
++	return (USB_FAILURE);
++}
+ 
+-		goto fail;
+-	}
+-	LE_TO_UINT16(data->b_rptr, 0, queryctrl->default_value);
+ 
+-	(void) strncpy(queryctrl->name, ctrl.ctrl_map->name,
+-	    sizeof (queryctrl->name));
+-	queryctrl->type = ctrl.ctrl_map->type;
+-	queryctrl->flags = 0;
++/* Implement ioctl VIDIOC_QUERYMENU: the menu items of a menu control */
++static int
++usbvc_v4l2_query_menu(usbvc_state_t *usbvcp, struct v4l2_querymenu *qm)
++{
++	usbvc_v4l2_ctrl_t	ctrl;
++	uint32_t		id = qm->id;
++	int32_t			v;
++	const char		*name;
+ 
+-	if (data) {
+-		freemsg(data);
++	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, &id) != USB_SUCCESS ||
++	    id != qm->id || ctrl.ctrl_map->type != V4L2_CTRL_TYPE_MENU) {
++
++		return (USB_FAILURE);
+ 	}
++	if (ctrl.ctrl_map->flags & USBVC_CTRL_AE_MODE) {
++		if (qm->index >= NELEM(usbvc_ae_modes) ||
++		    usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_RES, &v) !=
++		    USB_SUCCESS || !(v & usbvc_ae_modes[qm->index])) {
+ 
+-	return (USB_SUCCESS);
++			return (USB_FAILURE);
++		}
++		name = usbvc_ae_mode_names[qm->index];
++	} else {
++		/* power line frequency: the value is the index */
++		if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_MAX, &v) !=
++		    USB_SUCCESS || qm->index > v ||
++		    qm->index >= NELEM(usbvc_plf_names)) {
+ 
+-fail:
+-	if (data) {
+-		freemsg(data);
++			return (USB_FAILURE);
++		}
++		name = usbvc_plf_names[qm->index];
+ 	}
+-	USB_DPRINTF_L2(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+-	    "usbvc_v4l2_query_ctrl: fail when %s", req);
+-
+-	return (USB_FAILURE);
++	bzero(qm->name, sizeof (qm->name));
++	(void) strncpy((char *)qm->name, name, sizeof (qm->name) - 1);
++	qm->reserved = 0;
+ 
++	return (USB_SUCCESS);
+ }
+ 
+ 
+@@ -2011,33 +2179,25 @@ static int
+ usbvc_v4l2_get_ctrl(usbvc_state_t *usbvcp, struct v4l2_control *v4l2_ctrl)
+ {
+ 	usbvc_v4l2_ctrl_t	ctrl;
+-	mblk_t			*data;
++	uint32_t		id = v4l2_ctrl->id;
++	int32_t			v;
+ 
+-	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, v4l2_ctrl->id) !=
+-	    USB_SUCCESS) {
++	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, &id) != USB_SUCCESS ||
++	    id != v4l2_ctrl->id) {
+ 
+ 		return (USB_FAILURE);
+ 	}
+-	if ((data = allocb(ctrl.ctrl_map->len, BPRI_LO)) == NULL) {
+-
+-		return (USB_FAILURE);
+-	}
+-
+-	if (usbvc_vc_get_ctrl(usbvcp, GET_CUR, ctrl.entity_id,
+-	    ctrl.ctrl_map->selector, ctrl.ctrl_map->len, data) != USB_SUCCESS) {
+-		if (data) {
+-			freemsg(data);
+-		}
++	if (usbvc_v4l2_ctrl_req(usbvcp, &ctrl, GET_CUR, &v) != USB_SUCCESS) {
+ 		USB_DPRINTF_L2(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+-		    "usbvc_v4l2_get_ctrl: fail");
++		    "usbvc_v4l2_get_ctrl: %x fail", id);
+ 
+ 		return (USB_FAILURE);
+ 	}
+-	LE_TO_UINT16(data->b_rptr, 0, v4l2_ctrl->value);
+-
+-	if (data) {
+-		freemsg(data);
+-	}
++	if (ctrl.ctrl_map->flags & USBVC_CTRL_AE_MODE)
++		v = usbvc_ae_mode_index(v);
++	else if (ctrl.ctrl_map->type == V4L2_CTRL_TYPE_BOOLEAN)
++		v = (v != 0);
++	v4l2_ctrl->value = v;
+ 
+ 	return (USB_SUCCESS);
+ }
+@@ -2048,28 +2208,47 @@ static int
+ usbvc_v4l2_set_ctrl(usbvc_state_t *usbvcp, struct v4l2_control *v4l2_ctrl)
+ {
+ 	usbvc_v4l2_ctrl_t	ctrl;
++	uint32_t		id = v4l2_ctrl->id;
++	uint32_t		v = (uint32_t)v4l2_ctrl->value;
+ 	mblk_t			*data;
++	uint8_t			len;
+ 
+-	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, v4l2_ctrl->id) !=
+-	    USB_SUCCESS) {
++	if (usbvc_v4l2_match_ctrl(usbvcp, &ctrl, &id) != USB_SUCCESS ||
++	    id != v4l2_ctrl->id) {
+ 
+ 		return (USB_FAILURE);
+ 	}
+-	if ((data = allocb(ctrl.ctrl_map->len, BPRI_LO)) == NULL) {
++	if (ctrl.ctrl_map->flags & USBVC_CTRL_AE_MODE) {
++		if (v >= NELEM(usbvc_ae_modes))
++			return (USB_FAILURE);
++		v = usbvc_ae_modes[v];
++	} else if (ctrl.ctrl_map->type == V4L2_CTRL_TYPE_BOOLEAN) {
++		v = (v != 0);
++	}
++	len = ctrl.ctrl_map->len;
++	if ((data = allocb(len, BPRI_LO)) == NULL) {
+ 
+ 		return (USB_FAILURE);
+ 	}
+-
+-	UINT16_TO_LE(v4l2_ctrl->value, 0, data->b_wptr);
+-	data->b_wptr += 2;
++	switch (len) {
++	case 1:
++		data->b_wptr[0] = v & 0xff;
++		break;
++	case 2:
++		UINT16_TO_LE(v, 0, data->b_wptr);
++		break;
++	default:
++		UINT32_TO_LE(v, 0, data->b_wptr);
++		break;
++	}
++	data->b_wptr += len;
+ 	if (usbvc_vc_set_ctrl(usbvcp, SET_CUR, ctrl.entity_id,
+-	    ctrl.ctrl_map->selector, ctrl.ctrl_map->len, data) !=
+-	    USB_SUCCESS) {
++	    ctrl.ctrl_map->selector, len, data) != USB_SUCCESS) {
+ 		if (data) {
+ 			freemsg(data);
+ 		}
+ 		USB_DPRINTF_L2(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+-		    "usbvc_v4l2_set_ctrl: fail");
++		    "usbvc_v4l2_set_ctrl: %x fail", id);
+ 
+ 		return (USB_FAILURE);
+ 	}
+@@ -2080,6 +2259,7 @@ usbvc_v4l2_set_ctrl(usbvc_state_t *usbvcp, struct v4l2_control *v4l2_ctrl)
+ 	return (USB_SUCCESS);
+ }
+ 
++
+ /* For the given interval, find the closest frame interval to it. */
+ static uint32_t
+ usbvc_find_interval(usbvc_frames_t *frame, uint32_t interval)
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+index 31d2de63..ccab9779 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+@@ -280,23 +280,31 @@ enum usbvc_buf_status {
+ };
+ 
+ /*
+- * This structure is used to map v4l2 controls to uvc controls. The structure
+- * array is addressed by (V4L2_CID_BASE - V4L2_CID_*)
++ * This structure is used to map v4l2 controls to uvc controls.  The array
++ * (usbvc_v4l2_ctrls) is sorted by cid, for V4L2_CTRL_FLAG_NEXT_CTRL.
+  */
+ typedef struct usbvc_v4l2_ctrl_map {
++	uint32_t cid;	/* V4L2 control ID */
+ 	char	name[32];
++
++	/* VC_PROCESSING_UNIT, or VC_INPUT_TERMINAL for a camera terminal */
++	uint8_t	unit;
+ 	uint8_t	selector; /* Control Selector */
+ 	uint8_t	len;	/* wLength, defined in uvc spec chp 4 for each ctrl */
+ 
+-	/* The xth bit in bmControls bitmap of processing unit descriptor */
++	/* The xth bit in bmControls bitmap of the unit or terminal descriptor */
+ 	uint8_t	bit;
+ 
+ 	enum	v4l2_ctrl_type type;
++	uint8_t	flags;	/* USBVC_CTRL_* */
+ } usbvc_v4l2_ctrl_map_t;
+ 
++#define	USBVC_CTRL_SIGNED	0x01	/* two's complement value */
++#define	USBVC_CTRL_AE_MODE	0x02	/* CT_AE_MODE: menu index <-> bitmap */
++
+ typedef struct usbvc_v4l2_ctrl {
+ 	uint8_t			entity_id;
+-	usbvc_v4l2_ctrl_map_t	*ctrl_map;
++	const usbvc_v4l2_ctrl_map_t	*ctrl_map;
+ } usbvc_v4l2_ctrl_t;
+ 
+ 
+-- 
+2.56.0
+

@@ -1,0 +1,140 @@
+From 63b8847d07f356fed3be691d674149a458fe5ce5 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 07:03:57 +0100
+Subject: [PATCH] NNNNN usbvc: descriptor length checks look at the VC header,
+ not the descriptor being parsed
+
+usbvc_parse_ctrl_if() and usbvc_parse_stream_header() passed the start
+of the class specific descriptor array (cvs_data) to
+usbvc_chk_descr_len() instead of the descriptor being parsed, so every
+check measured the first one, the VC (or VS) header.  On a Logitech
+C920 the camera terminal (needs 15 bytes, the header has 13) and the
+processing unit (the header's dwClockFrequency low byte read as
+bControlSize) were dropped: no V4L2 control ever matched a unit, and
+VIDIOC_QUERYCTRL, G_CTRL and S_CTRL failed for brightness as for the
+camera terminal controls.
+
+- usbvc: the length checks in usbvc_parse_ctrl_if() and
+  usbvc_parse_stream_header() use the descriptor at hand.
+
+The still image frame checks in usbvc_parse_color_still() have the same
+mistake and another one (an item count used as an offset); they are left
+as they are here.
+---
+ .../common/io/usb/clients/video/usbvc/usbvc.c | 23 +++++++++++--------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index e376e354..895aa9c2 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -2032,7 +2032,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 	int			if_num;
+ 	int			cvs_num;
+ 	usb_alt_if_data_t	*if_alt_data;
+-	usb_cvs_data_t		*cvs_data;
++	usb_cvs_data_t		*cvs_data, *cvs;
+ 	uchar_t			*cvs_buf;
+ 	uint_t			cvs_buf_len;
+ 	uint16_t		version;
+@@ -2042,6 +2042,8 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 	cvs_data = if_alt_data->altif_cvs;
+ 
+ 	for (cvs_num = 0; cvs_num < if_alt_data->altif_n_cvs; cvs_num++) {
++		/* the descriptor the length checks below are about */
++		cvs = &cvs_data[cvs_num];
+ 		cvs_buf = cvs_data[cvs_num].cvs_buf;
+ 		cvs_buf_len = cvs_data[cvs_num].cvs_buf_len;
+ 		USB_DPRINTF_L3(PRINT_MASK_ATTA, usbvcp->usbvc_log_handle,
+@@ -2077,7 +2079,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 			 * a device not compliant to uvc spec. This descriptor
+ 			 * is critical, return failure if not a valid one.
+ 			 */
+-			if (usbvc_chk_descr_len(11, 1, 0, cvs_data) !=
++			if (usbvc_chk_descr_len(11, 1, 0, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				return (USB_FAILURE);
+@@ -2126,7 +2128,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 			    usbvcp->usbvc_log_handle, "usbvc_parse_ctrl_if: "
+ 			    "input term type=%x", term->descr->wTerminalType);
+ 			if (term->descr->wTerminalType == ITT_CAMERA) {
+-				if (usbvc_chk_descr_len(14, 1, 0, cvs_data) !=
++				if (usbvc_chk_descr_len(14, 1, 0, cvs) !=
+ 				    USB_SUCCESS) {
+ 					kmem_free(term, sizeof (usbvc_terms_t));
+ 
+@@ -2167,7 +2169,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 			uint8_t sz;
+ 			usbvc_units_t *unit;
+ 
+-			if (usbvc_chk_descr_len(7, 1, 0, cvs_data) !=
++			if (usbvc_chk_descr_len(7, 1, 0, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				break;
+@@ -2210,7 +2212,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 			uint8_t  pins;
+ 			usbvc_units_t *unit;
+ 
+-			if (usbvc_chk_descr_len(4, 1, 0, cvs_data) !=
++			if (usbvc_chk_descr_len(4, 1, 0, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				break;
+@@ -2242,7 +2244,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 			uint8_t  pins, n;
+ 			usbvc_units_t *unit;
+ 
+-			if (usbvc_chk_descr_len(21, 1, 0, cvs_data) !=
++			if (usbvc_chk_descr_len(21, 1, 0, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				break;
+@@ -2256,7 +2258,7 @@ usbvc_parse_ctrl_if(usbvc_state_t *usbvcp)
+ 			/* Size of bmControls */
+ 			n = cvs_buf[pins + 22];
+ 
+-			if (usbvc_chk_descr_len(pins + 22, 1, 0, cvs_data) !=
++			if (usbvc_chk_descr_len(pins + 22, 1, 0, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				break;
+@@ -2810,7 +2812,7 @@ int
+ usbvc_parse_stream_header(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if)
+ {
+ 	usb_alt_if_data_t	*if_alt_data;
+-	usb_cvs_data_t		*cvs_data;
++	usb_cvs_data_t		*cvs_data, *cvs;
+ 	int			cvs_num;
+ 	uchar_t			*cvs_buf;
+ 	usbvc_input_header_t	*in_hdr;
+@@ -2819,6 +2821,7 @@ usbvc_parse_stream_header(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if)
+ 	if_alt_data = strm_if->if_descr->if_alt;
+ 	cvs_data = if_alt_data->altif_cvs;
+ 	for (cvs_num = 0; cvs_num < if_alt_data->altif_n_cvs; cvs_num++) {
++		cvs = &cvs_data[cvs_num];
+ 		cvs_buf = cvs_data[cvs_num].cvs_buf;
+ 		USB_DPRINTF_L3(PRINT_MASK_ATTA, usbvcp->usbvc_log_handle,
+ 		    "usbvc_parse_stream_header: cvs_num= %d", cvs_num);
+@@ -2833,7 +2836,7 @@ usbvc_parse_stream_header(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if)
+ 		}
+ 
+ 		if (cvs_buf[2] == VS_INPUT_HEADER) {
+-			if (usbvc_chk_descr_len(3, 0, 12, cvs_data) !=
++			if (usbvc_chk_descr_len(3, 0, 12, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				continue;
+@@ -2851,7 +2854,7 @@ usbvc_parse_stream_header(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if)
+ 
+ 			return (USB_SUCCESS);
+ 		} else if (cvs_buf[2] == VS_OUTPUT_HEADER) {
+-			if (usbvc_chk_descr_len(3, 0, 8, cvs_data) !=
++			if (usbvc_chk_descr_len(3, 0, 8, cvs) !=
+ 			    USB_SUCCESS) {
+ 
+ 				continue;
+-- 
+2.56.0
+

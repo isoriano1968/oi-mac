@@ -1,0 +1,154 @@
+From 6a5f405a0cfc7044ecd06f656c90cc794282a970 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 17:37:20 +0100
+Subject: [PATCH] NNNNN usbvc: VIDIOC_TRY_FMT; an empty end of frame drops no
+ frame
+
+GStreamer's v4l2src negotiates its caps with VIDIOC_TRY_FMT and stops
+when it fails; usbvc had no TRY_FMT (ENOTTY).
+
+- VIDIOC_TRY_FMT: what VIDIOC_S_FMT would set, without a request to the
+  camera: the nearest frame size of the pixel format, or of the current
+  format for a pixel format the camera does not have (as the V4L2 spec
+  asks); sizeimage from the frame descriptor.
+- An end of frame without data may carry the next frame's FID; forget
+  the FID then, so that the next frame's first packet is not taken for
+  the rest of the last one and the next frame lost.
+---
+ .../common/io/usb/clients/video/usbvc/usbvc.c |  5 +-
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 87 +++++++++++++++++++
+ 2 files changed, 91 insertions(+), 1 deletion(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index 23ff6953..29ce59e9 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -3701,9 +3701,12 @@ usbvc_decode_stream_header(usbvc_state_t *usbvcp, usbvc_buf_grp_t *bufgrp,
+ 			 * An end of frame without any data (e.g. a header-only
+ 			 * packet that toggles FID): no frame to hand out,
+ 			 * read(2) would return 0 (end of file). Keep the
+-			 * buffer for the next frame.
++			 * buffer for the next frame, and let the next packet
++			 * start it whatever its FID: this packet's FID may
++			 * already be the next frame's.
+ 			 */
+ 			buf_filling->status = USBVC_BUF_EMPTY;
++			strm_if->fid = 0xff;
+ 			USB_DPRINTF_L3(PRINT_MASK_CB, usbvcp->usbvc_log_handle,
+ 			    "usbvc_decode_stream_header: empty frame");
+ 
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index 2be36024..f26fd885 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -39,6 +39,7 @@
+ 
+ static int usbvc_v4l2_set_format(usbvc_state_t *, struct v4l2_format *);
+ static int usbvc_v4l2_get_format(usbvc_state_t *, struct v4l2_format *);
++static int usbvc_v4l2_try_format(usbvc_state_t *, struct v4l2_format *);
+ static void usbvc_v4l2_query_buf(usbvc_state_t *, usbvc_buf_t *,
+ 				struct v4l2_buffer *);
+ static int usbvc_v4l2_enqueue_buf(usbvc_state_t *, usbvc_buf_t *,
+@@ -371,6 +372,21 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 
+ 		break;
+ 	}
++	case VIDIOC_TRY_FMT:
++	{
++		struct v4l2_format	fmt;
++
++		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++		    "V4L2 ioctl: VIDIOC_TRY_FMT");
++		USBVC_COPYIN(fmt);
++		if ((rv = usbvc_v4l2_try_format(usbvcp, &fmt)) != 0) {
++
++			break;
++		}
++		USBVC_COPYOUT(fmt);
++
++		break;
++	}
+ 	case VIDIOC_G_FMT:
+ 	{
+ 		struct v4l2_format	fmt;
+@@ -1213,6 +1229,77 @@ usbvc_match_image_size(uint32_t width, uint32_t height,
+ }
+ 
+ 
++/*
++ * VIDIOC_TRY_FMT: the format VIDIOC_S_FMT would set, without a request to
++ * the camera. As the V4L2 spec asks, an unknown pixel format or size is not
++ * an error: the nearest frame size of the pixel format (of the current
++ * format if the camera does not have that pixel format) is returned.
++ * sizeimage is the frame descriptor's dwMaxVideoFrameBufferSize (none in
++ * frame based descriptors: bytesperline * height, or w * h * 2 compressed).
++ */
++static int
++usbvc_v4l2_try_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
++{
++	usbvc_stream_if_t	*strm_if;
++	usbvc_format_group_t	*fmtgrp;
++	usbvc_frames_t		*frame = NULL;
++	uint32_t		w, h, size = 0;
++
++	if (format->type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
++
++		return (EINVAL);
++	}
++	mutex_enter(&usbvcp->usbvc_mutex);
++	strm_if = usbvcp->usbvc_curr_strm;
++	if (strm_if == NULL) {
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		return (EINVAL);
++	}
++	fmtgrp = usbvc_v4l2_find_fmtgrp(strm_if, format->fmt.pix.pixelformat);
++	if (fmtgrp == NULL) {
++		fmtgrp = strm_if->cur_format_group;
++	}
++	if (fmtgrp != NULL) {
++		frame = usbvc_match_image_size(format->fmt.pix.width,
++		    format->fmt.pix.height, fmtgrp);
++	}
++	if (frame == NULL) {
++		mutex_exit(&usbvcp->usbvc_mutex);
++		USB_DPRINTF_L2(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++		    "usbvc_v4l2_try_format: no format, pixelformat=%x",
++		    format->fmt.pix.pixelformat);
++
++		return (EINVAL);
++	}
++
++	LE_TO_UINT16(frame->descr->wWidth, 0, w);
++	LE_TO_UINT16(frame->descr->wHeight, 0, h);
++	if (frame->descr->bDescriptorSubType != VS_FRAME_FRAME_BASED) {
++		LE_TO_UINT32(frame->descr->dwMaxVideoFrameBufferSize, 0, size);
++	}
++	if (size == 0) {
++		size = (fmtgrp->v4l2_bpp != 0 ? fmtgrp->v4l2_bpp : 2) * w * h;
++	}
++
++	format->fmt.pix.pixelformat = fmtgrp->v4l2_pixelformat;
++	format->fmt.pix.width = w;
++	format->fmt.pix.height = h;
++	format->fmt.pix.field = V4L2_FIELD_NONE;
++	format->fmt.pix.bytesperline = fmtgrp->v4l2_bpp * w;
++	format->fmt.pix.sizeimage = size;
++	format->fmt.pix.colorspace = fmtgrp->v4l2_color;
++	format->fmt.pix.priv = 0;
++	format->fmt.pix.flags = 0;
++	format->fmt.pix.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
++	format->fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
++	format->fmt.pix.xfer_func = V4L2_XFER_FUNC_DEFAULT;
++	mutex_exit(&usbvcp->usbvc_mutex);
++
++	return (0);
++}
++
++
+ /* Implement ioctl VIDIOC_S_FMT, set a video format */
+ static int
+ usbvc_v4l2_set_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+-- 
+2.56.0
+

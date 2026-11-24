@@ -1,0 +1,24 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+
+set name=pkg.fmri value=pkg:/group/apple/audio@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="OI-Apple: sound"
+set name=pkg.description value="audiohd with the Apple codec fixes (CS4206/CS4208/CS8409 amplifiers, HDMI/DisplayPort) and PulseAudio."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+depend type=require fmri=pkg:/driver/audio/audiohd@0.5.11-2026.0.0.23395.7
+depend type=require fmri=pkg:/library/audio/pulseaudio@17.0-2026.0.0.7

@@ -1,0 +1,255 @@
+From 6e910bc469e0de007be9c2a276396ee4fde30253 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Fri, 20 Nov 2026 10:56:38 +0100
+Subject: [PATCH] NNNNN usbvc: several opens; lost packets and a missing end of
+ frame as uvcvideo
+
+usbvc allowed one open at a time.  Chromium opens every /dev/video*
+device again to enumerate it (at each enumerateDevices(), which web
+apps such as Teams call during a call); with the camera streaming the
+open failed with EBUSY, Chromium left the camera out of the device list
+and the page restarted it.  V4L2 allows several opens.
+
+usbvc only logged isochronous packets that came back with an error and
+used them as if nothing had happened: the frame missed data but was
+handed out as good.  A FID toggle in the middle of a frame (its end of
+frame packet lost) marked the frame broken, dropped the packet, and the
+FID check then dropped the whole next frame as well.
+
+- usbvc: open(9E) no longer refuses a second open; power is raised and
+  held busy at the first open only (close(9E) comes at the last close).
+  S_FMT and S_PARM already return EBUSY while streaming.
+- usbvc: a packet with an error marks the frame being filled broken
+  (V4L2_BUF_FLAG_ERROR), its data unused, as uvcvideo; lost before a
+  frame began, the frame that begins next is marked.
+- usbvc: a FID toggle in the middle of a frame completes it and the
+  packet starts the next frame, as uvcvideo.
+- usbvc: every stream start resets the FID state.
+---
+ .../common/io/usb/clients/video/usbvc/usbvc.c | 131 ++++++++++++------
+ .../sys/usb/clients/video/usbvc/usbvc_var.h   |   4 +
+ 2 files changed, 93 insertions(+), 42 deletions(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index 895aa9c2..e7599559 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -667,8 +667,11 @@ usbvc_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
+ 	}
+ 
+ 	/*
+-	 * Keep it simple: one client at a time.
+-	 * Exclusive open only
++	 * Several opens, as V4L2 allows: programs open the device to
++	 * enumerate it while another descriptor streams (Chromium does at
++	 * every enumerateDevices()).  The device state is shared; S_FMT and
++	 * S_PARM return EBUSY while streaming, and close(9E) comes only
++	 * with the last close.
+ 	 */
+ 	mutex_enter(&usbvcp->usbvc_mutex);
+ 	USB_DPRINTF_L4(PRINT_MASK_OPEN, usbvcp->usbvc_log_handle,
+@@ -684,20 +687,20 @@ usbvc_open(dev_t *devp, int flag, int otyp, cred_t *cred_p)
+ 
+ 		return (EIO);
+ 	}
+-	if ((usbvcp->usbvc_drv_state & USBVC_OPEN) != 0) {
+-		mutex_exit(&usbvcp->usbvc_mutex);
+-
+-		return (EBUSY);
+-	}
+-	usbvcp->usbvc_drv_state |= USBVC_OPEN;
+-
+ 	if (usbvc_serialize_access(usbvcp, USBVC_SER_SIG) == 0) {
+-		usbvcp->usbvc_drv_state &= ~USBVC_OPEN;
+ 		usbvcp->usbvc_serial_inuse = B_FALSE;
+ 		mutex_exit(&usbvcp->usbvc_mutex);
+ 
+ 		return (EINTR);
+ 	}
++	if ((usbvcp->usbvc_drv_state & USBVC_OPEN) != 0) {
++		/* already open: power is up and stays busy until last close */
++		usbvc_release_access(usbvcp);
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		return (0);
++	}
++	usbvcp->usbvc_drv_state |= USBVC_OPEN;
+ 
+ 	/* raise power */
+ 	usbvc_pm_busy_component(usbvcp);
+@@ -3268,6 +3271,9 @@ usbvc_start_isoc_polling(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if,
+ 		n_pkt = 1;
+ 	}
+ 	strm_if->sequence = 0;
++	/* the first frame of every stream start begins with any FID */
++	strm_if->fid = 0xff;
++	strm_if->pkt_lost = 0;
+ 	USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 	    "usbvc_start_isoc_polling: n_pkt=%d", n_pkt);
+ 
+@@ -3352,51 +3358,81 @@ usbvc_isoc_cb(usb_pipe_handle_t ph, usb_isoc_req_t *isoc_req)
+ 		    isoc_req->isoc_pkt_descr[i].isoc_pkt_status,
+ 		    isoc_req->isoc_pkt_descr[i].isoc_pkt_actual_length);
+ 
+-		if (isoc_req->isoc_pkt_descr[i].isoc_pkt_status !=
+-		    USB_CR_OK) {
+-			USB_DPRINTF_L3(PRINT_MASK_CB,
+-			    usbvcp->usbvc_log_handle,
+-			    "record: pkt=%d status=%s", i, usb_str_cr(
+-			    isoc_req->isoc_pkt_descr[i].isoc_pkt_status));
+-		}
+-
+ 		if (usbvcp->usbvc_io_type == V4L2_MEMORY_MMAP) {
+ 			bufgrp = &usbvcp->usbvc_curr_strm->buf_map;
+ 		} else {
+ 			bufgrp = &usbvcp->usbvc_curr_strm->buf_read;
+ 		}
+ 
+-		if (isoc_req->isoc_pkt_descr[i].isoc_pkt_actual_length) {
+-			if (usbvc_decode_stream_header(usbvcp, bufgrp, data,
+-			    isoc_req->isoc_pkt_descr[i].isoc_pkt_actual_length)
+-			    != USB_SUCCESS) {
+-				USB_DPRINTF_L3(PRINT_MASK_CB,
+-				    usbvcp->usbvc_log_handle, "decode error");
++		if (isoc_req->isoc_pkt_descr[i].isoc_pkt_status !=
++		    USB_CR_OK) {
++			USB_DPRINTF_L3(PRINT_MASK_CB,
++			    usbvcp->usbvc_log_handle,
++			    "record: pkt=%d status=%s", i, usb_str_cr(
++			    isoc_req->isoc_pkt_descr[i].isoc_pkt_status));
++			/*
++			 * A lost packet: the frame being filled misses data
++			 * (as uvcvideo, the packet's data is not used).  The
++			 * rest of that frame is dropped by the FID check; a
++			 * frame that begins next may miss its start.
++			 */
++			if (bufgrp->buf_filling != NULL &&
++			    bufgrp->buf_filling->filled != 0) {
++				bufgrp->buf_filling->status = USBVC_BUF_ERR;
++			} else {
++				usbvcp->usbvc_curr_strm->pkt_lost = 1;
+ 			}
+-			if (bufgrp->buf_filling &&
+-			    (bufgrp->buf_filling->status == USBVC_BUF_ERR ||
+-			    bufgrp->buf_filling->status == USBVC_BUF_DONE)) {
+-
++		} else if (isoc_req->isoc_pkt_descr[i].
++		    isoc_pkt_actual_length != 0) {
++			int	drv;
++
++			drv = usbvc_decode_stream_header(usbvcp, bufgrp, data,
++			    isoc_req->isoc_pkt_descr[i].isoc_pkt_actual_length);
++			if (drv == USBVC_DECODE_AGAIN) {
++				/*
++				 * FID toggled without an end of frame: the
++				 * frame being filled is complete, this packet
++				 * starts the next one.
++				 */
+ 				usbvc_buf_complete(usbvcp->usbvc_curr_strm,
+ 				    bufgrp->buf_filling);
+-
+-				/* Move the buf to the full list */
+ 				list_insert_tail(&bufgrp->uv_buf_done,
+ 				    bufgrp->buf_filling);
+-
+ 				bufgrp->buf_filling = NULL;
+ 				buf_done = B_TRUE;
+-
+-				if (usbvcp->usbvc_io_type == V4L2_MEMORY_MMAP) {
+-					cv_broadcast(&usbvcp->usbvc_mapio_cv);
+-				} else {
+-					cv_broadcast(&usbvcp->usbvc_read_cv);
+-				}
++				drv = usbvc_decode_stream_header(usbvcp,
++				    bufgrp, data, isoc_req->
++				    isoc_pkt_descr[i].isoc_pkt_actual_length);
+ 			}
++			if (drv != USB_SUCCESS) {
++				USB_DPRINTF_L3(PRINT_MASK_CB,
++				    usbvcp->usbvc_log_handle, "decode error");
++			}
++		}
++		if (bufgrp->buf_filling != NULL &&
++		    (bufgrp->buf_filling->status == USBVC_BUF_ERR ||
++		    bufgrp->buf_filling->status == USBVC_BUF_DONE)) {
++
++			usbvc_buf_complete(usbvcp->usbvc_curr_strm,
++			    bufgrp->buf_filling);
++
++			/* Move the buf to the full list */
++			list_insert_tail(&bufgrp->uv_buf_done,
++			    bufgrp->buf_filling);
++
++			bufgrp->buf_filling = NULL;
++			buf_done = B_TRUE;
+ 		}
+ 
+ 		data->b_rptr += isoc_req->isoc_pkt_descr[i].isoc_pkt_length;
+ 	}
++	if (buf_done) {
++		if (usbvcp->usbvc_io_type == V4L2_MEMORY_MMAP) {
++			cv_broadcast(&usbvcp->usbvc_mapio_cv);
++		} else {
++			cv_broadcast(&usbvcp->usbvc_read_cv);
++		}
++	}
+ 	mutex_exit(&usbvcp->usbvc_mutex);
+ 
+ 	/* not under usbvc_mutex: usbvc_chpoll() takes it */
+@@ -3693,15 +3729,26 @@ usbvc_decode_stream_header(usbvc_state_t *usbvcp, usbvc_buf_grp_t *bufgrp,
+ 			return (USB_FAILURE);
+ 		}
+ 		strm_if->fid = head_flag & USBVC_STREAM_FID;
++		if (strm_if->pkt_lost) {
++			/* a packet lost just before: may be this frame's */
++			strm_if->pkt_lost = 0;
++			buf_filling->status = USBVC_BUF_ERR;
++		}
+ 
+-	/* If in the middle of a frame, fid should be consistent. */
++	/*
++	 * FID toggled in the middle of a frame: its end of frame packet was
++	 * lost (or the camera sends none).  As uvcvideo, the frame is
++	 * complete and this packet is the first of the next one.
++	 */
+ 	} else if (strm_if->fid != (head_flag & USBVC_STREAM_FID)) {
+ 		USB_DPRINTF_L2(PRINT_MASK_CB, usbvcp->usbvc_log_handle,
+-		    "usbvc_decode_stream_header: fid is incorrect.");
+-		strm_if->fid = head_flag & USBVC_STREAM_FID;
+-		buf_filling->status = USBVC_BUF_ERR;
++		    "usbvc_decode_stream_header: FID toggled, frame done");
++		if (buf_filling->status != USBVC_BUF_ERR) {
++			buf_filling->status = USBVC_BUF_DONE;
++		}
++		strm_if->fid = 0xff;
+ 
+-		return (USB_FAILURE);
++		return (USBVC_DECODE_AGAIN);
+ 	}
+ 	if (data_len) {
+ 		bcopy((void *)(data->b_rptr + head_len),
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+index ccab9779..80e85f9c 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+@@ -135,6 +135,7 @@ typedef struct usbvc_stream_if {
+ 	uint8_t		stream_on;
+ 
+ 	uchar_t		fid;		/* the MJPEG FID bit */
++	uchar_t		pkt_lost;	/* a packet lost before a frame began */
+ 	uint32_t	sequence;	/* v4l2_buffer sequence counter */
+ 	usbvc_buf_grp_t	buf_read;	/* buf used for read I/O */
+ 	uint8_t			buf_read_num; /* desired buf num for read I/O */
+@@ -158,6 +159,9 @@ typedef struct usbvc_vic {
+ /* Macros */
+ #define	USBVC_OPEN		0x00000001
+ 
++/* usbvc_decode_stream_header(): FID toggled, complete and decode again */
++#define	USBVC_DECODE_AGAIN	1
++
+ /* For serialization. */
+ #define	USBVC_SER_NOSIG	B_FALSE
+ #define	USBVC_SER_SIG		B_TRUE
+-- 
+2.56.0
+

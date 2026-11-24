@@ -1,0 +1,156 @@
+From 3cd950480b29792e9251945319299257003217e4 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 16:41:15 +0100
+Subject: [PATCH] NNNNN usbvc: isoc requests over 64k fail on xhci; no sequence
+ numbers or timestamps
+
+The high bandwidth alternate settings of USB 2 webcams (3 x 1024 byte
+packets per microframe, e.g. MJPEG 1280x720 on a Logitech C920) made
+usbvc ask for 40 * 3072 bytes in one isoc request. xhci(4D) maps an isoc
+request into a single DMA cookie that cannot cross a 64k boundary, so
+ddi_dma_mem_alloc() failed ("xhci0: failed to allocate DMA memory: -1")
+and VIDIOC_STREAMON and read(2) failed with EFAULT.
+
+- Limit an isoc request to 64k of data and to what the host controller
+  takes (usb_get_max_pkts_per_isoc_request()).
+- Completed buffers get a sequence number (from 0 at STREAMON), a
+  CLOCK_MONOTONIC timestamp (V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC) and
+  V4L2_BUF_FLAG_ERROR when the frame was broken; VIDIOC_DQBUF clears
+  V4L2_BUF_FLAG_QUEUED.
+- VIDIOC_STREAMON fails with EIO, not EFAULT, when the isoc polling
+  cannot start.
+---
+ .../common/io/usb/clients/video/usbvc/usbvc.c | 39 +++++++++++++++++++
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   |  3 +-
+ .../sys/usb/clients/video/usbvc/usbvc_var.h   |  9 +++++
+ 3 files changed, 50 insertions(+), 1 deletion(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index df8902ec..a00a347c 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -235,6 +235,7 @@ static void	usbvc_close_isoc_pipe(usbvc_state_t *, usbvc_stream_if_t *);
+ 
+ /* callbacks */
+ static void	usbvc_isoc_cb(usb_pipe_handle_t, usb_isoc_req_t *);
++static void	usbvc_buf_complete(usbvc_stream_if_t *, usbvc_buf_t *);
+ static void	usbvc_isoc_exc_cb(usb_pipe_handle_t, usb_isoc_req_t *);
+ 
+ /* Others */
+@@ -3178,6 +3179,29 @@ usbvc_close_isoc_pipe(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if)
+ }
+ 
+ 
++/*
++ * A buffer is complete: give it the next sequence number and a
++ * CLOCK_MONOTONIC (gethrtime) timestamp, and flag a broken frame.
++ */
++static void
++usbvc_buf_complete(usbvc_stream_if_t *strm_if, usbvc_buf_t *buf)
++{
++	hrtime_t	now = gethrtime();
++	uint32_t	flags = buf->v4l2_buf.flags;
++
++	buf->v4l2_buf.sequence = strm_if->sequence++;
++	buf->v4l2_buf.timestamp.tv_sec = now / NANOSEC;
++	buf->v4l2_buf.timestamp.tv_usec =
++	    (now % NANOSEC) / (NANOSEC / MICROSEC);
++	flags &= ~(V4L2_BUF_FLAG_TIMESTAMP_MASK | V4L2_BUF_FLAG_ERROR);
++	flags |= V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
++	if (buf->status == USBVC_BUF_ERR) {
++		flags |= V4L2_BUF_FLAG_ERROR;
++	}
++	buf->v4l2_buf.flags = flags;
++}
++
++
+ /*
+  * Start to get video data from isoc pipe in the stream interface,
+  * issue isoc req.
+@@ -3191,6 +3215,7 @@ usbvc_start_isoc_polling(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if,
+ 	usb_isoc_req_t	*req;
+ 	ushort_t	pkt_size;
+ 	ushort_t	n_pkt, pkt;
++	uint_t		max_pkt;
+ 	uint32_t	frame_size;
+ 
+ 	ASSERT(mutex_owned(&usbvcp->usbvc_mutex));
+@@ -3210,6 +3235,17 @@ usbvc_start_isoc_polling(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if,
+ 	if (n_pkt > USBVC_MAX_PKTS) {
+ 		n_pkt = USBVC_MAX_PKTS;
+ 	}
++	if (n_pkt > USBVC_MAX_ISOC_REQ_SIZE / pkt_size) {
++		n_pkt = USBVC_MAX_ISOC_REQ_SIZE / pkt_size;
++	}
++	max_pkt = usb_get_max_pkts_per_isoc_request(usbvcp->usbvc_dip);
++	if (max_pkt != 0 && n_pkt > max_pkt) {
++		n_pkt = max_pkt;
++	}
++	if (n_pkt == 0) {
++		n_pkt = 1;
++	}
++	strm_if->sequence = 0;
+ 	USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 	    "usbvc_start_isoc_polling: n_pkt=%d", n_pkt);
+ 
+@@ -3319,6 +3355,9 @@ usbvc_isoc_cb(usb_pipe_handle_t ph, usb_isoc_req_t *isoc_req)
+ 			    (bufgrp->buf_filling->status == USBVC_BUF_ERR ||
+ 			    bufgrp->buf_filling->status == USBVC_BUF_DONE)) {
+ 
++				usbvc_buf_complete(usbvcp->usbvc_curr_strm,
++				    bufgrp->buf_filling);
++
+ 				/* Move the buf to the full list */
+ 				list_insert_tail(&bufgrp->uv_buf_done,
+ 				    bufgrp->buf_filling);
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index 250a2ae6..3a646af4 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -496,7 +496,7 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 		/* At present, VIDIOC_STREAMON supports mmap io only. */
+ 		if (usbvc_start_isoc_polling(usbvcp, strm_if,
+ 		    V4L2_MEMORY_MMAP) != USB_SUCCESS) {
+-			rv = EFAULT;
++			rv = EIO;
+ 			mutex_exit(&usbvcp->usbvc_mutex);
+ 
+ 			break;
+@@ -1494,6 +1494,7 @@ usbvc_v4l2_dequeue_buffer(usbvc_state_t *usbvcp, struct v4l2_buffer *buf,
+ 	 * value to locate the mapped memory
+ 	 */
+ 	bcopy(&buf_done->v4l2_buf, buf, sizeof (struct v4l2_buffer));
++	buf->flags &= ~V4L2_BUF_FLAG_QUEUED;
+ 	buf->flags |= V4L2_BUF_FLAG_DONE | V4L2_BUF_FLAG_MAPPED;
+ 	buf->bytesused = buf_done->filled;
+ 	USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+index bf847ba9..c922848f 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+@@ -135,6 +135,7 @@ typedef struct usbvc_stream_if {
+ 	uint8_t		stream_on;
+ 
+ 	uchar_t		fid;		/* the MJPEG FID bit */
++	uint32_t	sequence;	/* v4l2_buffer sequence counter */
+ 	usbvc_buf_grp_t	buf_read;	/* buf used for read I/O */
+ 	uint8_t			buf_read_num; /* desired buf num for read I/O */
+ 	usbvc_buf_grp_t	buf_map;	/* buf used for mmap I/O */
+@@ -178,6 +179,14 @@ typedef struct usbvc_vic {
+ 
+ #define	USBVC_MAX_PKTS 40
+ 
++/*
++ * Largest data buffer of one isoc request. xhci(4D) maps an isoc request
++ * into a single DMA cookie, which cannot cross a 64k boundary; the high
++ * bandwidth alternate settings (3 x 1024 byte packets per microframe)
++ * would otherwise need 40 * 3072 bytes.
++ */
++#define	USBVC_MAX_ISOC_REQ_SIZE 0x10000
++
+ #define	USBVC_DEFAULT_READ_BUF_NUM 3
+ #define	USBVC_MAX_READ_BUF_NUM 40
+ #define	USBVC_MAX_MAP_BUF_NUM 40
+-- 
+2.56.0
+

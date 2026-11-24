@@ -1,0 +1,1439 @@
+From b676f0ef3a5d011461e17da2161b1678416daf8f Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Tue, 17 Nov 2026 11:36:30 +0100
+Subject: [PATCH 1/2] NNNNN usbvc: frame size/interval enumeration, frame based
+ formats, poll(2)
+
+V4L2 applications such as Chromium's video capture find the frame sizes
+and rates of a camera with VIDIOC_ENUM_FRAMESIZES and
+VIDIOC_ENUM_FRAMEINTERVALS, and poll(2) the device before each
+VIDIOC_DQBUF. usbvc had neither.
+
+- VIDIOC_ENUM_FRAMESIZES and VIDIOC_ENUM_FRAMEINTERVALS from the frame
+  descriptors the driver already parses: discrete sizes; discrete or
+  stepwise/continuous intervals as reduced fractions of a second.
+- chpoll(9E): POLLIN when a buffer is done (mmap I/O or read(2)),
+  POLLHUP when the camera is unplugged.
+- UVC frame based formats (VS_FORMAT_FRAME_BASED: MJPEG, H.264). Their
+  frame descriptors keep dwDefaultFrameInterval and bFrameIntervalType
+  at other offsets, so both are now decoded per frame at attach time.
+- Format GUIDs: I420, YV12, UYVY, M420, Y800, Y16 besides YUY2 and NV12.
+- VIDIOC_QUERYCAP sets device_caps and V4L2_CAP_DEVICE_CAPS.
+- VIDIOC_S_FMT fails with EINVAL, not EFAULT, for an unknown format.
+- The default format no longer assumes frames[0] has a descriptor.
+- sys/videodev2.h: the frame size/interval enumeration, device_caps,
+  the v4l2_pix_format colour fields (ycbcr_enc, quantization, xfer_func),
+  colour enums, camera class controls, events, more pixel formats and
+  buffer flags, with Linux V4L2's sizes, offsets and values.
+---
+ usr/src/man/man4d/usbvc.4d                    |  33 +-
+ .../common/io/usb/clients/video/usbvc/usbvc.c | 146 ++++++-
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 384 ++++++++++++++----
+ .../sys/usb/clients/video/usbvc/usbvc.h       |  23 +-
+ .../sys/usb/clients/video/usbvc/usbvc_var.h   |   7 +
+ usr/src/uts/common/sys/videodev2.h            | 321 ++++++++++++++-
+ 6 files changed, 820 insertions(+), 94 deletions(-)
+
+diff --git a/usr/src/man/man4d/usbvc.4d b/usr/src/man/man4d/usbvc.4d
+index 955b7b75..dd3a02d1 100644
+--- a/usr/src/man/man4d/usbvc.4d
++++ b/usr/src/man/man4d/usbvc.4d
+@@ -3,7 +3,7 @@
+ .\" The contents of this file are subject to the terms of the Common Development and Distribution License (the "License").  You may not use this file except in compliance with the License.
+ .\" You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE or http://www.opensolaris.org/os/licensing.  See the License for the specific language governing permissions and limitations under the License.
+ .\" When distributing Covered Code, include this CDDL HEADER in each file and include the License file at usr/src/OPENSOLARIS.LICENSE.  If applicable, add the following below this CDDL HEADER, with the fields enclosed by brackets "[]" replaced with your own identifying information: Portions Copyright [yyyy] [name of copyright owner]
+-.TH USBVC 4D "May 13, 2017"
++.TH USBVC 4D "November 17, 2026"
+ .SH NAME
+ usbvc \- USB video class driver
+ .SH SYNOPSIS
+@@ -42,7 +42,8 @@ The \fBusbvc\fR driver reads video data from the isochronous endpoint of the
+ device. Bulk data endpoints are not supported.
+ .sp
+ .LP
+-MJPEG and UNCOMPRESSED video formats are supported. Isochronous data are read
++MJPEG, UNCOMPRESSED and FRAME BASED (MJPEG and H.264) video formats are
++supported. Isochronous data are read
+ from the isochronous input device frame-by-frame and are maintained in a
+ buffer array within the driver. Video frames are read from the driver using the
+ \fBread\fR(2) or \fBmmap\fR(2) I/O method. For \fBread\fR(2), each read returns
+@@ -50,6 +51,11 @@ a buffer of a video frame. For \fBmmap\fR(2), each \fBVIDIOC_DQBUF\fR ioctl
+ returns the buffer structure v4l2_buffer. (A video frame buffer pointer is
+ included in the structure). See the \fIV4L2 API\fR for buffer structure and
+ other related data structure information.
++.sp
++.LP
++The device supports \fBpoll\fR(2): it is readable when a filled video frame
++buffer is waiting for \fBVIDIOC_DQBUF\fR or \fBread\fR(2), and reports
++POLLHUP when the device has been disconnected.
+ .SH IOCTLS
+ .LP
+ A brief overview of supported ioctl requests appears below. For more detailed
+@@ -100,6 +106,28 @@ Set a video format.
+ Get a video format.
+ .RE
+ 
++.sp
++.ne 2
++.na
++\fBVIDIOC_ENUM_FRAMESIZES\fR
++.ad
++.sp .6
++.RS 4n
++Enumerate the frame sizes of a video format. All sizes are of type
++V4L2_FRMSIZE_TYPE_DISCRETE.
++.RE
++
++.sp
++.ne 2
++.na
++\fBVIDIOC_ENUM_FRAMEINTERVALS\fR
++.ad
++.sp .6
++.RS 4n
++Enumerate the frame intervals of a video format and frame size, either
++discrete or as a minimum, maximum and step.
++.RE
++
+ .sp
+ .ne 2
+ .na
+@@ -370,6 +398,7 @@ Architecture	 SPARC, x86, PCI-based systems
+ .BR ioctl (2),
+ .BR mmap (2),
+ .BR open (2),
++.BR poll (2),
+ .BR read (2),
+ .BR ugen (4D),
+ .BR usba (4D),
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index 9a3eea35..df8902ec 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -24,6 +24,7 @@
+ 
+ /*
+  * Copyright (c) 2018, Joyent, Inc.
++ * Copyright 2026 isoriano1968
+  */
+ 
+ /*
+@@ -198,6 +199,7 @@ static void	usbvc_cpr_resume(dev_info_t *);
+ static void	usbvc_restore_device_state(dev_info_t *, usbvc_state_t *);
+ 
+ /* Events */
++static int	usbvc_chpoll(dev_t, short, int, short *, struct pollhead **);
+ static int	usbvc_disconnect_event_cb(dev_info_t *);
+ static int	usbvc_reconnect_event_cb(dev_info_t *);
+ 
+@@ -262,7 +264,7 @@ struct cb_ops usbvc_cb_ops = {
+ 	usbvc_devmap,		/* devmap */
+ 	nodev,			/* mmap */
+ 	ddi_devmap_segmap,	/* segmap */
+-	nochpoll,		/* poll */
++	usbvc_chpoll,		/* poll */
+ 	ddi_prop_op,		/* cb_prop_op */
+ 	NULL,			/* streamtab  */
+ 	D_MP | D_DEVMAP
+@@ -559,6 +561,52 @@ usbvc_detach(dev_info_t *dip, ddi_detach_cmd_t cmd)
+ }
+ 
+ 
++/*
++ * usbvc_chpoll:
++ *	poll(2) entry point: readable when a filled buffer waits for
++ *	VIDIOC_DQBUF (mmap I/O) or read(2). V4L2 applications such as
++ *	Chromium poll before they dequeue.
++ */
++static int
++usbvc_chpoll(dev_t dev, short events, int anyyet, short *reventsp,
++    struct pollhead **phpp)
++{
++	usbvc_state_t	*usbvcp =
++	    ddi_get_soft_state(usbvc_statep, getminor(dev));
++	usbvc_stream_if_t	*strm_if;
++	usbvc_buf_grp_t	*bufgrp;
++	short		revents = 0;
++
++	if (usbvcp == NULL) {
++
++		return (ENXIO);
++	}
++
++	mutex_enter(&usbvcp->usbvc_mutex);
++	strm_if = usbvcp->usbvc_curr_strm;
++	if (usbvcp->usbvc_dev_state == USB_DEV_DISCONNECTED) {
++		revents = POLLHUP | POLLERR;
++	} else if (strm_if != NULL) {
++		if (usbvcp->usbvc_io_type == V4L2_MEMORY_MMAP) {
++			bufgrp = &strm_if->buf_map;
++		} else {
++			bufgrp = &strm_if->buf_read;
++		}
++		if (!list_is_empty(&bufgrp->uv_buf_done)) {
++			revents = events & (POLLIN | POLLRDNORM);
++		}
++	}
++	mutex_exit(&usbvcp->usbvc_mutex);
++
++	*reventsp = revents;
++	if ((revents == 0 && !anyyet) || (events & POLLET)) {
++		*phpp = &usbvcp->usbvc_pollhead;
++	}
++
++	return (0);
++}
++
++
+ /*
+  * usbvc_cleanup:
+  *	clean up the driver state for detach
+@@ -597,6 +645,7 @@ usbvc_cleanup(dev_info_t *dip, usbvc_state_t *usbvcp)
+ 		usbvc_fini_sync_objs(usbvcp);
+ 	}
+ 
++	pollhead_clean(&usbvcp->usbvc_pollhead);
+ 	usb_client_detach(dip, usbvcp->usbvc_reg);
+ 	usb_free_log_hdl(usbvcp->usbvc_log_handle);
+ 	ddi_soft_state_free(usbvc_statep, ddi_get_instance(dip));
+@@ -1704,6 +1753,9 @@ usbvc_disconnect_event_cb(dev_info_t *dip)
+ 	usbvc_release_access(usbvcp);
+ 	mutex_exit(&usbvcp->usbvc_mutex);
+ 
++	/* and wake up the pollers, they will see POLLHUP */
++	pollwakeup(&usbvcp->usbvc_pollhead, POLLHUP | POLLERR);
++
+ 	return (USB_SUCCESS);
+ }
+ 
+@@ -2520,18 +2572,47 @@ usbvc_parse_frames(usbvc_state_t *usbvcp, usbvc_format_group_t *fmtgrp,
+ 			continue;
+ 		}
+ 		frm = &fmtgrp->frames[i];
++
++		/*
++		 * The frame-based frame descriptor has dwDefaultFrameInterval
++		 * and bFrameIntervalType at other offsets than the MJPEG and
++		 * uncompressed ones; anything else is not a frame descriptor.
++		 */
++		switch (cvs_buf[2]) {
++		case VS_FRAME_UNCOMPRESSED:
++		case VS_FRAME_MJPEG:
++			LE_TO_UINT32(cvs_buf, 21, frm->dwDefaultFrameInterval);
++			frm->bFrameIntervalType = cvs_buf[25];
++
++			break;
++		case VS_FRAME_FRAME_BASED:
++			LE_TO_UINT32(cvs_buf, 17, frm->dwDefaultFrameInterval);
++			frm->bFrameIntervalType = cvs_buf[21];
++
++			break;
++		default:
++			USB_DPRINTF_L2(PRINT_MASK_ATTA,
++			    usbvcp->usbvc_log_handle,
++			    "usbvc_parse_frames: not a frame descriptor, "
++			    "subtype=%x", cvs_buf[2]);
++			i++;
++
++			continue;
++		}
+ 		frm->descr = (usbvc_frame_descr_t *)cvs->cvs_buf;
+ 
+ 		/* Descriptor for discrete frame interval */
+-		if (frm->descr->bFrameIntervalType > 0) {
+-			if (usbvc_chk_descr_len(25, 4, 0, cvs) != USB_SUCCESS) {
++		if (frm->bFrameIntervalType > 0) {
++			if (cvs_buf_len < USBVC_FRAME_INTERVAL_OFF +
++			    4 * frm->bFrameIntervalType) {
+ 				frm->descr = NULL;
+ 				i++;
+ 
+ 				continue;
+ 			}
+ 
+-			frm->dwFrameInterval = (uint8_t *)&cvs_buf[26];
++			frm->dwFrameInterval =
++			    (uint8_t *)&cvs_buf[USBVC_FRAME_INTERVAL_OFF];
+ 		} else {	/* Continuous interval */
+ 			if (cvs_buf_len < USBVC_FRAME_LEN_CON) {
+ 				frm->descr = NULL;
+@@ -2586,10 +2667,32 @@ usbvc_parse_format_group(usbvc_state_t *usbvcp, usbvc_format_group_t *fmtgrp,
+ 		fmtgrp->v4l2_bpp = 0;
+ 		fmtgrp->v4l2_pixelformat = V4L2_PIX_FMT_MJPEG;
+ 
++		break;
++	case VS_FORMAT_FRAME_BASED:
++		if (fmt->bLength < 28) {
++			USB_DPRINTF_L2(PRINT_MASK_ATTA,
++			    usbvcp->usbvc_log_handle,
++			    "usbvc_parse_format_group: short frame based "
++			    "format descriptor");
++
++			return (USB_FAILURE);
++		}
++		usbvc_parse_color_still(usbvcp, fmtgrp, cvs_data, cvs_num,
++		    altif_n_cvs);
++		usbvc_parse_frames(usbvcp, fmtgrp, cvs_data, cvs_num,
++		    altif_n_cvs);
++		fmtgrp->v4l2_pixelformat = usbvc_v4l2_guid2fcc(
++		    (uint8_t *)&fmt->fmt.frame_based.guidFormat);
++		if (usbvc_v4l2_fcc_compressed(fmtgrp->v4l2_pixelformat)) {
++			fmtgrp->v4l2_bpp = 0;
++		} else {
++			fmtgrp->v4l2_bpp =
++			    fmt->fmt.frame_based.bBitsPerPixel / 8;
++		}
++
+ 		break;
+ 	case VS_FORMAT_MPEG2TS:
+ 	case VS_FORMAT_DV:
+-	case VS_FORMAT_FRAME_BASED:
+ 	case VS_FORMAT_STREAM_BASED:
+ 		USB_DPRINTF_L2(PRINT_MASK_ATTA, usbvcp->usbvc_log_handle,
+ 		    "usbvc_parse_format_group: format not supported yet.");
+@@ -3169,6 +3272,7 @@ usbvc_isoc_cb(usb_pipe_handle_t ph, usb_isoc_req_t *isoc_req)
+ 	int		i;
+ 	mblk_t		*data = isoc_req->isoc_data;
+ 	usbvc_buf_grp_t	*bufgrp;
++	boolean_t	buf_done = B_FALSE;
+ 
+ 	mutex_enter(&usbvcp->usbvc_mutex);
+ 
+@@ -3220,6 +3324,7 @@ usbvc_isoc_cb(usb_pipe_handle_t ph, usb_isoc_req_t *isoc_req)
+ 				    bufgrp->buf_filling);
+ 
+ 				bufgrp->buf_filling = NULL;
++				buf_done = B_TRUE;
+ 
+ 				if (usbvcp->usbvc_io_type == V4L2_MEMORY_MMAP) {
+ 					cv_broadcast(&usbvcp->usbvc_mapio_cv);
+@@ -3232,6 +3337,11 @@ usbvc_isoc_cb(usb_pipe_handle_t ph, usb_isoc_req_t *isoc_req)
+ 		data->b_rptr += isoc_req->isoc_pkt_descr[i].isoc_pkt_length;
+ 	}
+ 	mutex_exit(&usbvcp->usbvc_mutex);
++
++	/* not under usbvc_mutex: usbvc_chpoll() takes it */
++	if (buf_done) {
++		pollwakeup(&usbvcp->usbvc_pollhead, POLLIN | POLLRDNORM);
++	}
+ 	usb_free_isoc_req(isoc_req);
+ }
+ 
+@@ -3761,6 +3871,7 @@ usbvc_set_default_stream_fmt(usbvc_state_t *usbvcp)
+ 	usbvc_vs_probe_commit_t ctrl, ctrl_get;
+ 	usbvc_stream_if_t *strm_if;
+ 	usbvc_format_group_t *curr_fmtgrp;
++	usbvc_frames_t *frame = NULL;
+ 	uint32_t bandwidth;
+ 	uint8_t  index, i;
+ 
+@@ -3813,12 +3924,23 @@ usbvc_set_default_stream_fmt(usbvc_state_t *usbvcp)
+ 
+ 	ctrl.bFormatIndex = curr_fmtgrp->format->bFormatIndex;
+ 
+-	/* use the first frame descr as default */
+-	ctrl.bFrameIndex = curr_fmtgrp->frames[0].descr->bFrameIndex;
++	/* use the first valid frame descr as default */
++	for (i = 0; i < curr_fmtgrp->frame_cnt; i++) {
++		if (curr_fmtgrp->frames[i].descr != NULL) {
++			frame = &curr_fmtgrp->frames[i];
+ 
+-	/* use bcopy to keep the byte sequence as 32 bit little endian */
+-	bcopy(&(curr_fmtgrp->frames[0].descr->dwDefaultFrameInterval[0]),
+-	    &(ctrl.dwFrameInterval[0]), 4);
++			break;
++		}
++	}
++	if (frame == NULL) {
++		USB_DPRINTF_L2(PRINT_MASK_DEVCTRL, usbvcp->usbvc_log_handle,
++		    "usbvc_set_default_stream_fmt: no valid frame descr");
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		return (USB_FAILURE);
++	}
++	ctrl.bFrameIndex = frame->descr->bFrameIndex;
++	UINT32_TO_LE(frame->dwDefaultFrameInterval, 0, ctrl.dwFrameInterval);
+ 
+ 	mutex_exit(&usbvcp->usbvc_mutex);
+ 	if (usbvc_vs_set_probe_commit(usbvcp, strm_if, &ctrl, VS_PROBE_CONTROL)
+@@ -3858,8 +3980,8 @@ usbvc_set_default_stream_fmt(usbvc_state_t *usbvcp)
+ 		return (USB_FAILURE);
+ 	}
+ 
+-	index = ctrl_get.bFrameIndex -
+-	    strm_if->cur_format_group->frames[0].descr->bFrameIndex;
++	/* bFrameIndex is based on 1, frames[] on 0 (as in S_FMT) */
++	index = ctrl_get.bFrameIndex - 1;
+ 	if (index < strm_if->cur_format_group->frame_cnt) {
+ 		strm_if->cur_format_group->cur_frame =
+ 		    &strm_if->cur_format_group->frames[index];
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index db327ba4..250a2ae6 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -21,6 +21,7 @@
+ /*
+  * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
++ * Copyright 2026 isoriano1968
+  */
+ 
+ 
+@@ -49,6 +50,15 @@ static int usbvc_v4l2_get_ctrl(usbvc_state_t *, struct v4l2_control *);
+ static int usbvc_v4l2_set_ctrl(usbvc_state_t *, struct v4l2_control *);
+ static int usbvc_v4l2_set_parm(usbvc_state_t *, struct v4l2_streamparm *);
+ static int usbvc_v4l2_get_parm(usbvc_state_t *, struct v4l2_streamparm *);
++static usbvc_format_group_t *usbvc_v4l2_find_fmtgrp(usbvc_stream_if_t *,
++				uint32_t);
++static usbvc_frames_t *usbvc_v4l2_nth_frame(usbvc_format_group_t *, uint32_t);
++static usbvc_frames_t *usbvc_v4l2_find_frame(usbvc_format_group_t *,
++				uint32_t, uint32_t);
++static void usbvc_v4l2_interval(uint32_t, struct v4l2_fract *);
++static int usbvc_v4l2_enum_frameintervals(usbvc_state_t *,
++				struct v4l2_frmivalenum *);
++static void usbvc_v4l2_fcc_name(uint32_t, char *, size_t);
+ /* Video controls that supported by usbvc driver */
+ static usbvc_v4l2_ctrl_map_t usbvc_v4l2_ctrls[] = {
+ 	{
+@@ -101,6 +111,33 @@ static const uint8_t color_primaries[] = {
+ 		V4L2_COLORSPACE_SMPTE240M,
+ };
+ 
++/*
++ * Format GUIDs of uncompressed and frame based format descriptors: the
++ * first four bytes are a FOURCC, the rest is the same for all of them.
++ */
++static const uint8_t usbvc_guid_tail[12] = {
++	0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71
++};
++
++static const struct {
++	char		guid_fcc[4];
++	uint32_t	pixelformat;
++	boolean_t	compressed;
++	const char	*name;
++} usbvc_v4l2_formats[] = {
++	{ { 'Y', 'U', 'Y', '2' }, V4L2_PIX_FMT_YUYV, B_FALSE, "YUYV" },
++	{ { 'N', 'V', '1', '2' }, V4L2_PIX_FMT_NV12, B_FALSE, "NV12" },
++	{ { 'I', '4', '2', '0' }, V4L2_PIX_FMT_YUV420, B_FALSE, "YUV 4:2:0" },
++	{ { 'Y', 'V', '1', '2' }, V4L2_PIX_FMT_YVU420, B_FALSE, "YVU 4:2:0" },
++	{ { 'U', 'Y', 'V', 'Y' }, V4L2_PIX_FMT_UYVY, B_FALSE, "UYVY" },
++	{ { 'M', '4', '2', '0' }, V4L2_PIX_FMT_M420, B_FALSE, "M420" },
++	{ { 'Y', '8', '0', '0' }, V4L2_PIX_FMT_GREY, B_FALSE, "Greyscale" },
++	{ { 'Y', '8', ' ', ' ' }, V4L2_PIX_FMT_GREY, B_FALSE, "Greyscale" },
++	{ { 'Y', '1', '6', ' ' }, V4L2_PIX_FMT_Y16, B_FALSE, "Greyscale 16" },
++	{ { 'M', 'J', 'P', 'G' }, V4L2_PIX_FMT_MJPEG, B_TRUE, "MJPEG" },
++	{ { 'H', '2', '6', '4' }, V4L2_PIX_FMT_H264, B_TRUE, "H.264" },
++};
++
+ /* V4L2 ioctls */
+ int
+ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+@@ -127,8 +164,9 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 		(void) strncpy((char *)&caps.bus_info, "usb",
+ 		    sizeof (caps.bus_info));
+ 		caps.version = 1;
+-		caps.capabilities = V4L2_CAP_VIDEO_CAPTURE
++		caps.device_caps = V4L2_CAP_VIDEO_CAPTURE
+ 		    | V4L2_CAP_STREAMING | V4L2_CAP_READWRITE;
++		caps.capabilities = caps.device_caps | V4L2_CAP_DEVICE_CAPS;
+ 		USBVC_COPYOUT(caps);
+ 
+ 		break;
+@@ -157,33 +195,10 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 		    "V4L2 ioctl: VIDIOC_ENUM_FMT, idx=%d, grpcnt=%d",
+ 		    fmtdesc.index, strm_if->fmtgrp_cnt);
+ 
+-		switch (fmtgrp->format->bDescriptorSubType) {
+-		case VS_FORMAT_MJPEG:
+-			fmtdesc.flags = V4L2_FMT_FLAG_COMPRESSED;
+-			(void) strncpy(fmtdesc.description, "MJPEG",
+-			    sizeof (fmtdesc.description));
+-
+-			break;
+-		case VS_FORMAT_UNCOMPRESSED:
+-			fmtdesc.flags = 0;
+-			if (fmtdesc.pixelformat == V4L2_PIX_FMT_YUYV) {
+-				(void) strncpy(fmtdesc.description, "YUYV",
+-				    sizeof (fmtdesc.description));
+-			} else if (fmtdesc.pixelformat == V4L2_PIX_FMT_NV12) {
+-				(void) strncpy(fmtdesc.description, "NV12",
+-				    sizeof (fmtdesc.description));
+-			} else {
+-				(void) strncpy(fmtdesc.description,
+-				    "Unknown format",
+-				    sizeof (fmtdesc.description));
+-			}
+-
+-			break;
+-		default:
+-			fmtdesc.flags = 0;
+-			(void) strncpy(fmtdesc.description, "Unknown format",
+-			    sizeof (fmtdesc.description));
+-		}
++		fmtdesc.flags = usbvc_v4l2_fcc_compressed(fmtdesc.pixelformat) ?
++		    V4L2_FMT_FLAG_COMPRESSED : 0;
++		usbvc_v4l2_fcc_name(fmtdesc.pixelformat, fmtdesc.description,
++		    sizeof (fmtdesc.description));
+ 
+ 		mutex_exit(&usbvcp->usbvc_mutex);
+ 		USBVC_COPYOUT(fmtdesc);
+@@ -211,7 +226,7 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 
+ 		USBVC_COPYIN(fmt);
+ 		if (usbvc_v4l2_set_format(usbvcp, &fmt) != USB_SUCCESS) {
+-			rv = EFAULT;
++			rv = EINVAL;
+ 			USB_DPRINTF_L2(PRINT_MASK_IOCTL,
+ 			    usbvcp->usbvc_log_handle,
+ 			    "V4L2 ioctl VIDIOC_S_FMT fail");
+@@ -697,6 +712,59 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 
+ 		break;
+ 	}
++	case VIDIOC_ENUM_FRAMESIZES:
++	{
++		struct v4l2_frmsizeenum	fsize;
++		usbvc_format_group_t	*fmtgrp;
++		usbvc_frames_t		*frame = NULL;
++		uint32_t		w, h;
++
++		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++		    "V4L2 ioctl: VIDIOC_ENUM_FRAMESIZES");
++		USBVC_COPYIN(fsize);
++		mutex_enter(&usbvcp->usbvc_mutex);
++		fmtgrp = usbvc_v4l2_find_fmtgrp(usbvcp->usbvc_curr_strm,
++		    fsize.pixel_format);
++		if (fmtgrp != NULL) {
++			frame = usbvc_v4l2_nth_frame(fmtgrp, fsize.index);
++		}
++		if (frame == NULL) {
++			mutex_exit(&usbvcp->usbvc_mutex);
++			rv = EINVAL;
++
++			break;
++		}
++
++		/* UVC frame descriptors describe discrete sizes only */
++		LE_TO_UINT16(frame->descr->wWidth, 0, w);
++		LE_TO_UINT16(frame->descr->wHeight, 0, h);
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		bzero(&fsize.stepwise, sizeof (fsize.stepwise));
++		fsize.type = V4L2_FRMSIZE_TYPE_DISCRETE;
++		fsize.discrete.width = w;
++		fsize.discrete.height = h;
++		bzero(fsize.reserved, sizeof (fsize.reserved));
++		USBVC_COPYOUT(fsize);
++
++		break;
++	}
++	case VIDIOC_ENUM_FRAMEINTERVALS:
++	{
++		struct v4l2_frmivalenum	fival;
++
++		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++		    "V4L2 ioctl: VIDIOC_ENUM_FRAMEINTERVALS");
++		USBVC_COPYIN(fival);
++		rv = usbvc_v4l2_enum_frameintervals(usbvcp, &fival);
++		if (rv != 0) {
++
++			break;
++		}
++		USBVC_COPYOUT(fival);
++
++		break;
++	}
+ 	/* These ioctls are for analog video standards. */
+ 	case VIDIOC_G_STD:
+ 	case VIDIOC_S_STD:
+@@ -728,20 +796,209 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ uint32_t
+ usbvc_v4l2_guid2fcc(uint8_t *guid)
+ {
+-	uint32_t ret;
++	uint_t i;
++
++	if (memcmp(&guid[4], usbvc_guid_tail, sizeof (usbvc_guid_tail)) != 0) {
++
++		return (0);
++	}
++	for (i = 0; i < NELEM(usbvc_v4l2_formats); i++) {
++		if (memcmp(guid, usbvc_v4l2_formats[i].guid_fcc, 4) == 0) {
++
++			return (usbvc_v4l2_formats[i].pixelformat);
++		}
++	}
++
++	return (0);
++}
++
++
++/* Is the pixel format a compressed one (no bytesperline)? */
++boolean_t
++usbvc_v4l2_fcc_compressed(uint32_t pixelformat)
++{
++	uint_t i;
++
++	for (i = 0; i < NELEM(usbvc_v4l2_formats); i++) {
++		if (usbvc_v4l2_formats[i].pixelformat == pixelformat) {
++
++			return (usbvc_v4l2_formats[i].compressed);
++		}
++	}
++
++	return (B_FALSE);
++}
++
++
++/* Description of a pixel format for VIDIOC_ENUM_FMT */
++static void
++usbvc_v4l2_fcc_name(uint32_t pixelformat, char *buf, size_t len)
++{
++	uint_t i;
++
++	for (i = 0; i < NELEM(usbvc_v4l2_formats); i++) {
++		if (usbvc_v4l2_formats[i].pixelformat == pixelformat) {
++			(void) strlcpy(buf, usbvc_v4l2_formats[i].name, len);
++
++			return;
++		}
++	}
++	(void) strlcpy(buf, "Unknown format", len);
++}
++
++
++/*
++ * Find the format group of a pixel format. Only format groups with a
++ * known pixel format and at least one frame descriptor count.
++ */
++static usbvc_format_group_t *
++usbvc_v4l2_find_fmtgrp(usbvc_stream_if_t *strm_if, uint32_t pixelformat)
++{
++	usbvc_format_group_t *fmtgrp;
++	uint_t i;
++
++	if (strm_if == NULL || pixelformat == 0) {
++
++		return (NULL);
++	}
++	for (i = 0; i < strm_if->fmtgrp_cnt; i++) {
++		fmtgrp = &strm_if->format_group[i];
++		if (fmtgrp->v4l2_pixelformat == pixelformat &&
++		    fmtgrp->frame_cnt > 0) {
++
++			return (fmtgrp);
++		}
++	}
++
++	return (NULL);
++}
++
++
++/* The nth (from 0) valid frame descriptor of a format group */
++static usbvc_frames_t *
++usbvc_v4l2_nth_frame(usbvc_format_group_t *fmtgrp, uint32_t n)
++{
++	uint_t i;
++
++	for (i = 0; i < fmtgrp->frame_cnt; i++) {
++		if (fmtgrp->frames[i].descr == NULL) {
++
++			continue;
++		}
++		if (n-- == 0) {
++
++			return (&fmtgrp->frames[i]);
++		}
++	}
++
++	return (NULL);
++}
++
++
++/* The frame descriptor of a format group with exactly this size */
++static usbvc_frames_t *
++usbvc_v4l2_find_frame(usbvc_format_group_t *fmtgrp, uint32_t width,
++    uint32_t height)
++{
++	usbvc_frame_descr_t *descr;
++	uint32_t w, h;
++	uint_t i;
++
++	for (i = 0; i < fmtgrp->frame_cnt; i++) {
++		descr = fmtgrp->frames[i].descr;
++		if (descr == NULL) {
+ 
+-	uint8_t y[16] = USBVC_FORMAT_GUID_YUY2;
+-	uint8_t n[16] = USBVC_FORMAT_GUID_NV12;
+-	if (!memcmp((void *)guid, (void *) &y[0], 16)) {
+-		ret = V4L2_PIX_FMT_YUYV;
++			continue;
++		}
++		LE_TO_UINT16(descr->wWidth, 0, w);
++		LE_TO_UINT16(descr->wHeight, 0, h);
++		if (w == width && h == height) {
+ 
+-		return (ret);
++			return (&fmtgrp->frames[i]);
++		}
+ 	}
+-	if (!memcmp((void *)guid, (void *) &n, 16)) {
+-		ret = V4L2_PIX_FMT_NV12;
+ 
+-		return (ret);
++	return (NULL);
++}
++
++
++/*
++ * A UVC frame interval (in 100ns units) as a fraction of a second, reduced
++ * as far as possible: 333333 gives 333333/10000000, 400000 gives 1/25.
++ */
++static void
++usbvc_v4l2_interval(uint32_t interval, struct v4l2_fract *fract)
++{
++	uint32_t a = interval, b = USBVC_FRAME_INTERVAL_DENOMINATOR, t;
++
++	/* greatest common divisor */
++	while (b != 0) {
++		t = a % b;
++		a = b;
++		b = t;
+ 	}
++	fract->numerator = interval / a;
++	fract->denominator = USBVC_FRAME_INTERVAL_DENOMINATOR / a;
++}
++
++
++/* Implement ioctl VIDIOC_ENUM_FRAMEINTERVALS */
++static int
++usbvc_v4l2_enum_frameintervals(usbvc_state_t *usbvcp,
++    struct v4l2_frmivalenum *fival)
++{
++	usbvc_format_group_t	*fmtgrp;
++	usbvc_frames_t		*frame = NULL;
++	uint32_t		interval, min, max, step;
++	uint8_t			cnt;
++
++	mutex_enter(&usbvcp->usbvc_mutex);
++	fmtgrp = usbvc_v4l2_find_fmtgrp(usbvcp->usbvc_curr_strm,
++	    fival->pixel_format);
++	if (fmtgrp != NULL) {
++		frame = usbvc_v4l2_find_frame(fmtgrp, fival->width,
++		    fival->height);
++	}
++	if (frame == NULL) {
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		return (EINVAL);
++	}
++
++	cnt = frame->bFrameIntervalType;
++	if (cnt > 0) {
++		/* discrete frame intervals */
++		if (fival->index >= cnt) {
++			mutex_exit(&usbvcp->usbvc_mutex);
++
++			return (EINVAL);
++		}
++		LE_TO_UINT32(frame->dwFrameInterval, fival->index * 4,
++		    interval);
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		bzero(&fival->stepwise, sizeof (fival->stepwise));
++		fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
++		usbvc_v4l2_interval(interval, &fival->discrete);
++	} else {
++		/* continuous frame intervals: min, max and step */
++		if (fival->index > 0) {
++			mutex_exit(&usbvcp->usbvc_mutex);
++
++			return (EINVAL);
++		}
++		min = frame->dwMinFrameInterval;
++		max = frame->dwMaxFrameInterval;
++		step = frame->dwFrameIntervalStep;
++		mutex_exit(&usbvcp->usbvc_mutex);
++
++		fival->type = (step == 1) ? V4L2_FRMIVAL_TYPE_CONTINUOUS :
++		    V4L2_FRMIVAL_TYPE_STEPWISE;
++		usbvc_v4l2_interval(min, &fival->stepwise.min);
++		usbvc_v4l2_interval(max, &fival->stepwise.max);
++		usbvc_v4l2_interval(step, &fival->stepwise.step);
++	}
++	bzero(fival->reserved, sizeof (fival->reserved));
+ 
+ 	return (0);
+ }
+@@ -797,7 +1054,7 @@ usbvc_v4l2_set_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+ 	usbvc_format_group_t	*fmtgrp;
+ 	usbvc_frames_t		*frame;
+ 	uint32_t		w, h, interval, bandwidth;
+-	uint8_t			type, i;
++	uint8_t			i;
+ 
+ 	mutex_enter(&usbvcp->usbvc_mutex);
+ 
+@@ -811,36 +1068,9 @@ usbvc_v4l2_set_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+ 	    "usbvc_v4l2_set_format: strm_if->fmtgrp_cnt=%d",
+ 	    strm_if->fmtgrp_cnt);
+ 
+-	/* Find the proper format group according to compress type and guid */
+-	for (i = 0; i < strm_if->fmtgrp_cnt; i++) {
+-		fmtgrp = &strm_if->format_group[i];
+-
+-		/*
+-		 * If v4l2_pixelformat is NULL, then that means there is not
+-		 * a parsed format in format_group[i].
+-		 */
+-		if (!fmtgrp->v4l2_pixelformat || fmtgrp->frame_cnt == 0) {
+-			USB_DPRINTF_L3(PRINT_MASK_DEVCTRL,
+-			    usbvcp->usbvc_log_handle,
+-			    "usbvc_set_default_stream_fmt: no frame, fail");
+-
+-			continue;
+-		}
+-		type = fmtgrp->format->bDescriptorSubType;
+-		USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+-		    "usbvc_v4l2_set_format: type =%x, i =%d", type, i);
+-
+-		if ((type == VS_FORMAT_MJPEG) ||
+-		    (type == VS_FORMAT_UNCOMPRESSED)) {
+-			if (format->fmt.pix.pixelformat ==
+-			    fmtgrp->v4l2_pixelformat) {
+-
+-				break;
+-			}
+-		}
+-	}
+-
+-	if (i >= strm_if->fmtgrp_cnt) {
++	/* Find the format group of this pixel format */
++	fmtgrp = usbvc_v4l2_find_fmtgrp(strm_if, format->fmt.pix.pixelformat);
++	if (fmtgrp == NULL) {
+ 		mutex_exit(&usbvcp->usbvc_mutex);
+ 		USB_DPRINTF_L2(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 		    "usbvc_v4l2_set_format: can't find a proper format, "
+@@ -849,8 +1079,6 @@ usbvc_v4l2_set_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+ 		return (USB_FAILURE);
+ 	}
+ 
+-	fmtgrp = &strm_if->format_group[i];
+-
+ 	frame = usbvc_match_image_size(format->fmt.pix.width,
+ 	    format->fmt.pix.height, fmtgrp);
+ 
+@@ -864,7 +1092,7 @@ usbvc_v4l2_set_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+ 	}
+ 
+ 	/* frame interval */
+-	LE_TO_UINT32(frame->descr->dwDefaultFrameInterval, 0, interval);
++	interval = frame->dwDefaultFrameInterval;
+ 	USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 	    "usbvc_v4l2_set_format: Default Frame Interval=%x", interval);
+ 
+@@ -1007,6 +1235,10 @@ usbvc_v4l2_set_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+ 	format->fmt.pix.colorspace = fmtgrp->v4l2_color;
+ 	format->fmt.pix.field = V4L2_FIELD_NONE;
+ 	format->fmt.pix.priv = 0;
++	format->fmt.pix.flags = 0;
++	format->fmt.pix.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
++	format->fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
++	format->fmt.pix.xfer_func = V4L2_XFER_FUNC_DEFAULT;
+ 
+ 	LE_TO_UINT16(frame->descr->wWidth, 0, w);
+ 	LE_TO_UINT16(frame->descr->wHeight, 0, h);
+@@ -1054,6 +1286,10 @@ usbvc_v4l2_get_format(usbvc_state_t *usbvcp, struct v4l2_format *format)
+ 	}
+ 	format->fmt.pix.colorspace = fmtgrp->v4l2_color;
+ 	format->fmt.pix.priv = 0;
++	format->fmt.pix.flags = 0;
++	format->fmt.pix.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
++	format->fmt.pix.quantization = V4L2_QUANTIZATION_DEFAULT;
++	format->fmt.pix.xfer_func = V4L2_XFER_FUNC_DEFAULT;
+ 	format->fmt.pix.pixelformat = fmtgrp->v4l2_pixelformat;
+ 
+ 	LE_TO_UINT16(fmtgrp->cur_frame->descr->wWidth, 0, w);
+@@ -1526,7 +1762,7 @@ usbvc_find_interval(usbvc_frames_t *frame, uint32_t interval)
+ 	 * value. The available intervals are those between min and max
+ 	 * values.
+ 	 */
+-	if (!frame->descr->bFrameIntervalType) {
++	if (!frame->bFrameIntervalType) {
+ 		step = frame->dwFrameIntervalStep;
+ 
+ 		if (step == 0) {
+@@ -1557,7 +1793,7 @@ usbvc_find_interval(usbvc_frames_t *frame, uint32_t interval)
+ 	 */
+ 	closest = 0;
+ 	approx2 = (uint32_t)-1;
+-	for (index = 0; index < frame->descr->bFrameIntervalType; index++) {
++	for (index = 0; index < frame->bFrameIntervalType; index++) {
+ 		LE_TO_UINT32(frame->dwFrameInterval, index * 4, i);
+ 		approx1 = (i > interval) ? (i - interval) : (interval - i);
+ 
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h
+index c552217a..cb619268 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h
+@@ -21,6 +21,7 @@
+ /*
+  * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
++ * Copyright 2026 isoriano1968
+  */
+ 
+ #ifndef _SYS_USB_USBVC_H
+@@ -332,6 +333,12 @@ typedef struct usbvc_output_header {
+ /*
+  * Except bDescriptorSubType value, MJPEG and uncompressed frame descriptor are
+  * all the same. So share one structure.
++ *
++ * The frame-based frame descriptor (VS_FRAME_FRAME_BASED) has the same fields
++ * up to dwMaxBitRate, but then dwDefaultFrameInterval (offset 17),
++ * bFrameIntervalType (21) and dwBytesPerLine (22). The frame intervals start at
++ * offset 26 in all three. Only use the fields up to dwMaxBitRate from here;
++ * the default interval and the interval type are decoded into usbvc_frames_t.
+  */
+ typedef struct usbvc_frame_descr {
+ 	uint8_t bLength;
+@@ -354,6 +361,8 @@ typedef struct usbvc_frame_descr {
+  */
+ typedef struct usbvc_frames {
+ 	usbvc_frame_descr_t *descr;
++	uint32_t dwDefaultFrameInterval; /* decoded, see usbvc_frame_descr_t */
++	uint8_t bFrameIntervalType;	/* 0: continuous, n: n discrete */
+ 	uint32_t dwMinFrameInterval;	/* for continuous frame intervals */
+ 	uint32_t dwMaxFrameInterval;	/* for continuous frame intervals */
+ 	uint32_t dwFrameIntervalStep;	/* for continuous frame intervals */
+@@ -402,7 +411,7 @@ typedef struct usbvc_color_matching_descr {
+ 	uint8_t	bMatrixCoefficients;
+ } usbvc_color_matching_descr_t;
+ 
+-/* Mjpeg and uncompressed format descriptor */
++/* Mjpeg, uncompressed and frame based format descriptor */
+ typedef struct usbvc_format_descr {
+ 	uint8_t	bLength;
+ 	uint8_t	bDescriptorType;
+@@ -428,6 +437,18 @@ typedef struct usbvc_format_descr {
+ 			uint8_t	bmInterlaceFlags;
+ 			uint8_t	bCopyProtect;
+ 		} uncompressed;
++
++		/* UVC 1.1 frame based payload: MJPEG, H.264 etc. */
++		struct {
++			uint8_t	guidFormat[16];
++			uint8_t	bBitsPerPixel;
++			uint8_t	bDefaultFrameIndex;
++			uint8_t	bAspectRatioX;
++			uint8_t	bAspectRatioY;
++			uint8_t	bmInterlaceFlags;
++			uint8_t	bCopyProtect;
++			uint8_t	bVariableSize;
++		} frame_based;
+ 	}fmt;
+ } usbvc_format_descr_t;
+ 
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+index 31a6a9fd..bf847ba9 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+@@ -21,6 +21,7 @@
+ /*
+  * Copyright 2010 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
++ * Copyright 2026 isoriano1968
+  */
+ 
+ #ifndef _SYS_USB_USBVC_VAR_H
+@@ -32,6 +33,7 @@ extern "C" {
+ #endif
+ 
+ #include <sys/list.h>
++#include <sys/poll.h>
+ #include <sys/sysmacros.h>
+ #include <sys/usb/usba/usbai_private.h>
+ #include <sys/videodev2.h>
+@@ -252,6 +254,7 @@ struct usbvc_state {
+ 	usbvc_stream_if_t	*usbvc_curr_strm;
+ 	kcondvar_t		usbvc_read_cv;	/* wait for read buf done */
+ 	kcondvar_t		usbvc_mapio_cv;	/* wait for mmap I/O buf done */
++	struct pollhead		usbvc_pollhead;	/* poll(2): a buf is done */
+ 
+ 	/* current I/O type: read or mmap. */
+ 	uchar_t			usbvc_io_type;
+@@ -321,6 +324,9 @@ if (ddi_copyin((caddr_t)arg, &arg_name, sizeof (arg_name), mode)) { \
+ #define	USBVC_E_UNIT_LEN_MIN	22	/* extension unit */
+ #define	USBVC_FRAME_LEN_MIN	26	/* Frame descriptor */
+ 
++/* Offset of the frame intervals in all frame descriptors */
++#define	USBVC_FRAME_INTERVAL_OFF	26
++
+ /* Length of the Frame descriptor which has continuous frame intervals */
+ #define	USBVC_FRAME_LEN_CON	38
+ 
+@@ -381,6 +387,7 @@ int	usbvc_vs_get_probe(usbvc_state_t *, usbvc_stream_if_t *,
+ /* Functions specific for V4L2 API */
+ uint8_t		usbvc_v4l2_colorspace(uint8_t);
+ uint32_t	usbvc_v4l2_guid2fcc(uint8_t *);
++boolean_t	usbvc_v4l2_fcc_compressed(uint32_t);
+ int		usbvc_v4l2_ioctl(usbvc_state_t *, int, intptr_t, int);
+ 
+ 
+diff --git a/usr/src/uts/common/sys/videodev2.h b/usr/src/uts/common/sys/videodev2.h
+index f675901c..21f4a701 100644
+--- a/usr/src/uts/common/sys/videodev2.h
++++ b/usr/src/uts/common/sys/videodev2.h
+@@ -21,6 +21,7 @@
+ /*
+  * Copyright 2008 Sun Microsystems, Inc.  All rights reserved.
+  * Use is subject to license terms.
++ * Copyright 2026 isoriano1968
+  */
+ 
+ #ifndef __LINUX_VIDEODEV2_H
+@@ -46,7 +47,9 @@ extern "C" {
+  *		et al.
+  */
+ 
++#include <sys/types.h>
+ #include <sys/ioccom.h>
++#include <sys/time_impl.h>
+ 
+ /*
+  * Common stuff for both V4L1 and V4L2
+@@ -136,7 +139,10 @@ enum v4l2_ctrl_type {
+ 	V4L2_CTRL_TYPE_MENU		= 3,
+ 	V4L2_CTRL_TYPE_BUTTON		= 4,
+ 	V4L2_CTRL_TYPE_INTEGER64	= 5,
+-	V4L2_CTRL_TYPE_CTRL_CLASS	= 6
++	V4L2_CTRL_TYPE_CTRL_CLASS	= 6,
++	V4L2_CTRL_TYPE_STRING		= 7,
++	V4L2_CTRL_TYPE_BITMASK		= 8,
++	V4L2_CTRL_TYPE_INTEGER_MENU	= 9
+ };
+ 
+ enum v4l2_tuner_type {
+@@ -153,6 +159,9 @@ enum v4l2_memory {
+ 
+ /* see also http: vektor.theorem.ca/graphics/ycbcr/ */
+ enum v4l2_colorspace {
++	/* Default colorspace: the driver picks it from the pixel format */
++	V4L2_COLORSPACE_DEFAULT		= 0,
++
+ 	/* ITU-R 601 -- broadcast NTSC/PAL */
+ 	V4L2_COLORSPACE_SMPTE170M	= 1,
+ 
+@@ -177,7 +186,48 @@ enum v4l2_colorspace {
+ 	V4L2_COLORSPACE_JPEG		= 7,
+ 
+ 	/* For RGB colourspaces, this is probably a good start. */
+-	V4L2_COLORSPACE_SRGB		= 8
++	V4L2_COLORSPACE_SRGB		= 8,
++
++	V4L2_COLORSPACE_OPRGB		= 9,	/* opRGB (Adobe RGB) */
++	V4L2_COLORSPACE_BT2020		= 10,	/* UHDTV */
++	V4L2_COLORSPACE_RAW		= 11,	/* raw sensor data */
++	V4L2_COLORSPACE_DCI_P3		= 12	/* digital cinema */
++};
++#define	V4L2_COLORSPACE_ADOBERGB	V4L2_COLORSPACE_OPRGB
++
++enum v4l2_xfer_func {
++	V4L2_XFER_FUNC_DEFAULT		= 0,
++	V4L2_XFER_FUNC_709		= 1,
++	V4L2_XFER_FUNC_SRGB		= 2,
++	V4L2_XFER_FUNC_OPRGB		= 3,
++	V4L2_XFER_FUNC_SMPTE240M	= 4,
++	V4L2_XFER_FUNC_NONE		= 5,
++	V4L2_XFER_FUNC_DCI_P3		= 6,
++	V4L2_XFER_FUNC_SMPTE2084	= 7
++};
++#define	V4L2_XFER_FUNC_ADOBERGB		V4L2_XFER_FUNC_OPRGB
++
++enum v4l2_ycbcr_encoding {
++	V4L2_YCBCR_ENC_DEFAULT		= 0,
++	V4L2_YCBCR_ENC_601		= 1,
++	V4L2_YCBCR_ENC_709		= 2,
++	V4L2_YCBCR_ENC_XV601		= 3,
++	V4L2_YCBCR_ENC_XV709		= 4,
++	V4L2_YCBCR_ENC_SYCC		= 5,
++	V4L2_YCBCR_ENC_BT2020		= 6,
++	V4L2_YCBCR_ENC_BT2020_CONST_LUM	= 7,
++	V4L2_YCBCR_ENC_SMPTE240M	= 8
++};
++
++enum v4l2_hsv_encoding {
++	V4L2_HSV_ENC_180		= 128,
++	V4L2_HSV_ENC_256		= 129
++};
++
++enum v4l2_quantization {
++	V4L2_QUANTIZATION_DEFAULT	= 0,
++	V4L2_QUANTIZATION_FULL_RANGE	= 1,
++	V4L2_QUANTIZATION_LIM_RANGE	= 2
+ };
+ 
+ enum v4l2_priority {
+@@ -209,8 +259,9 @@ struct v4l2_capability
+ 	uint8_t		card[32];	/* i.e. "Hauppauge WinTV" */
+ 	uint8_t		bus_info[32];	/* "PCI:" + pci_name(pci_dev) */
+ 	uint32_t	version;	/* should use KERNEL_VERSION() */
+-	uint32_t	capabilities;	/* Device capabilities */
+-	uint32_t	reserved[4];
++	uint32_t	capabilities;	/* capabilities of the whole device */
++	uint32_t	device_caps;	/* capabilities of this device node */
++	uint32_t	reserved[3];
+ };
+ 
+ /* Values for 'capabilities' field */
+@@ -245,6 +296,11 @@ struct v4l2_capability
+ #define	V4L2_CAP_ASYNCIO		0x02000000  /* async I/O */
+ #define	V4L2_CAP_STREAMING		0x04000000  /* streaming I/O ioctls */
+ 
++/* v4l2_pix_format has the extended fields (flags ... xfer_func) */
++#define	V4L2_CAP_EXT_PIX_FORMAT		0x00200000
++/* device_caps is valid */
++#define	V4L2_CAP_DEVICE_CAPS		0x80000000
++
+ /*
+  *	V I D E O   I M A G E	F O R M A T
+  */
+@@ -258,8 +314,18 @@ struct v4l2_pix_format
+ 	uint32_t		sizeimage;
+ 	enum v4l2_colorspace	colorspace;
+ 	uint32_t		priv; /* private data, depends on pixelformat */
++	uint32_t		flags;	/* V4L2_PIX_FMT_FLAG_* */
++	union {
++		uint32_t	ycbcr_enc;	/* enum v4l2_ycbcr_encoding */
++		uint32_t	hsv_enc;	/* enum v4l2_hsv_encoding */
++	};
++	uint32_t		quantization;	/* enum v4l2_quantization */
++	uint32_t		xfer_func;	/* enum v4l2_xfer_func */
+ };
+ 
++#define	V4L2_PIX_FMT_PRIV_MAGIC		0xfeedcafe
++#define	V4L2_PIX_FMT_FLAG_PREMUL_ALPHA	0x00000001
++
+ /*	Pixel format		FOURCC			depth Description */
+ #define	V4L2_PIX_FMT_RGB332  v4l2_fourcc('R', 'G', 'B', '1') /*  8 RGB-3-3-2 */
+ #define	V4L2_PIX_FMT_RGB555  v4l2_fourcc('R', 'G', 'B', 'O') /* 16 RGB-5-5-5 */
+@@ -307,6 +373,19 @@ struct v4l2_pix_format
+ /* 8 BGBG.. GRGR.. */
+ #define	V4L2_PIX_FMT_SBGGR8  v4l2_fourcc('B', 'A', '8', '1')
+ 
++/* Greyscale and depth formats */
++#define	V4L2_PIX_FMT_Y10	v4l2_fourcc('Y', '1', '0', ' ') /* 10 Grey */
++#define	V4L2_PIX_FMT_Y12	v4l2_fourcc('Y', '1', '2', ' ') /* 12 Grey */
++#define	V4L2_PIX_FMT_Y16	v4l2_fourcc('Y', '1', '6', ' ') /* 16 Grey */
++#define	V4L2_PIX_FMT_Z16	v4l2_fourcc('Z', '1', '6', ' ') /* 16 Depth */
++
++/* More YUV formats */
++#define	V4L2_PIX_FMT_YVYU	v4l2_fourcc('Y', 'V', 'Y', 'U') /* 16 4:2:2 */
++#define	V4L2_PIX_FMT_VYUY	v4l2_fourcc('V', 'Y', 'U', 'Y') /* 16 4:2:2 */
++#define	V4L2_PIX_FMT_NV16	v4l2_fourcc('N', 'V', '1', '6') /* 16 4:2:2 */
++#define	V4L2_PIX_FMT_NV61	v4l2_fourcc('N', 'V', '6', '1') /* 16 4:2:2 */
++#define	V4L2_PIX_FMT_M420	v4l2_fourcc('M', '4', '2', '0') /* 12 4:2:0 */
++
+ /* compressed formats */
+ 
+ /* Motion-JPEG */
+@@ -314,6 +393,11 @@ struct v4l2_pix_format
+ #define	V4L2_PIX_FMT_JPEG	v4l2_fourcc('J', 'P', 'E', 'G') /* JFIF JPEG */
+ #define	V4L2_PIX_FMT_DV		v4l2_fourcc('d', 'v', 's', 'd') /* 1394 */
+ #define	V4L2_PIX_FMT_MPEG	v4l2_fourcc('M', 'P', 'E', 'G') /* MPEG-1/2/4 */
++#define	V4L2_PIX_FMT_H264	v4l2_fourcc('H', '2', '6', '4') /* H.264 */
++#define	V4L2_PIX_FMT_H264_NO_SC v4l2_fourcc('A', 'V', 'C', '1')
++#define	V4L2_PIX_FMT_HEVC	v4l2_fourcc('H', 'E', 'V', 'C') /* H.265 */
++#define	V4L2_PIX_FMT_VP8	v4l2_fourcc('V', 'P', '8', '0') /* VP8 */
++#define	V4L2_PIX_FMT_VP9	v4l2_fourcc('V', 'P', '9', '0') /* VP9 */
+ 
+ /*  Vendor-specific formats   */
+ 
+@@ -346,6 +430,73 @@ struct v4l2_fmtdesc
+ };
+ 
+ #define	V4L2_FMT_FLAG_COMPRESSED 0x0001
++#define	V4L2_FMT_FLAG_EMULATED	0x0002
++
++/*
++ *	F R A M E   S I Z E   E N U M E R A T I O N
++ */
++enum v4l2_frmsizetypes {
++	V4L2_FRMSIZE_TYPE_DISCRETE	= 1,
++	V4L2_FRMSIZE_TYPE_CONTINUOUS	= 2,
++	V4L2_FRMSIZE_TYPE_STEPWISE	= 3
++};
++
++struct v4l2_frmsize_discrete {
++	uint32_t	width;		/* Frame width [pixel] */
++	uint32_t	height;		/* Frame height [pixel] */
++};
++
++struct v4l2_frmsize_stepwise {
++	uint32_t	min_width;	/* Minimum frame width [pixel] */
++	uint32_t	max_width;	/* Maximum frame width [pixel] */
++	uint32_t	step_width;	/* Frame width step size [pixel] */
++	uint32_t	min_height;	/* Minimum frame height [pixel] */
++	uint32_t	max_height;	/* Maximum frame height [pixel] */
++	uint32_t	step_height;	/* Frame height step size [pixel] */
++};
++
++struct v4l2_frmsizeenum {
++	uint32_t	index;		/* Frame size number */
++	uint32_t	pixel_format;	/* Pixel format */
++	uint32_t	type;		/* enum v4l2_frmsizetypes */
++
++	union {				/* Frame size */
++		struct v4l2_frmsize_discrete	discrete;
++		struct v4l2_frmsize_stepwise	stepwise;
++	};
++
++	uint32_t	reserved[2];	/* Reserved space for future use */
++};
++
++/*
++ *	F R A M E   R A T E   E N U M E R A T I O N
++ */
++enum v4l2_frmivaltypes {
++	V4L2_FRMIVAL_TYPE_DISCRETE	= 1,
++	V4L2_FRMIVAL_TYPE_CONTINUOUS	= 2,
++	V4L2_FRMIVAL_TYPE_STEPWISE	= 3
++};
++
++struct v4l2_frmival_stepwise {
++	struct v4l2_fract	min;	/* Minimum frame interval [s] */
++	struct v4l2_fract	max;	/* Maximum frame interval [s] */
++	struct v4l2_fract	step;	/* Frame interval step size [s] */
++};
++
++struct v4l2_frmivalenum {
++	uint32_t	index;		/* Frame format index */
++	uint32_t	pixel_format;	/* Pixel format */
++	uint32_t	width;		/* Frame width */
++	uint32_t	height;		/* Frame height */
++	uint32_t	type;		/* enum v4l2_frmivaltypes */
++
++	union {				/* Frame interval */
++		struct v4l2_fract		discrete;
++		struct v4l2_frmival_stepwise	stepwise;
++	};
++
++	uint32_t	reserved[2];	/* Reserved space for future use */
++};
+ 
+ /*
+  *	T I M E C O D E
+@@ -547,8 +698,18 @@ struct v4l2_buffer
+ #define	V4L2_BUF_FLAG_KEYFRAME	0x0008	/* Image is a keyframe (I-frame) */
+ #define	V4L2_BUF_FLAG_PFRAME	0x0010	/* Image is a P-frame */
+ #define	V4L2_BUF_FLAG_BFRAME	0x0020	/* Image is a B-frame */
++#define	V4L2_BUF_FLAG_ERROR	0x0040	/* Buffer data may be corrupt */
+ #define	V4L2_BUF_FLAG_TIMECODE	0x0100	/* timecode field is valid */
+ #define	V4L2_BUF_FLAG_INPUT	0x0200	/* input field is valid */
++#define	V4L2_BUF_FLAG_PREPARED	0x0400	/* Buffer is prepared for queuing */
++#define	V4L2_BUF_FLAG_TIMESTAMP_MASK		0xe000
++#define	V4L2_BUF_FLAG_TIMESTAMP_UNKNOWN		0x0000
++#define	V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC	0x2000
++#define	V4L2_BUF_FLAG_TIMESTAMP_COPY		0x4000
++#define	V4L2_BUF_FLAG_TSTAMP_SRC_MASK		0x00070000
++#define	V4L2_BUF_FLAG_TSTAMP_SRC_EOF		0x00000000
++#define	V4L2_BUF_FLAG_TSTAMP_SRC_SOE		0x00010000
++#define	V4L2_BUF_FLAG_LAST	0x00100000	/* Last buffer of a stream */
+ 
+ /*
+  *	O V E R L A Y	P R E V I E W
+@@ -842,6 +1003,7 @@ struct v4l2_ext_controls
+ /*  Values for ctrl_class field */
+ #define	V4L2_CTRL_CLASS_USER 0x00980000	/* Old-style 'user' controls */
+ #define	V4L2_CTRL_CLASS_MPEG 0x00990000	/* MPEG-compression controls */
++#define	V4L2_CTRL_CLASS_CAMERA 0x009a0000 /* Camera class controls */
+ 
+ #define	V4L2_CTRL_ID_MASK	  (0x0fffffff)
+ #define	V4L2_CTRL_ID2CLASS(id)	  ((id) & 0x0fff0000UL)
+@@ -877,9 +1039,15 @@ struct v4l2_querymenu
+ #define	V4L2_CTRL_FLAG_UPDATE		0x0008
+ #define	V4L2_CTRL_FLAG_INACTIVE 	0x0010
+ #define	V4L2_CTRL_FLAG_SLIDER		0x0020
++#define	V4L2_CTRL_FLAG_WRITE_ONLY	0x0040
++#define	V4L2_CTRL_FLAG_VOLATILE		0x0080
++#define	V4L2_CTRL_FLAG_HAS_PAYLOAD	0x0100
++#define	V4L2_CTRL_FLAG_EXECUTE_ON_WRITE	0x0200
++#define	V4L2_CTRL_FLAG_MODIFY_LAYOUT	0x0400
+ 
+ /*  Query flag, to be ORed with the control ID */
+ #define	V4L2_CTRL_FLAG_NEXT_CTRL	0x80000000
++#define	V4L2_CTRL_FLAG_NEXT_COMPOUND	0x40000000
+ 
+ /*  User-class control IDs defined by V4L2 */
+ #define	V4L2_CID_BASE			(V4L2_CTRL_CLASS_USER | 0x900)
+@@ -912,7 +1080,79 @@ struct v4l2_querymenu
+ #define	V4L2_CID_VFLIP			(V4L2_CID_BASE+21)
+ #define	V4L2_CID_HCENTER		(V4L2_CID_BASE+22)
+ #define	V4L2_CID_VCENTER		(V4L2_CID_BASE+23)
+-#define	V4L2_CID_LASTP1			(V4L2_CID_BASE+24) /* last CID + 1 */
++#define	V4L2_CID_POWER_LINE_FREQUENCY	(V4L2_CID_BASE+24)
++enum v4l2_power_line_frequency {
++	V4L2_CID_POWER_LINE_FREQUENCY_DISABLED	= 0,
++	V4L2_CID_POWER_LINE_FREQUENCY_50HZ	= 1,
++	V4L2_CID_POWER_LINE_FREQUENCY_60HZ	= 2,
++	V4L2_CID_POWER_LINE_FREQUENCY_AUTO	= 3
++};
++#define	V4L2_CID_HUE_AUTO		(V4L2_CID_BASE+25)
++#define	V4L2_CID_WHITE_BALANCE_TEMPERATURE	(V4L2_CID_BASE+26)
++#define	V4L2_CID_SHARPNESS		(V4L2_CID_BASE+27)
++#define	V4L2_CID_BACKLIGHT_COMPENSATION	(V4L2_CID_BASE+28)
++#define	V4L2_CID_CHROMA_AGC		(V4L2_CID_BASE+29)
++#define	V4L2_CID_COLOR_KILLER		(V4L2_CID_BASE+30)
++#define	V4L2_CID_COLORFX		(V4L2_CID_BASE+31)
++#define	V4L2_CID_AUTOBRIGHTNESS		(V4L2_CID_BASE+32)
++#define	V4L2_CID_BAND_STOP_FILTER	(V4L2_CID_BASE+33)
++#define	V4L2_CID_ROTATE			(V4L2_CID_BASE+34)
++#define	V4L2_CID_BG_COLOR		(V4L2_CID_BASE+35)
++#define	V4L2_CID_CHROMA_GAIN		(V4L2_CID_BASE+36)
++#define	V4L2_CID_ILLUMINATORS_1		(V4L2_CID_BASE+37)
++#define	V4L2_CID_ILLUMINATORS_2		(V4L2_CID_BASE+38)
++#define	V4L2_CID_MIN_BUFFERS_FOR_CAPTURE	(V4L2_CID_BASE+39)
++#define	V4L2_CID_MIN_BUFFERS_FOR_OUTPUT	(V4L2_CID_BASE+40)
++#define	V4L2_CID_ALPHA_COMPONENT	(V4L2_CID_BASE+41)
++#define	V4L2_CID_COLORFX_CBCR		(V4L2_CID_BASE+42)
++#define	V4L2_CID_COLORFX_RGB		(V4L2_CID_BASE+43)
++#define	V4L2_CID_LASTP1			(V4L2_CID_BASE+44) /* last CID + 1 */
++
++/*  Camera class control IDs */
++#define	V4L2_CID_CAMERA_CLASS_BASE	(V4L2_CTRL_CLASS_CAMERA | 0x900)
++#define	V4L2_CID_CAMERA_CLASS		(V4L2_CTRL_CLASS_CAMERA | 1)
++
++#define	V4L2_CID_EXPOSURE_AUTO		(V4L2_CID_CAMERA_CLASS_BASE+1)
++enum v4l2_exposure_auto_type {
++	V4L2_EXPOSURE_AUTO		= 0,
++	V4L2_EXPOSURE_MANUAL		= 1,
++	V4L2_EXPOSURE_SHUTTER_PRIORITY	= 2,
++	V4L2_EXPOSURE_APERTURE_PRIORITY	= 3
++};
++#define	V4L2_CID_EXPOSURE_ABSOLUTE	(V4L2_CID_CAMERA_CLASS_BASE+2)
++#define	V4L2_CID_EXPOSURE_AUTO_PRIORITY	(V4L2_CID_CAMERA_CLASS_BASE+3)
++#define	V4L2_CID_PAN_RELATIVE		(V4L2_CID_CAMERA_CLASS_BASE+4)
++#define	V4L2_CID_TILT_RELATIVE		(V4L2_CID_CAMERA_CLASS_BASE+5)
++#define	V4L2_CID_PAN_RESET		(V4L2_CID_CAMERA_CLASS_BASE+6)
++#define	V4L2_CID_TILT_RESET		(V4L2_CID_CAMERA_CLASS_BASE+7)
++#define	V4L2_CID_PAN_ABSOLUTE		(V4L2_CID_CAMERA_CLASS_BASE+8)
++#define	V4L2_CID_TILT_ABSOLUTE		(V4L2_CID_CAMERA_CLASS_BASE+9)
++#define	V4L2_CID_FOCUS_ABSOLUTE		(V4L2_CID_CAMERA_CLASS_BASE+10)
++#define	V4L2_CID_FOCUS_RELATIVE		(V4L2_CID_CAMERA_CLASS_BASE+11)
++#define	V4L2_CID_FOCUS_AUTO		(V4L2_CID_CAMERA_CLASS_BASE+12)
++#define	V4L2_CID_ZOOM_ABSOLUTE		(V4L2_CID_CAMERA_CLASS_BASE+13)
++#define	V4L2_CID_ZOOM_RELATIVE		(V4L2_CID_CAMERA_CLASS_BASE+14)
++#define	V4L2_CID_ZOOM_CONTINUOUS	(V4L2_CID_CAMERA_CLASS_BASE+15)
++#define	V4L2_CID_PRIVACY		(V4L2_CID_CAMERA_CLASS_BASE+16)
++#define	V4L2_CID_IRIS_ABSOLUTE		(V4L2_CID_CAMERA_CLASS_BASE+17)
++#define	V4L2_CID_IRIS_RELATIVE		(V4L2_CID_CAMERA_CLASS_BASE+18)
++#define	V4L2_CID_AUTO_EXPOSURE_BIAS	(V4L2_CID_CAMERA_CLASS_BASE+19)
++#define	V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE	(V4L2_CID_CAMERA_CLASS_BASE+20)
++#define	V4L2_CID_WIDE_DYNAMIC_RANGE	(V4L2_CID_CAMERA_CLASS_BASE+21)
++#define	V4L2_CID_IMAGE_STABILIZATION	(V4L2_CID_CAMERA_CLASS_BASE+22)
++#define	V4L2_CID_ISO_SENSITIVITY	(V4L2_CID_CAMERA_CLASS_BASE+23)
++#define	V4L2_CID_ISO_SENSITIVITY_AUTO	(V4L2_CID_CAMERA_CLASS_BASE+24)
++#define	V4L2_CID_EXPOSURE_METERING	(V4L2_CID_CAMERA_CLASS_BASE+25)
++#define	V4L2_CID_SCENE_MODE		(V4L2_CID_CAMERA_CLASS_BASE+26)
++#define	V4L2_CID_3A_LOCK		(V4L2_CID_CAMERA_CLASS_BASE+27)
++#define	V4L2_CID_AUTO_FOCUS_START	(V4L2_CID_CAMERA_CLASS_BASE+28)
++#define	V4L2_CID_AUTO_FOCUS_STOP	(V4L2_CID_CAMERA_CLASS_BASE+29)
++#define	V4L2_CID_AUTO_FOCUS_STATUS	(V4L2_CID_CAMERA_CLASS_BASE+30)
++#define	V4L2_CID_AUTO_FOCUS_RANGE	(V4L2_CID_CAMERA_CLASS_BASE+31)
++#define	V4L2_CID_PAN_SPEED		(V4L2_CID_CAMERA_CLASS_BASE+32)
++#define	V4L2_CID_TILT_SPEED		(V4L2_CID_CAMERA_CLASS_BASE+33)
++#define	V4L2_CID_CAMERA_ORIENTATION	(V4L2_CID_CAMERA_CLASS_BASE+34)
++#define	V4L2_CID_CAMERA_SENSOR_ROTATION	(V4L2_CID_CAMERA_CLASS_BASE+35)
+ 
+ /*  MPEG-class control IDs defined by V4L2 */
+ #define	V4L2_CID_MPEG_BASE			(V4L2_CTRL_CLASS_MPEG | 0x900)
+@@ -1337,6 +1577,72 @@ struct v4l2_streamparm
+ 	} parm;
+ };
+ 
++/*
++ *	E V E N T S
++ */
++#define	V4L2_EVENT_ALL			0
++#define	V4L2_EVENT_VSYNC		1
++#define	V4L2_EVENT_EOS			2
++#define	V4L2_EVENT_CTRL			3
++#define	V4L2_EVENT_FRAME_SYNC		4
++#define	V4L2_EVENT_SOURCE_CHANGE	5
++#define	V4L2_EVENT_MOTION_DET		6
++#define	V4L2_EVENT_PRIVATE_START	0x08000000
++
++/* Payload for V4L2_EVENT_CTRL */
++#define	V4L2_EVENT_CTRL_CH_VALUE	(1 << 0)
++#define	V4L2_EVENT_CTRL_CH_FLAGS	(1 << 1)
++#define	V4L2_EVENT_CTRL_CH_RANGE	(1 << 2)
++
++struct v4l2_event_ctrl {
++	uint32_t	changes;
++	uint32_t	type;
++	union {
++		int32_t	value;
++		int64_t	value64;
++	};
++	uint32_t	flags;
++	int32_t		minimum;
++	int32_t		maximum;
++	int32_t		step;
++	int32_t		default_value;
++};
++
++struct v4l2_event_frame_sync {
++	uint32_t	frame_sequence;
++};
++
++#define	V4L2_EVENT_SRC_CH_RESOLUTION	(1 << 0)
++
++struct v4l2_event_src_change {
++	uint32_t	changes;
++};
++
++struct v4l2_event {
++	uint32_t			type;
++	union {
++		struct v4l2_event_ctrl		ctrl;
++		struct v4l2_event_frame_sync	frame_sync;
++		struct v4l2_event_src_change	src_change;
++		uint8_t				data[64];
++	} u;
++	uint32_t			pending;
++	uint32_t			sequence;
++	struct timespec			timestamp;
++	uint32_t			id;
++	uint32_t			reserved[8];
++};
++
++#define	V4L2_EVENT_SUB_FL_SEND_INITIAL		(1 << 0)
++#define	V4L2_EVENT_SUB_FL_ALLOW_FEEDBACK	(1 << 1)
++
++struct v4l2_event_subscription {
++	uint32_t	type;
++	uint32_t	id;
++	uint32_t	flags;
++	uint32_t	reserved[5];
++};
++
+ /*
+  *	I O C T L   C O D E S	F O R	V I D E O   D E V I C E S
+  *
+@@ -1402,6 +1708,11 @@ struct v4l2_streamparm
+ #define	VIDIOC_G_EXT_CTRLS	_IOWR('V', 71, struct v4l2_ext_controls)
+ #define	VIDIOC_S_EXT_CTRLS	_IOWR('V', 72, struct v4l2_ext_controls)
+ #define	VIDIOC_TRY_EXT_CTRLS	_IOWR('V', 73, struct v4l2_ext_controls)
++#define	VIDIOC_ENUM_FRAMESIZES	_IOWR('V', 74, struct v4l2_frmsizeenum)
++#define	VIDIOC_ENUM_FRAMEINTERVALS _IOWR('V', 75, struct v4l2_frmivalenum)
++#define	VIDIOC_DQEVENT		_IOR('V', 89, struct v4l2_event)
++#define	VIDIOC_SUBSCRIBE_EVENT	_IOW('V', 90, struct v4l2_event_subscription)
++#define	VIDIOC_UNSUBSCRIBE_EVENT _IOW('V', 91, struct v4l2_event_subscription)
+ 
+ #ifdef __OLD_VIDIOC_
+ /* for compatibility, will go away some day */
+-- 
+2.56.0
+
+

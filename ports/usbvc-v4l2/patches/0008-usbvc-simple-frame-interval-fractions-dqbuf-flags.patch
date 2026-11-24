@@ -1,0 +1,140 @@
+From d53082a3e1b9178d20bfae7a89906b3d6e5fc7de Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Thu, 19 Nov 2026 06:04:32 +0100
+Subject: [PATCH] NNNNN usbvc: frame intervals as simple fractions; DQBUF
+ clears DONE
+
+Frame intervals were reported in 100ns units reduced only by their
+greatest common divisor, e.g. 333333/10000000 for 30 fps.  GStreamer
+matches frame rates exactly, so caps asking for 30/1 failed to
+negotiate.
+
+- usbvc: VIDIOC_ENUM_FRAMEINTERVALS, VIDIOC_G_PARM and VIDIOC_S_PARM
+  give the interval as the simplest close fraction (continued fraction,
+  at most 8 terms, stopping before a term of 333 or more), as Linux
+  V4L2 does: 1/30, 1/24, 2/15.  VIDIOC_S_PARM still maps the requested
+  fraction to the nearest interval the device offers.
+- usbvc: VIDIOC_DQBUF returns the buffer with neither QUEUED nor DONE
+  set, as in Linux; GStreamer took DONE for a buffer still queued.
+---
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 71 ++++++++++++++-----
+ 1 file changed, 52 insertions(+), 19 deletions(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index 113802d5..1a21faa9 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -1145,22 +1145,53 @@ usbvc_v4l2_find_frame(usbvc_format_group_t *fmtgrp, uint32_t width,
+ 
+ 
+ /*
+- * A UVC frame interval (in 100ns units) as a fraction of a second, reduced
+- * as far as possible: 333333 gives 333333/10000000, 400000 gives 1/25.
++ * A UVC frame interval (in 100ns units) as a fraction of a second, in the
++ * simplest form that is close to it: 333333 (30 fps, rounded down to whole
++ * 100ns) gives 1/30 rather than 333333/10000000, 416666 gives 1/24 and
++ * 1333333 gives 2/15.  Applications such as GStreamer match frame rates
++ * exactly, and they ask for 30/1.  Linux V4L2 (uvcvideo) reports the same
++ * fractions: the interval/10^7 is expanded as a continued fraction of at
++ * most USBVC_FRACT_TERMS terms, which ends before the first term of
++ * USBVC_FRACT_LIMIT or more (that term is only rounding noise); the first
++ * two terms are always kept, so intervals of 10^7 or more stay exact.
+  */
++#define	USBVC_FRACT_TERMS	8
++#define	USBVC_FRACT_LIMIT	333
++
+ static void
+ usbvc_v4l2_interval(uint32_t interval, struct v4l2_fract *fract)
+ {
+-	uint32_t a = interval, b = USBVC_FRAME_INTERVAL_DENOMINATOR, t;
+-
+-	/* greatest common divisor */
+-	while (b != 0) {
+-		t = a % b;
+-		a = b;
+-		b = t;
++	uint32_t term[USBVC_FRACT_TERMS];
++	uint32_t x = interval, y = USBVC_FRAME_INTERVAL_DENOMINATOR, r;
++	uint32_t num, den;
++	int nterms = 0;
++
++	while (nterms < USBVC_FRACT_TERMS && y != 0) {
++		term[nterms] = x / y;
++		if (term[nterms] >= USBVC_FRACT_LIMIT) {
++			if (nterms < 2)
++				nterms++;
++			break;
++		}
++		r = x - term[nterms] * y;
++		x = y;
++		y = r;
++		nterms++;
+ 	}
+-	fract->numerator = interval / a;
+-	fract->denominator = USBVC_FRAME_INTERVAL_DENOMINATOR / a;
++
++	/*
++	 * Fold the terms back, from the last one: t0 + 1/(t1 + 1/(...)) is
++	 * den/num seconds per frame.
++	 */
++	num = 0;
++	den = 1;
++	while (nterms > 0) {
++		r = den;
++		den = term[--nterms] * den + num;
++		num = r;
++	}
++	fract->numerator = den;
++	fract->denominator = num;
+ }
+ 
+ 
+@@ -1787,8 +1818,13 @@ usbvc_v4l2_dequeue_buffer(usbvc_state_t *usbvcp, struct v4l2_buffer *buf,
+ 	 * value to locate the mapped memory
+ 	 */
+ 	bcopy(&buf_done->v4l2_buf, buf, sizeof (struct v4l2_buffer));
+-	buf->flags &= ~V4L2_BUF_FLAG_QUEUED;
+-	buf->flags |= V4L2_BUF_FLAG_DONE | V4L2_BUF_FLAG_MAPPED;
++	/*
++	 * A dequeued buffer belongs to the application: neither QUEUED nor
++	 * DONE, as in Linux V4L2 (GStreamer takes either flag to mean the
++	 * driver still holds the buffer).
++	 */
++	buf->flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE);
++	buf->flags |= V4L2_BUF_FLAG_MAPPED;
+ 	buf->bytesused = buf_done->filled;
+ 	USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 	    "usbvc_v4l2_dequeue_buffer: bytesused=%d, idx=%x, status=%d",
+@@ -2237,8 +2273,7 @@ usbvc_v4l2_set_parm(usbvc_state_t *usbvcp, struct v4l2_streamparm *parm)
+ 	bcopy(&ctrl, &strm_if->ctrl_pc, sizeof (usbvc_vs_probe_commit_t));
+ 
+ 	LE_TO_UINT32(ctrl.dwFrameInterval, 0, i);
+-	parm->parm.capture.timeperframe.numerator = i;
+-	parm->parm.capture.timeperframe.denominator = c;
++	usbvc_v4l2_interval(i, &parm->parm.capture.timeperframe);
+ 
+ 	mutex_enter(&usbvcp->usbvc_mutex);
+ 	/*
+@@ -2260,7 +2295,7 @@ static int
+ usbvc_v4l2_get_parm(usbvc_state_t *usbvcp, struct v4l2_streamparm *parm)
+ {
+ 	usbvc_stream_if_t	*strm_if;
+-	uint32_t n, d;
++	uint32_t n;
+ 
+ 	bzero(parm, sizeof (*parm));
+ 
+@@ -2278,9 +2313,7 @@ usbvc_v4l2_get_parm(usbvc_state_t *usbvcp, struct v4l2_streamparm *parm)
+ 	 * According to UVC payload specs, the dwFrameInterval in frame
+ 	 * descriptors is in 100ns unit.
+ 	 */
+-	d = USBVC_FRAME_INTERVAL_DENOMINATOR;
+-	parm->parm.capture.timeperframe.numerator = n;
+-	parm->parm.capture.timeperframe.denominator = d;
++	usbvc_v4l2_interval(n, &parm->parm.capture.timeperframe);
+ 
+ 	/* Support capture only, so far. */
+ 	parm->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+-- 
+2.56.0
+

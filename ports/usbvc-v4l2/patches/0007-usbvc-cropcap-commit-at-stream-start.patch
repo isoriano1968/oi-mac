@@ -1,0 +1,103 @@
+From 1202d7174acb8224f9a791f6d2d7d790fab3c5e3 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 17:58:40 +0100
+Subject: [PATCH] NNNNN usbvc: VIDIOC_CROPCAP; commit the format at every
+ stream start
+
+- VIDIOC_CROPCAP: bounds and default rectangle are the current frame,
+  pixel aspect 1/1. GStreamer's v4l2src calls it right after the
+  VIDIOC_ENUM_FMT that ends the enumeration with EINVAL, so ENOTTY from
+  CROPCAP replaced that errno and v4l2src stopped ("Failed to get number
+  2 in pixelformat enumeration").
+- Commit the negotiated format before the alternate setting each time the
+  isoc pipe opens, as usbvc_resume_operation() and Linux uvcvideo do.
+  read(2) without VIDIOC_S_FMT relied on the commit made at attach; the
+  camera (Logitech C920) had been idle or suspended since and sent only
+  empty packets, so read(2) never returned.
+---
+ .../common/io/usb/clients/video/usbvc/usbvc.c | 19 ++++++++++
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 38 +++++++++++++++++++
+ 2 files changed, 57 insertions(+)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index 29ce59e9..e376e354 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -3128,6 +3128,25 @@ usbvc_open_isoc_pipe(usbvc_state_t *usbvcp, usbvc_stream_if_t *strm_if)
+ 
+ 	ASSERT(mutex_owned(&usbvcp->usbvc_mutex));
+ 
++	/*
++	 * Commit the negotiated format again before the alternate setting is
++	 * chosen, as usbvc_resume_operation() does and as Linux uvcvideo does
++	 * at every stream start: a camera (Logitech C920) that was suspended
++	 * or idle since the last commit sends only empty packets otherwise,
++	 * e.g. for read(2) without VIDIOC_S_FMT. S_FMT cannot change ctrl_pc
++	 * meanwhile: the caller holds the serial access.
++	 */
++	mutex_exit(&usbvcp->usbvc_mutex);
++	rval = usbvc_vs_set_probe_commit(usbvcp, strm_if, &strm_if->ctrl_pc,
++	    VS_COMMIT_CONTROL);
++	mutex_enter(&usbvcp->usbvc_mutex);
++	if (rval != USB_SUCCESS) {
++		USB_DPRINTF_L2(PRINT_MASK_OPEN, usbvcp->usbvc_log_handle,
++		    "usbvc_open_isoc_pipe: commit failed, rval=%d", rval);
++
++		return (rval);
++	}
++
+ 	if ((rval = usbvc_set_alt(usbvcp, strm_if)) != USB_SUCCESS) {
+ 
+ 		return (rval);
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index f26fd885..113802d5 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -372,6 +372,44 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 
+ 		break;
+ 	}
++	case VIDIOC_CROPCAP:
++	{
++		struct v4l2_cropcap	cc;
++		usbvc_format_group_t	*fmtgrp;
++		uint16_t		w, h;
++
++		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
++		    "V4L2 ioctl: VIDIOC_CROPCAP");
++		USBVC_COPYIN(cc);
++		if (cc.type != V4L2_BUF_TYPE_VIDEO_CAPTURE) {
++			rv = EINVAL;
++
++			break;
++		}
++
++		/* No cropping: bounds and default = the frame, square pixels */
++		mutex_enter(&usbvcp->usbvc_mutex);
++		fmtgrp = usbvcp->usbvc_curr_strm != NULL ?
++		    usbvcp->usbvc_curr_strm->cur_format_group : NULL;
++		if (fmtgrp == NULL || fmtgrp->cur_frame == NULL) {
++			mutex_exit(&usbvcp->usbvc_mutex);
++			rv = EINVAL;
++
++			break;
++		}
++		LE_TO_UINT16(fmtgrp->cur_frame->descr->wWidth, 0, w);
++		LE_TO_UINT16(fmtgrp->cur_frame->descr->wHeight, 0, h);
++		mutex_exit(&usbvcp->usbvc_mutex);
++		bzero(&cc.bounds, sizeof (cc.bounds));
++		cc.bounds.width = w;
++		cc.bounds.height = h;
++		cc.defrect = cc.bounds;
++		cc.pixelaspect.numerator = 1;
++		cc.pixelaspect.denominator = 1;
++		USBVC_COPYOUT(cc);
++
++		break;
++	}
+ 	case VIDIOC_TRY_FMT:
+ 	{
+ 		struct v4l2_format	fmt;
+-- 
+2.56.0
+

@@ -1,0 +1,30 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+
+set name=pkg.fmri value=pkg:/group/apple/drm-amdgpu-polaris@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="OI-Apple: amdgpu for Polaris (iMac 2017/2019, MacBook Pro 15-inch)"
+set name=pkg.description value="illumos-drm with amdgpu, drmadm and the Polaris firmware."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+depend type=require fmri=pkg:/group/apple/gfx-stack
+depend type=require fmri=pkg:/driver/graphics/drm-core
+depend type=require fmri=pkg:/driver/graphics/linuxkpi
+depend type=require fmri=pkg:/driver/graphics/drm-helpers
+depend type=require fmri=pkg:/driver/graphics/drm-kms
+depend type=require fmri=pkg:/driver/graphics/amdgpu
+depend type=require fmri=pkg:/driver/graphics/drmadm
+depend type=require fmri=pkg:/system/firmware/amdgpu-polaris

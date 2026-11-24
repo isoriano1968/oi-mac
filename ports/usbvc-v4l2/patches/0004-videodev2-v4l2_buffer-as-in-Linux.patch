@@ -1,0 +1,404 @@
+From 7b95a40feca31594ebaa854f0158477fec5d962a Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 16:41:26 +0100
+Subject: [PATCH] NNNNN sys/videodev2.h: struct v4l2_buffer as in Linux V4L2
+
+struct v4l2_buffer had its own illumos field order (80 bytes in both data
+models). Programs built from Linux V4L2 sources with their own copy of
+the Linux header, such as GStreamer's v4l2 plugin (sys/v4l2/ext), used
+other VIDIOC_QUERYBUF, VIDIOC_QBUF and VIDIOC_DQBUF numbers, so usbvc
+rejected them.
+
+- sys/videodev2.h: struct v4l2_buffer with Linux's layout (88 bytes for
+  LP64, 68 for ILP32), struct timeval timestamp, the planes and fd
+  members of m, request_fd. struct v4l2_timeval stays for old sources.
+- usbvc: VIDIOC_QUERYBUF, QBUF and DQBUF accept the new layout, its
+  ILP32 form, and the old 80 byte layout (the ioctl numbers differ in
+  the size), so programs built against the old header keep working.
+---
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 163 +++++++++++++++++-
+ .../sys/usb/clients/video/usbvc/usbvc_var.h   |  57 ++++++
+ usr/src/uts/common/sys/videodev2.h            |  45 +++--
+ 3 files changed, 242 insertions(+), 23 deletions(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index 3a646af4..e4c2082c 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -58,6 +58,8 @@ static usbvc_frames_t *usbvc_v4l2_find_frame(usbvc_format_group_t *,
+ static void usbvc_v4l2_interval(uint32_t, struct v4l2_fract *);
+ static int usbvc_v4l2_enum_frameintervals(usbvc_state_t *,
+ 				struct v4l2_frmivalenum *);
++static int usbvc_v4l2_copyin_buf(int, intptr_t, struct v4l2_buffer *, int);
++static int usbvc_v4l2_copyout_buf(int, intptr_t, struct v4l2_buffer *, int);
+ static void usbvc_v4l2_fcc_name(uint32_t, char *, size_t);
+ /* Video controls that supported by usbvc driver */
+ static usbvc_v4l2_ctrl_map_t usbvc_v4l2_ctrls[] = {
+@@ -138,6 +140,140 @@ static const struct {
+ 	{ { 'H', '2', '6', '4' }, V4L2_PIX_FMT_H264, B_TRUE, "H.264" },
+ };
+ 
++/*
++ * VIDIOC_QUERYBUF, QBUF and DQBUF come with three struct v4l2_buffer
++ * layouts: the one of <sys/videodev2.h> (Linux V4L2), the same for 32-bit
++ * programs, and the old illumos one. The size is part of the ioctl number,
++ * so cmd tells which one; the driver itself works with the native one.
++ * Only MMAP I/O exists, so m.offset is the only member of m that matters.
++ */
++static int
++usbvc_v4l2_copyin_buf(int cmd, intptr_t arg, struct v4l2_buffer *buf,
++    int mode)
++{
++	bzero(buf, sizeof (*buf));
++
++	switch (cmd) {
++	case VIDIOC_QUERYBUF_OLD:
++	case VIDIOC_QBUF_OLD:
++	case VIDIOC_DQBUF_OLD:
++	{
++		usbvc_v4l2_buffer_old_t ob;
++
++		if (ddi_copyin((caddr_t)arg, &ob, sizeof (ob), mode) != 0)
++			return (EFAULT);
++		buf->index = ob.index;
++		buf->type = ob.type;
++		buf->bytesused = ob.bytesused;
++		buf->flags = ob.flags;
++		buf->field = ob.field;
++		buf->timestamp.tv_sec = (time_t)ob.ts_sec;
++		buf->timestamp.tv_usec = (suseconds_t)ob.ts_usec;
++		buf->timecode = ob.timecode;
++		buf->sequence = ob.sequence;
++		buf->memory = ob.memory;
++		buf->m.offset = ob.m.offset;
++		buf->length = ob.length;
++
++		return (0);
++	}
++#ifdef _SYSCALL32_IMPL
++	case VIDIOC_QUERYBUF32:
++	case VIDIOC_QBUF32:
++	case VIDIOC_DQBUF32:
++	{
++		usbvc_v4l2_buffer32_t b32;
++
++		if (ddi_copyin((caddr_t)arg, &b32, sizeof (b32), mode) != 0)
++			return (EFAULT);
++		buf->index = b32.index;
++		buf->type = b32.type;
++		buf->bytesused = b32.bytesused;
++		buf->flags = b32.flags;
++		buf->field = b32.field;
++		buf->timestamp.tv_sec = b32.timestamp.tv_sec;
++		buf->timestamp.tv_usec = b32.timestamp.tv_usec;
++		buf->timecode = b32.timecode;
++		buf->sequence = b32.sequence;
++		buf->memory = b32.memory;
++		buf->m.offset = b32.m.offset;
++		buf->length = b32.length;
++
++		return (0);
++	}
++#endif
++	default:
++		if (ddi_copyin((caddr_t)arg, buf, sizeof (*buf), mode) != 0)
++			return (EFAULT);
++
++		return (0);
++	}
++}
++
++static int
++usbvc_v4l2_copyout_buf(int cmd, intptr_t arg, struct v4l2_buffer *buf,
++    int mode)
++{
++	switch (cmd) {
++	case VIDIOC_QUERYBUF_OLD:
++	case VIDIOC_QBUF_OLD:
++	case VIDIOC_DQBUF_OLD:
++	{
++		usbvc_v4l2_buffer_old_t ob;
++
++		bzero(&ob, sizeof (ob));
++		ob.index = buf->index;
++		ob.bytesused = buf->bytesused;
++		ob.type = buf->type;
++		ob.field = buf->field;
++		ob.ts_sec = (uint64_t)buf->timestamp.tv_sec;
++		ob.ts_usec = (uint64_t)buf->timestamp.tv_usec;
++		ob.timecode = buf->timecode;
++		ob.flags = buf->flags;
++		ob.sequence = buf->sequence;
++		ob.m.offset = buf->m.offset;
++		ob.memory = buf->memory;
++		ob.length = buf->length;
++		if (ddi_copyout(&ob, (caddr_t)arg, sizeof (ob), mode) != 0)
++			return (EFAULT);
++
++		return (0);
++	}
++#ifdef _SYSCALL32_IMPL
++	case VIDIOC_QUERYBUF32:
++	case VIDIOC_QBUF32:
++	case VIDIOC_DQBUF32:
++	{
++		usbvc_v4l2_buffer32_t b32;
++
++		bzero(&b32, sizeof (b32));
++		b32.index = buf->index;
++		b32.type = buf->type;
++		b32.bytesused = buf->bytesused;
++		b32.flags = buf->flags;
++		b32.field = buf->field;
++		b32.timestamp.tv_sec = (time32_t)buf->timestamp.tv_sec;
++		b32.timestamp.tv_usec = (int32_t)buf->timestamp.tv_usec;
++		b32.timecode = buf->timecode;
++		b32.sequence = buf->sequence;
++		b32.memory = buf->memory;
++		b32.m.offset = buf->m.offset;
++		b32.length = buf->length;
++		if (ddi_copyout(&b32, (caddr_t)arg, sizeof (b32), mode) != 0)
++			return (EFAULT);
++
++		return (0);
++	}
++#endif
++	default:
++		if (ddi_copyout(buf, (caddr_t)arg, sizeof (*buf), mode) != 0)
++			return (EFAULT);
++
++		return (0);
++	}
++}
++
++
+ /* V4L2 ioctls */
+ int
+ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+@@ -359,11 +495,16 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 		break;
+ 	}
+ 	case VIDIOC_QUERYBUF: /* for memory mapping IO method */
++	case VIDIOC_QUERYBUF_OLD:
++#ifdef _SYSCALL32_IMPL
++	case VIDIOC_QUERYBUF32:
++#endif
+ 	{
+ 		struct v4l2_buffer	buf;
+ 		usbvc_buf_grp_t		*usbvc_bufg;
+ 
+-		USBVC_COPYIN(buf);
++		if ((rv = usbvc_v4l2_copyin_buf(cmd, arg, &buf, mode)) != 0)
++			break;
+ 		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 		    "V4L2 ioctl: VIDIOC_QUERYBUF: idx=%d", buf.index);
+ 		mutex_enter(&usbvcp->usbvc_mutex);
+@@ -383,7 +524,7 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 		usbvc_v4l2_query_buf(usbvcp, &usbvc_bufg->buf_head[buf.index],
+ 		    &buf);
+ 		mutex_exit(&usbvcp->usbvc_mutex);
+-		USBVC_COPYOUT(buf);
++		rv = usbvc_v4l2_copyout_buf(cmd, arg, &buf, mode);
+ 		USB_DPRINTF_L3(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 		    "V4L2 ioctl: VIDIOC_QUERYBUF,(index=%d)len=%d",
+ 		    buf.index, buf.length);
+@@ -391,13 +532,18 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 		break;
+ 	}
+ 	case VIDIOC_QBUF:
++	case VIDIOC_QBUF_OLD:
++#ifdef _SYSCALL32_IMPL
++	case VIDIOC_QBUF32:
++#endif
+ 	{
+ 		struct v4l2_buffer	buf;
+ 		usbvc_buf_grp_t		*usbvc_bufg;
+ 
+ 		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 		    "V4L2 ioctl: VIDIOC_QBUF");
+-		USBVC_COPYIN(buf);
++		if ((rv = usbvc_v4l2_copyin_buf(cmd, arg, &buf, mode)) != 0)
++			break;
+ 		mutex_enter(&usbvcp->usbvc_mutex);
+ 		usbvc_bufg = &usbvcp->usbvc_curr_strm->buf_map;
+ 
+@@ -421,18 +567,23 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 			break;
+ 		}
+ 		mutex_exit(&usbvcp->usbvc_mutex);
+-		USBVC_COPYOUT(buf);
++		rv = usbvc_v4l2_copyout_buf(cmd, arg, &buf, mode);
+ 
+ 		break;
+ 	}
+ 
+ 	case VIDIOC_DQBUF:
++	case VIDIOC_DQBUF_OLD:
++#ifdef _SYSCALL32_IMPL
++	case VIDIOC_DQBUF32:
++#endif
+ 	{
+ 		struct v4l2_buffer	buf;
+ 
+ 		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 		    "V4L2 ioctl: VIDIOC_DQBUF");
+-		USBVC_COPYIN(buf);
++		if ((rv = usbvc_v4l2_copyin_buf(cmd, arg, &buf, mode)) != 0)
++			break;
+ 		mutex_enter(&usbvcp->usbvc_mutex);
+ 		if ((rv = usbvc_v4l2_dequeue_buffer(usbvcp, &buf, mode)) != 0) {
+ 			mutex_exit(&usbvcp->usbvc_mutex);
+@@ -443,7 +594,7 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 			break;
+ 		}
+ 		mutex_exit(&usbvcp->usbvc_mutex);
+-		USBVC_COPYOUT(buf);
++		rv = usbvc_v4l2_copyout_buf(cmd, arg, &buf, mode);
+ 
+ 		break;
+ 	}
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+index c922848f..7995fc9f 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+@@ -187,6 +187,63 @@ typedef struct usbvc_vic {
+  */
+ #define	USBVC_MAX_ISOC_REQ_SIZE 0x10000
+ 
++/*
++ * struct v4l2_buffer as <sys/videodev2.h> had it before the Linux V4L2
++ * layout (80 bytes in both data models): programs built against that header
++ * use these ioctl numbers.
++ */
++typedef struct usbvc_v4l2_buffer_old {
++	uint32_t		index;
++	uint32_t		bytesused;
++	uint32_t		type;
++	uint32_t		field;
++	uint64_t		ts_sec;
++	uint64_t		ts_usec;
++	struct v4l2_timecode	timecode;
++	uint32_t		flags;
++	uint32_t		sequence;
++	union {
++		uint32_t	offset;
++		uint64_t	userptr;
++	} m;
++	uint32_t		memory;
++	uint32_t		length;
++	uint32_t		input;
++	uint32_t		reserved;
++} usbvc_v4l2_buffer_old_t;
++
++#define	VIDIOC_QUERYBUF_OLD	_IOWR('V',  9, usbvc_v4l2_buffer_old_t)
++#define	VIDIOC_QBUF_OLD		_IOWR('V', 15, usbvc_v4l2_buffer_old_t)
++#define	VIDIOC_DQBUF_OLD	_IOWR('V', 17, usbvc_v4l2_buffer_old_t)
++
++#ifdef _SYSCALL32
++/* struct v4l2_buffer of 32-bit programs (68 bytes) */
++typedef struct usbvc_v4l2_buffer32 {
++	uint32_t		index;
++	uint32_t		type;
++	uint32_t		bytesused;
++	uint32_t		flags;
++	uint32_t		field;
++	struct timeval32	timestamp;
++	struct v4l2_timecode	timecode;
++	uint32_t		sequence;
++	uint32_t		memory;
++	union {
++		uint32_t	offset;
++		caddr32_t	userptr;
++		caddr32_t	planes;
++		int32_t		fd;
++	} m;
++	uint32_t		length;
++	uint32_t		reserved2;
++	uint32_t		reserved;
++} usbvc_v4l2_buffer32_t;
++
++#define	VIDIOC_QUERYBUF32	_IOWR('V',  9, usbvc_v4l2_buffer32_t)
++#define	VIDIOC_QBUF32		_IOWR('V', 15, usbvc_v4l2_buffer32_t)
++#define	VIDIOC_DQBUF32		_IOWR('V', 17, usbvc_v4l2_buffer32_t)
++#endif /* _SYSCALL32 */
++
+ #define	USBVC_DEFAULT_READ_BUF_NUM 3
+ #define	USBVC_MAX_READ_BUF_NUM 40
+ #define	USBVC_MAX_MAP_BUF_NUM 40
+diff --git a/usr/src/uts/common/sys/videodev2.h b/usr/src/uts/common/sys/videodev2.h
+index 7be5b4f2..271f2933 100644
+--- a/usr/src/uts/common/sys/videodev2.h
++++ b/usr/src/uts/common/sys/videodev2.h
+@@ -50,6 +50,7 @@ extern "C" {
+ #include <sys/types.h>
+ #include <sys/ioccom.h>
+ #include <sys/time_impl.h>
++#include <sys/time.h>
+ 
+ /*
+  * Common stuff for both V4L1 and V4L2
+@@ -661,34 +662,44 @@ struct v4l2_requestbuffers
+ };
+ 
+ /*
+- * this structure is defined to replace timeval structure which includes
+- * "long" type elements
++ * The timestamp type of the old illumos struct v4l2_buffer, kept for source
++ * compatibility.
+  */
+ struct v4l2_timeval {
+ 	uint64_t	tv_sec;	/* seconds */
+ 	uint64_t	tv_usec; /* and microseconds */
+ };
+ 
+-/* this structure is now 64bits alignment */
++struct v4l2_plane;
++
++/*
++ * The layout of Linux V4L2 (88 bytes for LP64, 68 for ILP32 programs).
++ * Before, illumos had its own layout (80 bytes in both data models); usbvc
++ * still accepts the ioctls of that layout, whose numbers differ in the size.
++ */
+ struct v4l2_buffer
+ {
+-	uint32_t			index;
+-	uint32_t			bytesused;
+-	enum v4l2_buf_type	type;
+-	enum v4l2_field		field;
+-	struct v4l2_timeval		timestamp;
++	uint32_t		index;
++	uint32_t		type;		/* enum v4l2_buf_type */
++	uint32_t		bytesused;
++	uint32_t		flags;
++	uint32_t		field;		/* enum v4l2_field */
++	struct timeval		timestamp;
+ 	struct v4l2_timecode	timecode;
+-	uint32_t			flags;
+-	uint32_t			sequence;
++	uint32_t		sequence;
++	uint32_t		memory;		/* enum v4l2_memory */
+ 	union {
+-		uint32_t	   offset;
+-		uint64_t   userptr;
++		uint32_t		offset;
++		unsigned long		userptr;
++		struct v4l2_plane	*planes;
++		int32_t			fd;
+ 	} m;
+-	/* memory location */
+-	enum v4l2_memory	memory;
+-	uint32_t			length;
+-	uint32_t			input;
+-	uint32_t			reserved;
++	uint32_t		length;
++	uint32_t		reserved2;
++	union {
++		int32_t		request_fd;
++		uint32_t	reserved;
++	};
+ };
+ 
+ /*  Flags for 'flags' field */
+-- 
+2.56.0
+

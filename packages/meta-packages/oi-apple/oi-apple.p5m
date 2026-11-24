@@ -1,0 +1,27 @@
+#
+# This file and its contents are supplied under the terms of the
+# Common Development and Distribution License ("CDDL"), version 1.0.
+# You may only use this file in accordance with the terms of version
+# 1.0 of the CDDL.
+#
+# A full copy of the text of the CDDL should have accompanied this
+# source.  A copy of the CDDL is also available via the Internet at
+# http://www.illumos.org/license/CDDL.
+#
+
+#
+# Copyright 2026 isoriano1968
+#
+
+
+set name=pkg.fmri value=pkg:/metapackages/oi-apple@$(IPS_COMPONENT_VERSION),$(BUILD_VERSION)
+set name=pkg.summary value="OI-Apple: the common package set for Intel Macs"
+set name=pkg.description value="The packages every Intel Mac gets from OI-Apple (group/apple/base, smc, audio, storage) and the OI-Apple Updater, which adds the model-specific groups."
+set name=info.classification value="org.opensolaris.category.2008:$(COMPONENT_CLASSIFICATION)"
+set name=info.upstream-url value=$(COMPONENT_PROJECT_URL)
+set name=org.opensolaris.consolidation value=$(CONSOLIDATION)
+depend type=require fmri=pkg:/group/apple/base
+depend type=require fmri=pkg:/group/apple/smc
+depend type=require fmri=pkg:/group/apple/audio
+depend type=require fmri=pkg:/group/apple/storage
+depend type=require fmri=pkg:/system/apple/oi-apple-updater

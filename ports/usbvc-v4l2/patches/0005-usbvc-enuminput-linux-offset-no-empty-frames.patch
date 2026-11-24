@@ -1,0 +1,187 @@
+From dba2389892561485ef0108d754f8f755127688c3 Mon Sep 17 00:00:00 2001
+From: isoriano1968 <81116077+isoriano1968@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 17:23:53 +0100
+Subject: [PATCH] NNNNN usbvc: VIDIOC_ENUMINPUT index at the Linux offset; no
+ empty frames
+
+struct v4l2_input had name before index. Programs built from Linux V4L2
+sources with their own copy of the Linux header (GStreamer's v4l2
+plugin) put the index at offset 0, where usbvc read the name, so every
+index was taken for input 0 and GStreamer enumerated inputs forever.
+
+- sys/videodev2.h: struct v4l2_input with Linux's layout (index, name,
+  ..., capabilities; 80 bytes for LP64, 76 for ILP32) and the
+  V4L2_IN_CAP_* values.
+- usbvc: VIDIOC_ENUMINPUT also for ILP32 programs; the reply clears
+  everything but the index.
+- usbvc: an end of frame without any data no longer completes a buffer:
+  read(2) returned 0 bytes (end of file) for it.
+- usbvc: a payload header with the UVC error bit marks the frame broken
+  (V4L2_BUF_FLAG_ERROR).
+---
+ .../common/io/usb/clients/video/usbvc/usbvc.c | 22 ++++++++++++++++-
+ .../io/usb/clients/video/usbvc/usbvc_v4l2.c   | 21 ++++++++++++++--
+ .../sys/usb/clients/video/usbvc/usbvc.h       |  1 +
+ .../sys/usb/clients/video/usbvc/usbvc_var.h   |  7 ++++++
+ usr/src/uts/common/sys/videodev2.h            | 24 +++++++++----------
+ 5 files changed, 60 insertions(+), 15 deletions(-)
+
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+index a00a347c..23ff6953 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc.c
+@@ -3689,9 +3689,29 @@ usbvc_decode_stream_header(usbvc_state_t *usbvcp, usbvc_buf_grp_t *bufgrp,
+ 		buf_filling->filled += min(data_len, buf_left);
+ 	}
+ 
++	/* The camera flagged an error in this frame (UVC 1.1 2.4.3.3). */
++	if (head_flag & USBVC_STREAM_ERR) {
++		buf_filling->status = USBVC_BUF_ERR;
++	}
++
+ 	/* If the last packet for this frame */
+ 	if (head_flag & USBVC_STREAM_EOF) {
+-		buf_filling->status = USBVC_BUF_DONE;
++		if (buf_filling->filled == 0) {
++			/*
++			 * An end of frame without any data (e.g. a header-only
++			 * packet that toggles FID): no frame to hand out,
++			 * read(2) would return 0 (end of file). Keep the
++			 * buffer for the next frame.
++			 */
++			buf_filling->status = USBVC_BUF_EMPTY;
++			USB_DPRINTF_L3(PRINT_MASK_CB, usbvcp->usbvc_log_handle,
++			    "usbvc_decode_stream_header: empty frame");
++
++			return (USB_FAILURE);
++		}
++		if (buf_filling->status != USBVC_BUF_ERR) {
++			buf_filling->status = USBVC_BUF_DONE;
++		}
+ 	}
+ 	if (data_len > buf_left) {
+ 		buf_filling->status = USBVC_BUF_ERR;
+diff --git a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+index e4c2082c..2be36024 100644
+--- a/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
++++ b/usr/src/uts/common/io/usb/clients/video/usbvc/usbvc_v4l2.c
+@@ -703,22 +703,39 @@ usbvc_v4l2_ioctl(usbvc_state_t *usbvcp, int cmd, intptr_t arg, int mode)
+ 	}
+ 
+ 	case VIDIOC_ENUMINPUT:
++#ifdef _SYSCALL32_IMPL
++	case VIDIOC_ENUMINPUT32:
++#endif
+ 	{
+ 		struct v4l2_input input;
++		size_t	insize = sizeof (input);
+ 
++#ifdef _SYSCALL32_IMPL
++		if (cmd == VIDIOC_ENUMINPUT32)
++			insize = USBVC_V4L2_INPUT32_SIZE;
++#endif
+ 		USB_DPRINTF_L4(PRINT_MASK_IOCTL, usbvcp->usbvc_log_handle,
+ 		    "V4L2 ioctl: ENUMINPUT");
+-		USBVC_COPYIN(input);
++		bzero(&input, sizeof (input));
++		if (ddi_copyin((caddr_t)arg, &input, insize, mode) != 0) {
++			rv = EFAULT;
++
++			break;
++		}
+ 
+ 		if (input.index != 0) { /* Support only one INPUT now */
+ 			rv = EINVAL;
+ 
+ 			break;
+ 		}
++		bzero(&input.name, sizeof (input) - offsetof(struct v4l2_input,
++		    name));
+ 		(void) strncpy((char *)input.name, "Camera Terminal",
+ 		    sizeof (input.name));
+ 		input.type = V4L2_INPUT_TYPE_CAMERA;
+-		USBVC_COPYOUT(input);
++		if (ddi_copyout(&input, (caddr_t)arg, insize, mode) != 0) {
++			rv = EFAULT;
++		}
+ 
+ 		break;
+ 	}
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h
+index cb619268..02463abc 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc.h
+@@ -483,6 +483,7 @@ typedef struct usbvc_vs_probe_commit {
+ 				0x9b, 0x71}
+ 
+ /* Stream frame's flag bits */
++#define	USBVC_STREAM_ERR	(1 << 6)
+ #define	USBVC_STREAM_EOF	(1 << 1)
+ #define	USBVC_STREAM_FID	(1 << 0)
+ 
+diff --git a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+index 7995fc9f..31d2de63 100644
+--- a/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
++++ b/usr/src/uts/common/sys/usb/clients/video/usbvc/usbvc_var.h
+@@ -242,6 +242,13 @@ typedef struct usbvc_v4l2_buffer32 {
+ #define	VIDIOC_QUERYBUF32	_IOWR('V',  9, usbvc_v4l2_buffer32_t)
+ #define	VIDIOC_QBUF32		_IOWR('V', 15, usbvc_v4l2_buffer32_t)
+ #define	VIDIOC_DQBUF32		_IOWR('V', 17, usbvc_v4l2_buffer32_t)
++
++/*
++ * struct v4l2_input of 32-bit programs: the same offsets, but 76 bytes
++ * (std is only 4-byte aligned in ILP32).
++ */
++#define	USBVC_V4L2_INPUT32_SIZE	76
++#define	VIDIOC_ENUMINPUT32	_IOWRN('V', 26, USBVC_V4L2_INPUT32_SIZE)
+ #endif /* _SYSCALL32 */
+ 
+ #define	USBVC_DEFAULT_READ_BUF_NUM 3
+diff --git a/usr/src/uts/common/sys/videodev2.h b/usr/src/uts/common/sys/videodev2.h
+index 271f2933..189a6e82 100644
+--- a/usr/src/uts/common/sys/videodev2.h
++++ b/usr/src/uts/common/sys/videodev2.h
+@@ -919,28 +919,28 @@ struct v4l2_standard
+ /*
+  *	V I D E O   I N P U T S
+  */
++/*
++ * The layout of Linux V4L2 (80 bytes for LP64, 76 for ILP32 programs).
++ * Before, illumos had name before index (80 bytes in both data models).
++ */
+ struct v4l2_input
+ {
+-	uint8_t		name[32];	/*  Label */
+ 	uint32_t	index;		/*  Which input */
++	uint8_t		name[32];	/*  Label */
+ 	uint32_t	type;		/*  Type of input */
+ 	uint32_t	audioset;	/*  Associated audios (bitfield) */
+ 	uint32_t	tuner;		/*  Associated tuner */
+ 	v4l2_std_id	std;
+ 	uint32_t	status;
+-
+-	/*
+-	 * Added for 64bits alignment, or, ENUMINPUT ioctl will fail. Because
+-	 * 32 bits app and 64bits driver will get different structure size
+-	 * which cause the values of ENUMINPUT are different. v4l2_input has a
+-	 * 64-bit element which make v4l2_input structure has to be 64bit
+-	 * alignment.
+-	 */
+-	uint32_t pad;
+-
+-	uint32_t	reserved[4];
++	uint32_t	capabilities;
++	uint32_t	reserved[3];
+ };
+ 
++/* Values for the 'capabilities' field */
++#define	V4L2_IN_CAP_DV_TIMINGS		0x00000002
++#define	V4L2_IN_CAP_STD			0x00000004
++#define	V4L2_IN_CAP_NATIVE_SIZE		0x00000008
++
+ /*  Values for the 'type' field */
+ #define	V4L2_INPUT_TYPE_TUNER		1
+ #define	V4L2_INPUT_TYPE_CAMERA		2
+-- 
+2.56.0
+
